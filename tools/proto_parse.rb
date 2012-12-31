@@ -20,7 +20,6 @@ loop {
     user = client.gets("\r\n").chomp("\r\n")
     users.push(user)
     while done == 0 do
-      client.print("> ")
       message = client.gets("\r\n").chomp("\r\n")
       #message = client.gets()
       #client.puts(message)
