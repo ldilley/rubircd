@@ -18,6 +18,21 @@ class Ban
 end
 
 class Channel
+  FLAG_ADMIN = '&'     # server administrator
+  MODE_CHANOP = 'o'    # channel operator
+  FLAG_CHANOP = '@'
+  MODE_VOICE = 'v'     # can chat in moderated channels
+  FLAG_VOICE = '+'
+  FLAG_FOUNDER = '~'   # if nick is registered and is founder of the channel
+  MODE_BAN = 'b'       # ban
+  MODE_INVITE = 'i'    # invite only
+  MODE_LIMIT = 'l'     # limit set
+  MODE_LOCKED = 'k'    # key set
+  MODE_MODERATED = 'm' # only voiced users can chat
+  MODE_NOEXTERN = 'n'  # no external PRIVMSG
+  MODE_PRIVATE = 'p'   # will not show up in LIST output
+  MODE_SECRET = 's'    # will not show up in LIST or WHOIS output
+  MODE_TOPIC = 't'     # only channel operators can change topic
   @bans
   @name
   @modes

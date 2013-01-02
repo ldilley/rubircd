@@ -12,9 +12,16 @@ loop {
     client_count = client_count+1
     done = 0
     client.puts(":#{server_name} NOTICE Auth :*** Looking up your hostname...")
-    client.puts(":#{server_name} NOTICE Auth :*** Found your hostname" ) # ToDo: attempt to resolve client IP address
+    sock_domain, client_port, client_hostname, client_ip = client.peeraddr
+    client.puts(":#{server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
+    # client sends "NICK <nick>"
     incoming = client.gets("\r\n").chomp("\r\n")
     puts(incoming.split)
+    # client sends "USER <ident> <ident> <hostname> :<gecos>
+    incoming = client.gets("\r\n").chomp("\r\n")
+    puts(incoming.split)
+    # send PING and expect a PONG back
+    client.puts("PING :#{Time.now.to_i}")
     incoming = client.gets("\r\n").chomp("\r\n")
     puts(incoming.split)
     user = client.gets("\r\n").chomp("\r\n")
