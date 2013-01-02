@@ -1,0 +1,46 @@
+class Command
+  def parse(text)
+    # ToDo: Handle the commands below
+    # admin
+    # away
+    # connect
+    # error
+    # info
+    # invite
+    # ison
+    # join
+    # kick
+    # kill
+    # links
+    # list
+    # mode
+    # motd
+    # names
+    # nick
+    # notice
+    # oper
+    # operwall
+    # part
+    # pass
+    # ping
+    # pong
+    # privmsg
+    # quit
+    # rehash
+    # restart
+    # server
+    # squit
+    # stats
+    # summon
+    # time
+    # topic
+    # trace
+    # user
+    # userhost
+    # users
+    # version
+    # who
+    # whois
+    # whowas
+  end
+end
