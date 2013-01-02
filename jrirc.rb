@@ -1,5 +1,7 @@
-require_relative 'log'
+require_relative 'channel'
 require_relative 'config'
+require_relative 'log'
+require_relative 'server'
 require_relative 'user'
 
 print("Parsing configuration file... ")
@@ -20,6 +22,10 @@ user.channels.each { |channel| puts(channel) }
 user.remove_channel("#foo")
 puts("\nChannels after removing #foo:")
 user.channels.each { |channel| puts(channel) }
+puts("\nCreating channel #test with a sample ban...")
+channel = Channel.new("#test", "Jim")
+channel.add_ban("Jim", "*!*jed@localhost.dom", "too smelly")
+channel.remove_ban("*!*jed@localhost.dom")
 puts("\nTesting logging functionality...")
 log = Log.new
 log.write_log("This is only a test.")
