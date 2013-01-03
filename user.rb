@@ -5,6 +5,7 @@ class User
   @gecos
   @umodes
   @channels
+  @last_activity # used to determine whether the client should be pinged
 
   # Used to create a new user object when a client connects
   def initialize(nick, ident, hostname, gecos)
@@ -14,6 +15,7 @@ class User
     @gecos = gecos
     @umodes = Array.new
     @channels = Array.new
+    @last_activity = Time.now.to_i
   end
 
   def change_nick(new_nick)

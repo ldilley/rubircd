@@ -1,0 +1,10 @@
+class Limits
+  AWAYLEN = 201
+  KICKLEN = 256
+  MAXBANS = 50
+  MAXCHANNELS = 10
+  MAXMSG = 512
+  MODES = 6
+  NICKLEN = 32
+  TOPICLEN = 308
+end

@@ -18,21 +18,27 @@ class Ban
 end
 
 class Channel
-  FLAG_ADMIN = '&'     # server administrator
-  MODE_CHANOP = 'o'    # channel operator
+  MODE_ADMIN = 'a'      # server administrator
+  FLAG_ADMIN = '&'
+  MODE_CHANOP = 'o'     # channel operator
   FLAG_CHANOP = '@'
-  MODE_VOICE = 'v'     # can chat in moderated channels
+  MODE_VOICE = 'v'      # can chat in moderated channels
   FLAG_VOICE = '+'
-  FLAG_FOUNDER = '~'   # if nick is registered and is founder of the channel
-  MODE_BAN = 'b'       # ban
-  MODE_INVITE = 'i'    # invite only
-  MODE_LIMIT = 'l'     # limit set
-  MODE_LOCKED = 'k'    # key set
-  MODE_MODERATED = 'm' # only voiced users can chat
-  MODE_NOEXTERN = 'n'  # no external PRIVMSG
-  MODE_PRIVATE = 'p'   # will not show up in LIST output
-  MODE_SECRET = 's'    # will not show up in LIST or WHOIS output
-  MODE_TOPIC = 't'     # only channel operators can change topic
+  MODE_FOUNDER = 'f'    # if nick is registered and is founder of the channel
+  FLAG_FOUNDER = '~'
+  MODE_BAN = 'b'        # ban
+  MODE_INVITE = 'i'     # invite only
+  MODE_LIMIT = 'l'      # limit set
+  MODE_LOCKED = 'k'     # key set
+  MODE_MODERATED = 'm'  # only voiced users can chat
+  MODE_NOEXTERN = 'n'   # no external PRIVMSG
+  MODE_PRIVATE = 'p'    # will not show up in LIST output
+  MODE_REGISTERED = 'r' # channel is registered
+  MODE_SECRET = 's'     # will not show up in LIST or WHOIS output
+  MODE_TOPIC = 't'      # only channel operators can change topic
+  CHANNEL_MODES = "abfilkmnoprstv"
+  ISUPPORT_CHANNEL_MODES = "ab,fil,k,mnoprstv" # comma separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
+  ISUPPORT_PREFIX = "(afov)&~@+"
   @bans
   @name
   @modes
