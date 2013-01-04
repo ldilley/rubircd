@@ -1,0 +1,18 @@
+Core developers:
+
+Lloyd Dilley  (lloyd) <ldilley@devux.org>
+Mark McKenzie (Pests) <thenightwassaved@gmail.com>
+
+
+Contributors:
+
+Aaron Carroll (anomoly)
+
+
+Thanks to:
+
+Anthony Publiski (Tonster)
+Kelly Lesperance (pygmy)
+Nathan Mitchell  (nateM)
+Paul Mahon       (CatPasswd)
+Phil Rimer       (DrPhil)
