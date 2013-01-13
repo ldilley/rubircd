@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class Log
-  def write_log(text)
+  def self.write(text)
     begin
       log_file = File.open("jrirc.log", 'a')
       log_file.puts("#{Time.now.asctime} -- #{text}")

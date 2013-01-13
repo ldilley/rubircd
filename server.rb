@@ -35,4 +35,14 @@ class Server
   @@start_timestamp = 0   # holds server startup date and time
   @@links = Array.new
   @@users = Array.new
+
+  def self.add_user(user)
+    @@users.push(user)
+  end
+
+  def self.users
+    @@users
+  end
+
+  class << self; attr_accessor :client_count, :start_timestamp end
 end

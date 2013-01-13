@@ -12,6 +12,7 @@ Aaron Carroll (anomoly)
 Thanks to:
 
 Anthony Publiski (Tonster)
+Gerald Stuhrberg (barbo)
 Kelly Lesperance (pygmy)
 Nathan Mitchell  (nateM)
 Paul Mahon       (CatPasswd)

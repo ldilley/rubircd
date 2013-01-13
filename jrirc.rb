@@ -20,31 +20,32 @@
 require_relative 'channel'
 require_relative 'config'
 require_relative 'log'
+require_relative 'network'
 require_relative 'server'
 require_relative 'user'
 
-print("Parsing configuration file... ")
-config = JRIRC::Config.new
+print("Initializing logging... ")
+Log.write("Initializing logging...")
 puts("done.")
-puts("Server name: #{config.server_name}\nTCP port: #{config.listen_port}")
-# Proof of concept
-puts("Simulating creation of a new user object...")
-user = User.new("Joe", "joe", "localhost.dom", "something witty here")
-puts("Current nick is: #{user.nick}")
-user.change_nick("Jim")
-puts("Nick changed to: #{user.nick}")
-user.add_channel("#jibber")
-user.add_channel("#jabber")
-user.add_channel("#foo")
-puts("\nCurrent channels:")
-user.channels.each { |channel| puts(channel) }
-user.remove_channel("#foo")
-puts("\nChannels after removing #foo:")
-user.channels.each { |channel| puts(channel) }
-puts("\nCreating channel #test with a sample ban...")
-channel = Channel.new("#test", "Jim")
-channel.add_ban("Jim", "*!*jed@localhost.dom", "too smelly")
-channel.remove_ban("*!*jed@localhost.dom")
-puts("\nTesting logging functionality...")
-log = Log.new
-log.write_log("This is only a test.")
+Log.write("Logging initialized.")
+print("Parsing configuration file... ")
+JRIRC::Config.parse
+puts("done.")
+Log.write("Configuration loaded.")
+puts("Server name: #{JRIRC::Config.server_name}\nTCP port: #{JRIRC::Config.listen_port}")
+print("Populating reserved nicknames... ")
+chanserv = User.new("ChanServ", "services", JRIRC::Config.server_name, "Channel Services")
+global = User.new("Global", "services", JRIRC::Config.server_name, "Global Messenger")
+memoserv = User.new("MemoServ", "services", JRIRC::Config.server_name, "Memo Services")
+nickserv = User.new("NickServ", "services", JRIRC::Config.server_name, "Nickname Services")
+operserv = User.new("OperServ", "services", JRIRC::Config.server_name, "Operator Services")
+Server.add_user(chanserv)
+Server.add_user(global)
+Server.add_user(memoserv)
+Server.add_user(nickserv)
+Server.add_user(operserv)
+puts("done.")
+Log.write("Reserved nicknames populated.")
+Server.client_count = 0
+puts("Starting network and waiting for incoming connections... ")
+Network.start

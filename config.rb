@@ -28,7 +28,7 @@ module JRIRC
     @@server_name = nil
     @@listen_port = nil
 
-    def initialize
+    def self.parse
       config_file=YAML.load_file("config.yml")
       @@admin_name = config_file["admin_name"]
       @@admin_nick = config_file["admin_nick"]
@@ -69,11 +69,27 @@ module JRIRC
       end
     end
 
-    def server_name
+    def self.admin_name
+      return @@admin_name
+    end
+
+    def self.admin_nick
+      return @@admin_nick
+    end
+
+    def self.admin_email
+      return @@admin_email
+    end
+
+    def self.network_name
+      return @@network_name
+    end
+
+    def self.server_name
       return @@server_name
     end
 
-    def listen_port
+    def self.listen_port
       return @@listen_port
     end
   end # class

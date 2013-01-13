@@ -35,7 +35,9 @@ loop {
     client.puts(":#{server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
     # client sends "NICK <nick>"
     incoming = client.gets("\r\n").chomp("\r\n")
-    puts(incoming.split)
+    input = incoming.split
+    nick = input[1]
+    puts(input[1]) # this should contain the nick
     # client sends "USER <ident> <ident> <hostname> :<gecos>
     incoming = client.gets("\r\n").chomp("\r\n")
     puts(incoming.split)
@@ -43,20 +45,22 @@ loop {
     client.puts("PING :#{Time.now.to_i}")
     incoming = client.gets("\r\n").chomp("\r\n")
     puts(incoming.split)
-    user = client.gets("\r\n").chomp("\r\n")
-    users.push(user)
+    client.puts(":irc.devux.org 001 #{nick} :Welcome to the jrIRC IRC Network #{nick}!")
+    users.push(nick)
     while done == 0 do
       message = client.gets("\r\n").chomp("\r\n")
-      #message = client.gets()
-      #client.puts(message)
-      if message == 'quit'
+      client.puts(message)
+      puts(message)
+      if message == 'QUIT'
         done = 1
         client.close()
         client_count = client_count-1
-        users.delete(user)
-      elsif message == 'date' || message == 'time'
+        users.delete(nick)
+      elsif message == 'PING'
+        client.puts("PONG #{server_name}")
+      elsif message == 'TIME'
         client.puts(Time.now.ctime)
-      elsif message == 'who'
+      elsif message == 'WHO'
         client.puts("Current connections: #{client_count}")
         client.puts("Users online: ")
         users.each { |x| client.puts(x) }
