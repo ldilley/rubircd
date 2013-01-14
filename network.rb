@@ -28,55 +28,109 @@ class Network
     loop do
       Thread.start(server.accept) do |client|
         Server.client_count += 1
-        client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Looking up your hostname...")
-        sock_domain, client_port, client_hostname, client_ip = client.peeraddr
-        client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
-        # Registration loop
-        not_registered = true
-        while(not_registered) do
-          input = client.gets("\r\n").chomp("\r\n")
-          if input.empty?
-            redo
-          end
-          tokens = input.split
-          if tokens[0] =~ /(^nick$)/i && tokens.length == 1
-            client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
-            redo
-          end
-          if tokens[0] =~ /(^nick$)/i && tokens.length > 2
-            client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
-            redo
-          end
-          if tokens[0] =~ /(^nick$)/i && tokens.length == 2
-            if tokens[1] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && tokens[1].length >=1 && tokens[1].length <= Limits::NICKLEN
-              Server.users.each do |user|
-                if user.nick.casecmp(tokens[1]) == 0
-                  client.puts(Numeric.make("433", "null", Numeric::ERR_NICKNAMEINUSE))
-                  break
-                end
-              end
-              nick = tokens[1]
-            else
-              client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
-              redo
-            end
-          end
-          if tokens[0] =~ /(^user$)/i && tokens.length < 5
-            client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
-            redo
-          end
-          if tokens[0] =~ /(^user$)/i && tokens.length >= 5
-            gecos = tokens[4]
-            if tokens[1].length <= 9 && tokens[2].length <= 9 && gecos[0] == ':'
-              gecos = tokens[4..tokens.length]
-              gecos = gecos[1..gecos.length] # Remove leading ':'
-              puts(gecos)
-            else
-              redo
-            end
-          end
-        end # while
+        Network.registration_loop(client)
+        #Network.main_loop(client)
       end # Thread
     end # loop
   end # method
+
+  def self.registration_loop(client)
+    client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Looking up your hostname...")
+    sock_domain, client_port, client_hostname, client_ip = client.peeraddr
+    client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
+    registered = false
+    valid_nick = false
+    timer_thread = Thread.new() { Network.registration_timer(client) }
+    until(registered && valid_nick) do
+      input = client.gets("\r\n").chomp("\r\n")
+      if input.empty?
+        redo
+      end
+      tokens = input.split
+      if tokens[0] =~ /(^nick$)/i && tokens.length == 1
+        client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
+        redo
+      end
+      if tokens[0] =~ /(^nick$)/i && tokens.length > 2
+        client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
+        redo
+      end
+      if tokens[0] =~ /(^nick$)/i && tokens.length == 2
+        if tokens[1] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && tokens[1].length >=1 && tokens[1].length <= Limits::NICKLEN
+          Server.users.each do |user|
+            if user.nick.casecmp(tokens[1]) == 0
+              client.puts(Numeric.make("433", "null", Numeric::ERR_NICKNAMEINUSE))
+              break
+            end
+          end
+          nick = tokens[1]
+          valid_nick = true
+          if registered
+            ping_time = Time.now.to_i
+            client.puts("PING :#{ping_time}")
+            ping_response = client.gets("\r\n").chomp("\r\n")
+            pong_tokens = ping_response.split
+            if pong_tokens[0] =~ /(^pong$)/i && pong_tokens[1] == ":#{ping_time}"
+              Thread.kill(timer_thread)
+              Server.add_user(User.new(nick, ident, client_hostname, gecos))
+              return
+            else
+              redo
+            end
+          end
+        else
+          client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
+          redo
+        end
+      end
+      if tokens[0] =~ /(^user$)/i && tokens.length < 5
+        client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
+        redo
+      end
+      if tokens[0] =~ /(^user$)/i && tokens.length >= 5
+        gecos = tokens[4]
+        # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
+        # The 2nd field matches the 1st (ident string) for certain clients (FYI)
+        if tokens[1].length <= Limits::IDENTLEN && gecos[0] == ':'
+          if tokens[1] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
+            ident = tokens[1]
+          else
+            redo
+          end
+          gecos = tokens[4..tokens.length].join(" ")
+          gecos = gecos[1..gecos.length] # remove leading ':'
+          if gecos.length > Limits::GECOSLEN
+            gecos = gecos[0..Limits::GECOSLEN-1]
+          end
+          registered = true
+          if valid_nick
+            ping_time = Time.now.to_i
+            client.puts("PING :#{ping_time}")
+            ping_response = client.gets("\r\n").chomp("\r\n")
+            pong_tokens = ping_response.split
+            if pong_tokens[0] =~ /(^pong$)/i && pong_tokens[1] == ":#{ping_time}"
+              Thread.kill(timer_thread)
+              Server.add_user(User.new(nick, ident, client_hostname, gecos))
+              return
+            else
+              redo
+            end
+          end
+        else
+          redo
+        end
+      end
+    end # until
+  end # method
+
+  def self.registration_timer(client)
+    Kernel.sleep Limits::REGISTRATION_TIMEOUT
+    client.puts("ERROR :Closing link: [Registration timeout]")
+    client.close
+    Server.client_count -= 1
+  end
+
+  def self.main_loop(client)
+    # parse commands indefinitely here
+  end
 end # class

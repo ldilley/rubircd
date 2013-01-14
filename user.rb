@@ -57,5 +57,5 @@ class User
     @channels.delete(channel_name)
   end
 
-  attr_reader :nick, :channels
+  attr_reader :nick, :ident, :hostname, :gecos, :channels
 end
