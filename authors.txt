@@ -1,13 +1,12 @@
 Core developers:
 
 Lloyd Dilley  (lloyd) <ldilley@devux.org>
-Mark McKenzie (Pests) <thenightwassaved@gmail.com>
 
 
 Contributors:
 
 Aaron Carroll (anomoly)
-
+Mark McKenzie (Pests)
 
 Thanks to:
 

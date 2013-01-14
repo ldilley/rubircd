@@ -18,26 +18,28 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require 'socket'
-require_relative 'config'
+require_relative 'commands'
 require_relative 'numeric'
+require_relative 'options'
 require_relative 'server'
 
 class Network
   def self.start
-    server = TCPServer.open(JRIRC::Config.listen_port)
+    server = TCPServer.open(Options.listen_port)
     loop do
       Thread.start(server.accept) do |client|
         Server.client_count += 1
-        Network.registration_loop(client)
-        #Network.main_loop(client)
+        user = Network.registration_loop(client)
+        Network.welcome(client, user)
+        Network.main_loop(client, user)
       end # Thread
     end # loop
   end # method
 
   def self.registration_loop(client)
-    client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Looking up your hostname...")
+    client.puts(":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
     sock_domain, client_port, client_hostname, client_ip = client.peeraddr
-    client.puts(":#{JRIRC::Config.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
+    client.puts(":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
     registered = false
     valid_nick = false
     timer_thread = Thread.new() { Network.registration_timer(client) }
@@ -48,18 +50,18 @@ class Network
       end
       tokens = input.split
       if tokens[0] =~ /(^nick$)/i && tokens.length == 1
-        client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
+        client.puts(Numeric.ERR_NEEDMOREPARAMS("null", "NICK"))
         redo
       end
       if tokens[0] =~ /(^nick$)/i && tokens.length > 2
-        client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
+        client.puts(Numeric.ERR_ERRONEOUSNICKNAME("null"))
         redo
       end
       if tokens[0] =~ /(^nick$)/i && tokens.length == 2
         if tokens[1] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && tokens[1].length >=1 && tokens[1].length <= Limits::NICKLEN
           Server.users.each do |user|
             if user.nick.casecmp(tokens[1]) == 0
-              client.puts(Numeric.make("433", "null", Numeric::ERR_NICKNAMEINUSE))
+              client.puts(Numeric.ERR_NICKNAMEINUSE("null"))
               break
             end
           end
@@ -72,19 +74,20 @@ class Network
             pong_tokens = ping_response.split
             if pong_tokens[0] =~ /(^pong$)/i && pong_tokens[1] == ":#{ping_time}"
               Thread.kill(timer_thread)
-              Server.add_user(User.new(nick, ident, client_hostname, gecos))
-              return
+              user = User.new(nick, ident, client_hostname, gecos) 
+              Server.add_user(user)
+              return user
             else
               redo
             end
           end
         else
-          client.puts(Numeric.make("432", "null", Numeric::ERR_ERRONEOUSNICKNAME))
+          client.puts(Numeric.ERR_ERRONEOUSNICKNAME("null"))
           redo
         end
       end
       if tokens[0] =~ /(^user$)/i && tokens.length < 5
-        client.puts(Numeric.make("461", "null", Numeric::ERR_NEEDMOREPARAMS))
+        client.puts(Numeric.ERR_NEEDMOREPARAMS("null", "USER"))
         redo
       end
       if tokens[0] =~ /(^user$)/i && tokens.length >= 5
@@ -110,8 +113,9 @@ class Network
             pong_tokens = ping_response.split
             if pong_tokens[0] =~ /(^pong$)/i && pong_tokens[1] == ":#{ping_time}"
               Thread.kill(timer_thread)
-              Server.add_user(User.new(nick, ident, client_hostname, gecos))
-              return
+              user = User.new(nick, ident, client_hostname, gecos)
+              Server.add_user(user)
+              return user
             else
               redo
             end
@@ -130,7 +134,33 @@ class Network
     Server.client_count -= 1
   end
 
-  def self.main_loop(client)
-    # parse commands indefinitely here
+  def self.welcome(client, user)
+    client.puts(Numeric.RPL_WELCOME(user.nick))
+    client.puts(Numeric.RPL_YOURHOST(user.nick))
+    client.puts(Numeric.RPL_CREATED(user.nick))
+    client.puts(Numeric.RPL_MYINFO(user.nick))
+    client.puts(Numeric.RPL_ISUPPORT1(user.nick))
+    client.puts(Numeric.RPL_ISUPPORT2(user.nick))
+    client.puts(Numeric.RPL_LUSERCLIENT(user.nick))
+    client.puts(Numeric.RPL_LUSEROP(user.nick))
+    client.puts(Numeric.RPL_LUSERCHANNELS(user.nick))
+    client.puts(Numeric.RPL_LUSERME(user.nick))
+    client.puts(Numeric.RPL_LOCALUSERS(user.nick))
+    client.puts(Numeric.RPL_GLOBALUSERS(user.nick))
+    client.puts(Numeric.RPL_MOTDSTART(user.nick))
+    # ToDo: read motd.txt and send line by line below
+    client.puts(Numeric.RPL_MOTD(user.nick, "Welcome!"))
+    client.puts(Numeric.RPL_ENDOFMOTD(user.nick))
+  end
+
+  def self.main_loop(client, user)
+    loop do
+      input = client.gets("\r\n").chomp("\r\n")
+      if input.empty?
+        redo
+      end
+      input = input.split
+      Command.parse(client, user, input)
+    end
   end
 end # class

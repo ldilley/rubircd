@@ -17,9 +17,30 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require_relative 'numeric'
+require_relative 'options'
+require_relative 'server'
+
 class Command
-  def parse(text)
-    # ToDo: Handle the commands below
+  def self.parse(client, user, input)
+    # ping
+    if input[0] =~ /(^ping$)/i
+      if input.length < 2
+        client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "PING"))
+        return
+      end
+      client.puts("PONG #{Options.server_name}")
+      return
+    end
+
+    # quit
+    if input[0] =~ /(^quit$)/i
+      client.close
+      Server.client_count -= 1
+      Server.user_remove(user)
+      return
+    end
+      
     # admin
     # away
     # connect
@@ -41,10 +62,8 @@ class Command
     # operwall
     # part
     # pass
-    # ping
     # pong
     # privmsg
-    # quit
     # rehash
     # restart
     # server
@@ -61,5 +80,9 @@ class Command
     # who
     # whois
     # whowas
+
+    # If we get here, we've exhausted all commands
+    client.puts(Numeric.ERR_UNKNOWNCOMMAND(user.nick, input[0]))
+    return
   end
 end

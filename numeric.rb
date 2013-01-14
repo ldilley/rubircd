@@ -18,27 +18,88 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require_relative 'channel'
-require_relative 'config'
 require_relative 'limits'
+require_relative 'options'
 require_relative 'server'
 
 class Numeric
   # Do not be alarmed by gaps between numeric IDs. Some are reserved, many are unused,
   # and others are defined in separate classes.
-  RPL_WELCOME = "Welcome to the #{JRIRC::Config.network_name} IRC Network, [ToDo: populate nick here with sprintf or handle in a method]!" # 001
-  RPL_YOURHOST = "Your host is #{JRIRC::Config.server_name}, running version #{Server::VERSION}"                     # 002
-  RPL_CREATED = "This server was created on #{Server.start_timestamp}"                                               # 003
-  RPL_MYINFO = "#{JRIRC::Config.server_name} #{Server::VERSION} #{Server::USER_MODES} #{Channel::CHANNEL_MODES}"     # 004
+
+  # 001
+  def self.RPL_WELCOME(nick)
+    return sprintf(":%s 001 %s :Welcome to the %s IRC Network, %s!", Options.server_name, nick, Options.network_name, nick)
+  end
+
+  # 002
+  def self.RPL_YOURHOST(nick)
+    return sprintf(":%s 002 %s :Your host is %s, running version %s", Options.server_name, nick, Options.server_name, Server::VERSION)
+  end
+
+  # 003
+  def self.RPL_CREATED(nick)
+    return sprintf(":%s 003 %s :This server was created on %s", Options.server_name, nick, Server.start_timestamp)
+  end
+
+  # 004
+  def self.RPL_MYINFO(nick)
+    return sprintf(":%s 004 %s :%s %s %s %s", Options.server_name, nick, Options.server_name, Server::VERSION, Server::USER_MODES, Channel::CHANNEL_MODES)
+  end
+
   # Need to break ISUPPORT up to possibly avoid hitting the message length ceiling
-  RPL_ISUPPORT1 = "AWAYLEN=#{Limits::AWAYLEN} CASEMAPPING=rfc1459 CHANMODES=#{Channel::ISUPPORT_CHANNEL_MODES} KICKLEN=#{Limits::KICKLEN} MAXBANS=#{Limits::MAXBANS}" +        # 005
-                 "MAXCHANNELS=#{Limits::MAXCHANNELS} :are supported by this server"
-  RPL_ISUPPORT2 = "MODES=#{Limits::MODES} NETWORK=#{JRIRC::Config.network_name} NICKLEN=#{Limits::NICKLEN} PREFIX=#{Channel::ISUPPORT_PREFIX} TOPICLEN=#{Limits::TOPICLEN}" +  # 005
-                  " :are supported by this server"
+  # 005.1
+  def self.RPL_ISUPPORT1(nick)
+    return sprintf(":%s 005 %s :AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
+                   Options.server_name, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
+  end
+  # 005.2
+  def self.RPL_ISUPPORT2(nick)
+    return sprintf(":%s 005 %s :MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", Options.server_name, nick,
+                   Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Limits::TOPICLEN)
+  end
+
   RPL_UMODEIS = "" # 221 -- handle in Command class later
-  RPL_ADMINME = "Administrative info about #{JRIRC::Config.server_name}:"             # 256
-  RPL_ADMINLOC1 = "Name:     #{JRIRC::Config.admin_name}"                             # 257
-  RPL_ADMINLOC2 = "Nickname: #{JRIRC::Config.admin_nick}"                             # 258
-  RPL_ADMINEMAIL = "E-mail:   #{JRIRC::Config.admin_email}"                           # 259
+
+  # 251
+  def self.RPL_LUSERCLIENT(nick)
+    return sprintf(":%s 251 %s :There are %i users and %i invisible on %i servers", Options.server_name, nick, Server.visible_count, Server.invisible_count, Server.link_count + 1)
+  end
+
+  # 252
+  def self.RPL_LUSEROP(nick)
+    return sprintf(":%s 252 %s :%i IRC Operators online", Options.server_name, nick, Server.oper_count)
+  end
+
+  # 253
+  # For unregistered connections -- implement later
+  #def self.RPL_LUSERUNKNOWN(nick)
+  #end
+
+  # 254
+  def self.RPL_LUSERCHANNELS(nick)
+    return sprintf(":%s 254 %s :%i channels formed", Options.server_name, nick, Server.channel_count)
+  end
+
+  # 255
+  def self.RPL_LUSERME(nick)
+    return sprintf(":%s 255 %s :I have %i clients and %i servers", Options.server_name, nick, Server.client_count, Server.link_count + 1)
+  end
+
+  RPL_ADMINME = "Administrative info about #{Options.server_name}:"             # 256
+  RPL_ADMINLOC1 = "Name:     #{Options.admin_name}"                             # 257
+  RPL_ADMINLOC2 = "Nickname: #{Options.admin_nick}"                             # 258
+  RPL_ADMINEMAIL = "E-mail:   #{Options.admin_email}"                           # 259
+
+  # 265
+  def self.RPL_LOCALUSERS(nick)
+    return sprintf(":%s 265 %s :Current local users: %i Max: %i", Options.server_name, nick, Server.local_users, Server.local_users_max)
+  end
+
+  # 266
+  def self.RPL_GLOBALUSERS(nick)
+    return sprintf(":%s 266 %s :Current global users: %i Max: %i", Options.server_name, nick, Server.global_users, Server.global_users_max)
+  end
+
   RPL_UNAWAY = "You are no longer marked as being away"                               # 305
   RPL_NOWAWAY = "You have been marked as being away"                                  # 306
   RPL_WHOISREGNICK = "is a registered nick"                                           # 307
@@ -51,13 +112,28 @@ class Numeric
   RPL_TOPIC = "" # 332 -- handle in Command class later
   RPL_TOPICTIME = "" # 333 -- handle in Command class later
   RPL_INVITING = "" # 341 -- handle in Command class later
-  RPL_VERSION = "#{Server::VERSION} #{JRIRC::Config.server_name} :#{Server::RELEASE}" # 351
+  RPL_VERSION = "#{Server::VERSION} #{Options.server_name} :#{Server::RELEASE}" # 351
   RPL_NAMREPLY = "" # 353 -- handle in Command class later
   RPL_ENDOFNAMES = "End of names list."                                               # 366
   RPL_INFO = "#{Server::VERSION}\nhttp://www.devux.org/projects/jrirc/"               # 371
+
+  # 372
+  def self.RPL_MOTD(nick, text)
+    return sprintf(":%s 372 %s :- %s", Options.server_name, nick, text)
+  end
+
   RPL_ENDOFINFO = "End of info list."                                                 # 374
-  RPL_MOTDSTART = "Message of the day:"                                               # 375
-  RPL_ENDOFMOTD = "End of MOTD"                                                       # 376
+
+  # 375
+  def self.RPL_MOTDSTART(nick)
+    return sprintf(":%s 375 %s :Message of the day:", Options.server_name, nick)
+  end
+
+  # 376
+  def self.RPL_ENDOFMOTD(nick)
+    return sprintf(":%s 376 %s :End of MOTD", Options.server_name, nick)
+  end
+
   RPL_YOUAREOPER = "You are now an IRC Operator"                                      # 381
   RPL_REHASHING = "Rehashing"                                                         # 382
   RPL_TIME = "#{Time.now.asctime}"                                                    # 391
@@ -66,15 +142,34 @@ class Numeric
   ERR_NOSUCHCHANNEL = "No such channel"                                               # 403
   ERR_CANNOTSENDTOCHAN = "Cannot send to channel"                                     # 404
   ERR_TOOMANYCHANNELS = "You have joined too many channels"                           # 405
-  ERR_UNKNOWNCOMMAND = "Unknown command"                                              # 421
+
+  # 421
+  def self.ERR_UNKNOWNCOMMAND(nick, command)
+    return sprintf(":%s 421 %s :%s :Unknown command", Options.server_name, nick, command)
+  end
+
   ERR_NOMOTD = "MOTD file is missing"                                                 # 422
-  ERR_ERRONEOUSNICKNAME = "Erroneous Nickname"                                        # 432
-  ERR_NICKNAMEINUSE = "Nickname is already in use"                                    # 433
+
+  # 432
+  def self.ERR_ERRONEOUSNICKNAME(nick)
+    return sprintf(":%s 432 %s :Erroneous Nickname", Options.server_name, nick)
+  end
+
+  # 433
+  def self.ERR_NICKNAMEINUSE(nick)
+    return sprintf(":%s 433 %s :Nickname is already in use", Options.server_name, nick)
+  end
+
   ERR_USERNOTINCHANNEL = "They aren't on that channel"                                # 441
   ERR_NOTONCHANNEL = "You're not on that channel"                                     # 442
   ERR_USERONCHANNEL = "is already on channel"                                         # 443
   ERR_NOTREGISTERED = "Register first."                                               # 451
-  ERR_NEEDMOREPARAMS = "Not enough parameters"                                        # 461
+
+  # 461
+  def self.ERR_NEEDMOREPARAMS(nick, command)
+    return sprintf(":%s 461 %s :%s :Not enough parameters", Options.server_name, nick, command)
+  end
+
   ERR_ALREADYREGISTERED = "You may not reregister"                                    # 462
   ERR_CHANNELISFULL = "Cannot join channel (+l)"                                      # 471
   ERR_INVITEONLYCHAN = "Cannot join channel (+i)"                                     # 473
@@ -82,8 +177,4 @@ class Numeric
   ERR_BADCHANNELKEY = "Cannot join channel (+k)"                                      # 475
   ERR_NOPRIVILEGES = "Permission Denied- You're not an IRC operator"                  # 481
   ERR_CHANOPRIVSNEEDED = "You're not channel operator"                                # 482
-
-  def self.make(id, nick, message)
-    return ":#{JRIRC::Config.server_name} #{id} #{nick} :#{message}"
-  end
 end

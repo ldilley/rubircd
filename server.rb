@@ -30,9 +30,17 @@ class Server
   MODE_WALLOPS = 'w'      # can receive oper wall messages
   USER_MODES = "abioprsw"
   @@client_count = 0
+  @@visible_count = 0
+  @@invisible_count = 0
+  @@oper_count = 0
+  @@local_users = 0
+  @@global_users = 0
+  @@local_users_max = 0
+  @@global_users_max = 0
   @@channel_count = 0
   @@link_count = 0
   @@start_timestamp = 0   # holds server startup date and time
+  @@link_count = 0
   @@links = Array.new
   @@users = Array.new
 
@@ -40,9 +48,13 @@ class Server
     @@users.push(user)
   end
 
+  def self.remove_user(user)
+    @@users.delete(user)
+  end
+
   def self.users
     @@users
   end
 
-  class << self; attr_accessor :client_count, :start_timestamp end
+  class << self; attr_accessor :client_count, :visible_count, :invisible_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end
 end

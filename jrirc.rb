@@ -18,27 +18,28 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require_relative 'channel'
-require_relative 'config'
 require_relative 'log'
 require_relative 'network'
+require_relative 'options'
 require_relative 'server'
 require_relative 'user'
 
+puts(Server::VERSION)
 print("Initializing logging... ")
 Log.write("Initializing logging...")
 puts("done.")
 Log.write("Logging initialized.")
-print("Parsing configuration file... ")
-JRIRC::Config.parse
+print("Parsing options file... ")
+Options.parse
 puts("done.")
-Log.write("Configuration loaded.")
-puts("Server name: #{JRIRC::Config.server_name}\nTCP port: #{JRIRC::Config.listen_port}")
+Log.write("Options loaded.")
+puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
 print("Populating reserved nicknames... ")
-chanserv = User.new("ChanServ", "services", JRIRC::Config.server_name, "Channel Services")
-global = User.new("Global", "services", JRIRC::Config.server_name, "Global Messenger")
-memoserv = User.new("MemoServ", "services", JRIRC::Config.server_name, "Memo Services")
-nickserv = User.new("NickServ", "services", JRIRC::Config.server_name, "Nickname Services")
-operserv = User.new("OperServ", "services", JRIRC::Config.server_name, "Operator Services")
+chanserv = User.new("ChanServ", "services", Options.server_name, "Channel Services")
+global = User.new("Global", "services", Options.server_name, "Global Messenger")
+memoserv = User.new("MemoServ", "services", Options.server_name, "Memo Services")
+nickserv = User.new("NickServ", "services", Options.server_name, "Nickname Services")
+operserv = User.new("OperServ", "services", Options.server_name, "Operator Services")
 Server.add_user(chanserv)
 Server.add_user(global)
 Server.add_user(memoserv)
@@ -46,6 +47,12 @@ Server.add_user(nickserv)
 Server.add_user(operserv)
 puts("done.")
 Log.write("Reserved nicknames populated.")
-Server.client_count = 0
+Server.start_timestamp = Time.now.asctime
+Server.client_count = 5
+Server.oper_count = 5
+Server.link_count = 0
+Server.visible_count = 5
+Server.invisible_count = 0
+Server.channel_count = 0
 puts("Starting network and waiting for incoming connections... ")
 Network.start
