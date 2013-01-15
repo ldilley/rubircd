@@ -73,6 +73,10 @@ class Command
         client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
         return false
       end
+      if user.is_registered
+        client.puts(Numeric.ERR_ALREADYREGISTERED(user.nick))
+        return false
+      end
       gecos = input[4]
       # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
       # The 2nd field also matches the 1st (ident string) for certain clients (FYI)

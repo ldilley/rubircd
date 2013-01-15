@@ -175,7 +175,11 @@ class Numeric
     return sprintf(":%s 461 %s :%s :Not enough parameters", Options.server_name, nick, command)
   end
 
-  ERR_ALREADYREGISTERED = "You may not reregister"                                    # 462
+  # 462
+  def self.ERR_ALREADYREGISTERED(nick)
+    return sprintf(":%s 462 %s :You may not reregister", Options.server_name, nick)
+  end
+
   ERR_CHANNELISFULL = "Cannot join channel (+l)"                                      # 471
   ERR_INVITEONLYCHAN = "Cannot join channel (+i)"                                     # 473
   ERR_BANNEDFROMCHAN = "Cannot join channel (+b)"                                     # 474

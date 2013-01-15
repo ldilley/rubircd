@@ -22,6 +22,7 @@ class User
   @ident
   @hostname
   @gecos
+  @is_registered
   @umodes
   @channels
   @last_activity # used to determine whether the client should be pinged
@@ -49,6 +50,10 @@ class User
     @gecos = new_gecos
   end
 
+  def set_registered
+    @is_registered = true
+  end
+
   def add_umode(umode)
     @umodes.push(umode)
   end
@@ -65,5 +70,5 @@ class User
     @channels.delete(channel_name)
   end
 
-  attr_reader :nick, :ident, :hostname, :gecos, :channels
+  attr_reader :nick, :ident, :hostname, :gecos, :is_registered, :channels
 end

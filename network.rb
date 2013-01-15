@@ -68,6 +68,7 @@ class Network
       if ping_response[0] =~ /(^pong$)/i && ping_response.length == 2
         if ping_response[1] == ":#{ping_time}"
           Thread.kill(timer_thread)
+          user.set_registered
           Server.add_user(user)
           return user
         else
