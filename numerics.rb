@@ -150,14 +150,19 @@ class Numeric
 
   ERR_NOMOTD = "MOTD file is missing"                                                 # 422
 
+  # 431
+  def self.ERR_NONICKNAMEGIVEN(nick)
+    return sprintf(":%s 431 %s :No nickname given", Options.server_name, nick)
+  end
+
   # 432
-  def self.ERR_ERRONEOUSNICKNAME(nick)
-    return sprintf(":%s 432 %s :Erroneous Nickname", Options.server_name, nick)
+  def self.ERR_ERRONEOUSNICKNAME(nick, given_nick)
+    return sprintf(":%s 432 %s %s :Erroneous Nickname", Options.server_name, nick, given_nick)
   end
 
   # 433
-  def self.ERR_NICKNAMEINUSE(nick)
-    return sprintf(":%s 433 %s :Nickname is already in use", Options.server_name, nick)
+  def self.ERR_NICKNAMEINUSE(nick, given_nick)
+    return sprintf(":%s 433 %s %s :Nickname is already in use.", Options.server_name, nick, given_nick)
   end
 
   ERR_USERNOTINCHANNEL = "They aren't on that channel"                                # 441

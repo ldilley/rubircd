@@ -41,6 +41,14 @@ class User
     @nick = new_nick
   end
 
+  def change_ident(new_ident)
+    @ident = new_ident
+  end
+
+  def change_gecos(new_gecos)
+    @gecos = new_gecos
+  end
+
   def add_umode(umode)
     @umodes.push(umode)
   end
