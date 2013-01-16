@@ -138,14 +138,23 @@ class Numeric
   RPL_REHASHING = "Rehashing"                                                         # 382
   RPL_TIME = "#{Time.now.asctime}"                                                    # 391
   ERR_NOSUCHNICK = "No such nick"                                                     # 401
-  ERR_NOSUCHSERVER = "No such server"                                                 # 402
-  ERR_NOSUCHCHANNEL = "No such channel"                                               # 403
+
+  # 402
+  def self.ERR_NOSUCHSERVER(nick, server)
+    return sprintf(":%s 402 %s %s :No such server", Options.server_name, nick, server)
+  end
+
+  # 403
+  def self.ERR_NOSUCHCHANNEL(nick, channel)
+    return sprintf(":%s 403 %s %s :Invalid channel name", Options.server_name, nick, channel)
+  end
+
   ERR_CANNOTSENDTOCHAN = "Cannot send to channel"                                     # 404
   ERR_TOOMANYCHANNELS = "You have joined too many channels"                           # 405
 
   # 421
   def self.ERR_UNKNOWNCOMMAND(nick, command)
-    return sprintf(":%s 421 %s :%s :Unknown command", Options.server_name, nick, command)
+    return sprintf(":%s 421 %s %s :Unknown command", Options.server_name, nick, command)
   end
 
   ERR_NOMOTD = "MOTD file is missing"                                                 # 422
@@ -172,12 +181,17 @@ class Numeric
 
   # 461
   def self.ERR_NEEDMOREPARAMS(nick, command)
-    return sprintf(":%s 461 %s :%s :Not enough parameters", Options.server_name, nick, command)
+    return sprintf(":%s 461 %s %s :Not enough parameters", Options.server_name, nick, command)
   end
 
   # 462
   def self.ERR_ALREADYREGISTERED(nick)
     return sprintf(":%s 462 %s :You may not reregister", Options.server_name, nick)
+  end
+
+  # 468
+  def self.ERR_INVALIDUSERNAME(nick, username)
+    return sprintf(":%s 468 %s %s :Invalid username", Options.server_name, nick, username)
   end
 
   ERR_CHANNELISFULL = "Cannot join channel (+l)"                                      # 471

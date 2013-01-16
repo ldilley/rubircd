@@ -24,7 +24,7 @@ require_relative 'options'
 require_relative 'server'
 
 class Network
-  def self.start
+  def self.start()
     server = TCPServer.open(Options.listen_port)
     loop do
       Thread.start(server.accept) do |client|

@@ -6,6 +6,7 @@ Lloyd Dilley  (lloyd) <ldilley@devux.org>
 Contributors:
 
 Aaron Carroll (anomoly)
+Artur Kuptel  (nemerle)
 Mark McKenzie (Pests)
 
 

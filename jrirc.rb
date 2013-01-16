@@ -34,6 +34,9 @@ Options.parse
 puts("done.")
 Log.write("Options loaded.")
 puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
+print("Registering commands... ")
+Command.register_commands()
+puts("done.")
 print("Populating reserved nicknames... ")
 chanserv = User.new("ChanServ", "services", Options.server_name, "Channel Services")
 global = User.new("Global", "services", Options.server_name, "Global Messenger")
@@ -55,4 +58,4 @@ Server.visible_count = 5
 Server.invisible_count = 0
 Server.channel_count = 0
 puts("Starting network and waiting for incoming connections... ")
-Network.start
+Network.start()
