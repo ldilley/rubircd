@@ -18,24 +18,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class User
-  @nick
-  @ident
-  @hostname
-  @gecos
-  @is_registered
-  @umodes
-  @channels
-  @last_activity # used to determine whether the client should be pinged
-
   # Used to create a new user object when a client connects
   def initialize(nick, ident, hostname, gecos)
     @nick = nick
     @ident = ident
     @hostname = hostname
     @gecos = gecos
+    @is_registered = false
     @umodes = Array.new
     @channels = Array.new
-    @last_activity = Time.now.to_i
+    @last_activity = Time.now.to_i # used to determine whether the client should be pinged
   end
 
   def change_nick(new_nick)

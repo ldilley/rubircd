@@ -18,11 +18,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class Ban
-  @creator
-  @mask
-  @reason
-  @create_timestamp
-
   def initialize(creator, mask, reason)
     @creator = creator
     @mask = mask
@@ -30,10 +25,7 @@ class Ban
     @create_timestamp = Time.now
   end
 
-  # This method is used to locate the unique mask for ban removal
-  def mask
-    @mask
-  end
+  attr_reader :mask  # This is used to locate the unique mask for ban removal
 end
 
 class Channel
