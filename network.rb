@@ -29,14 +29,14 @@ class Network
     loop do
       Thread.start(server.accept) do |client|
         Server.client_count += 1
-        user = Network.register_user(client)
+        user = Network.register_user(client, Thread.current)
         Network.welcome(client, user)
-        Network.main_loop(client, user)
+        Network.main_loop(client, user, Thread.current)
       end # Thread
     end # loop
   end # method
 
-  def self.register_user(client)
+  def self.register_user(client, thread)
     client.puts(":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
     sock_domain, client_port, client_hostname, client_ip = client.peeraddr
     client.puts(":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
@@ -44,7 +44,12 @@ class Network
     user = User.new("*", nil, client_hostname, nil)
     timer_thread = Thread.new() { Network.registration_timer(client) }
     until(registered) do
-      input = client.gets("\r\n").chomp("\r\n")
+      begin
+        input = client.gets("\r\n").chomp("\r\n")
+      rescue Errno::EBADF => e
+        puts("Client connection closed during registration.")
+        Thread.kill(thread)
+      end
       if input.empty?
         redo
       end
@@ -61,7 +66,12 @@ class Network
     ping_time = Time.now.to_i
     client.puts("PING :#{ping_time}")
     loop do
-      ping_response = client.gets("\r\n").chomp("\r\n").split
+      begin
+        ping_response = client.gets("\r\n").chomp("\r\n").split
+      rescue Errno::EBADF => e
+        puts("Client connection closed during initial ping.")
+        Thread.kill(thread)
+      end
       if ping_response.empty?
         redo
       end
@@ -106,9 +116,14 @@ class Network
     client.puts(Numeric.RPL_ENDOFMOTD(user.nick))
   end
 
-  def self.main_loop(client, user)
+  def self.main_loop(client, user, thread)
     loop do
-      input = client.gets("\r\n").chomp("\r\n")
+      begin
+        input = client.gets("\r\n").chomp("\r\n")
+      rescue IOError => e
+        puts("Client connection closed during main_loop.")
+        Thread.kill(thread)
+      end
       if input.empty?
         redo
       end

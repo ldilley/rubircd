@@ -30,9 +30,12 @@ Log.write("Initializing logging...")
 puts("done.")
 Log.write("Logging initialized.")
 print("Parsing options file... ")
-Options.parse
+Options.parse()
 puts("done.")
 Log.write("Options loaded.")
+if Options.debug_mode.to_s == "true"
+  Thread.abort_on_exception = true
+end
 puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
 print("Registering commands... ")
 Command.register_commands()

@@ -26,8 +26,9 @@ class Options
   @@network_name = nil
   @@server_name = nil
   @@listen_port = nil
+  @@debug_mode = nil
 
-  def self.parse
+  def self.parse()
     options_file=YAML.load_file("options.yml")
     @@admin_name = options_file["admin_name"]
     @@admin_nick = options_file["admin_nick"]
@@ -35,6 +36,7 @@ class Options
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
     @@listen_port = options_file["listen_port"]
+    @@debug_mode = options_file["debug_mode"]
 
     if @@admin_name == nil
       puts("\nUnable to read admin_name option from options.yml file!")
@@ -62,8 +64,18 @@ class Options
       exit!
     end
 
+    if @@debug_mode == nil
+      puts("\nUnable to read debug_mode option from options.yml file!")
+      exit!
+    end
+
     if @@listen_port <= 0 || @@listen_port >=65536
       puts("\nlisten_port value is out of range!")
+      exit!
+    end
+
+    if @@debug_mode.to_s != "true" && @@debug_mode.to_s != "false"
+      puts("\ndebug_mode value should be set to either true or false.")
       exit!
     end
   end
@@ -90,5 +102,9 @@ class Options
 
   def self.listen_port
     return @@listen_port
+  end
+
+  def self.debug_mode
+    return @@debug_mode
   end
 end # class

@@ -152,6 +152,11 @@ class Numeric
   ERR_CANNOTSENDTOCHAN = "Cannot send to channel"                                     # 404
   ERR_TOOMANYCHANNELS = "You have joined too many channels"                           # 405
 
+  # 410
+  def self.ERR_INVALIDCAPCMD(nick, command)
+    return sprintf(":%s 410 %s %s :Invalid CAP subcommand", Options.server_name, nick, command)
+  end
+
   # 421
   def self.ERR_UNKNOWNCOMMAND(nick, command)
     return sprintf(":%s 421 %s %s :Unknown command", Options.server_name, nick, command)
