@@ -22,121 +22,133 @@ require_relative 'options'
 require_relative 'server'
 
 class Command
-  @@command_dict = {}
+  @@command_map = {}
 
-  def self.parse(client, user, input)
-    handler = @@command_dict[input[0].to_s.upcase]
-    puts(input)
+  def self.parse(user, input)
+    handler = @@command_map[input[0].to_s.upcase]
     if handler == nil
-      client.puts(Numeric.ERR_UNKNOWNCOMMAND(user.nick, input[0]))
+      Network.send(user, Numeric.ERR_UNKNOWNCOMMAND(user.nick, input[0]))
       return
     end
-    handler.call(client, user, input[1..-1])
+    handler.call(user, input[1..-1])
   end
 
   def self.register_commands()
-    @@command_dict["CAP"] = Proc.new() {|client, user, args| handle_cap(client, user, args)}
-    @@command_dict["JOIN"] = Proc.new() {|client, user, args| handle_join(client, user, args)}
-    @@command_dict["NICK"] = Proc.new() {|client, user, args| handle_nick(client, user, args)}
-    @@command_dict["PING"] = Proc.new() {|client, user, args| handle_ping(client, user, args)}
-    @@command_dict["QUIT"] = Proc.new() {|client, user, args| handle_quit(client, user, args)}
-    @@command_dict["USER"] = Proc.new() {|client, user, args| handle_user(client, user, args)}
+    @@command_map["ADMIN"] = Proc.new() {|user, args| handle_admin(user, args)}
+    @@command_map["CAP"] = Proc.new() {|user, args| handle_cap(user, args)}
+    @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
+    @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
+    @@command_map["PING"] = Proc.new() {|user, args| handle_ping(user, args)}
+    @@command_map["QUIT"] = Proc.new() {|user, args| handle_quit(user, args)}
+    @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
+    @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
   end
 
-  def self.handle_cap(client, user, args)
+  def self.handle_admin(user, args)
+    if args.length < 1 || args[0] == Options.server_name
+      Network.send(user, Numeric.RPL_ADMINME(user.nick))
+      Network.send(user, Numeric.RPL_ADMINLOC1(user.nick))
+      Network.send(user, Numeric.RPL_ADMINLOC2(user.nick))
+      Network.send(user, Numeric.RPL_ADMINEMAIL(user.nick))
+    end
+  end
+
+  def self.handle_cap(user, args)
     if args.length < 1
-      client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "CAP"))
-      return false
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "CAP"))
+      return
     end
     case args[0].to_s.upcase
       when "ACK"
-        return true
+        return
       when "CLEAR"
-        client.puts(":#{Options.server_name} CAP #{user.nick} ACK :")
-        return true
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
+        return
       when "END"
-        return true
+        return
       when "LIST"
-        client.puts(":#{Options.server_name} CAP #{user.nick} LIST :")
-        return true
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
+        return
       when "LS"
-        client.puts(":#{Options.server_name} CAP #{user.nick} LS :")
-        return true
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
+        return
       when "REQ"
-        return true
+        return
       else
-        client.puts(Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
-        return false
+        Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
+        return
     end
   end
 
-  def self.handle_join(client, user, args)
+  def self.handle_join(user, args)
   # ToDo: Handle conditions such as invite only and keys later once channels support those modes
     if args.length < 1
-      client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
-      return false
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
+      return
     end
     channel = args[0]
     if channel[0] != '#'
-      client.puts(Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
-      return false
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+      return
     end
   end
 
-  def self.handle_nick(client, user, args)
+  def self.handle_nick(user, args)
     if args.length < 1
-      client.puts(Numeric.ERR_NONICKNAMEGIVEN(user.nick))
-      return false
+      Network.send(user, Numeric.ERR_NONICKNAMEGIVEN(user.nick))
+      return
     end
     if args.length > 1
-      client.puts(Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..args.length].join(" ")))
-      return false
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..args.length].join(" ")))
+      return
     end
     # We must have exactly 2 tokens so ensure the nick is valid
     if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0
-          client.puts(Numeric.ERR_NICKNAMEINUSE("*", args[0]))
-          return false
+          Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
+          return
         end
       end
       if user.is_registered
-        client.puts(":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
+        Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
       end
       user.change_nick(args[0])
-      return true
+      return
     else
-      client.puts(Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0]))
-      return false
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0]))
+      return
     end
   end
 
-  def self.handle_ping(client, user, args)
+  def self.handle_ping(user, args)
     if args.length < 1
-      client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "PING"))
-      return false
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PING"))
+      return
     end
     # ToDo: Handle ERR_NOORIGIN (409)?
-    puts(args[0].length)
-    client.puts(":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
-    return true
+    Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
   end
 
-  def self.handle_quit(client, user, args)
-    client.close
-    Server.client_count -= 1
-    Server.remove_user(user)
-    return true
+  def self.handle_quit(user, args)
+    begin
+      user.socket.close()
+    rescue
+      Thread.kill(user.thread)
+    ensure
+      Server.client_count -= 1
+      Server.remove_user(user)
+    end
   end
 
-  def self.handle_user(client, user, args)
+  def self.handle_user(user, args)
     if args.length < 4
-      client.puts(Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
-      return false
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
+      return
     end
     if user.is_registered
-      client.puts(Numeric.ERR_ALREADYREGISTERED(user.nick))
-      return false
+      Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
+      return
     end
     gecos = args[3]
     # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
@@ -151,14 +163,22 @@ class Command
           gecos = gecos[0..Limits::GECOSLEN-1]
         end
         user.change_gecos(gecos)
-        return true
+        return
       else
-        clients.puts(Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident
-        return false
+        Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident
+        return
       end
     else
       # If we arrive here, just truncate the ident and add the gecos anyway? ToDo: ensure ident is still valid...
-      return false # ident too long or invalid gecos
+      return # ident too long or invalid gecos
+    end
+  end
+
+  def self.handle_version(user, args)
+    if args.length < 1 || args[0] == Options.server_name
+      Network.send(user, Numeric.RPL_VERSION(user.nick))
+      Network.send(user, Numeric.RPL_ISUPPORT1(user.nick))
+      Network.send(user, Numeric.RPL_ISUPPORT2(user.nick))
     end
   end
 
@@ -186,6 +206,7 @@ class Command
   # rehash
   # restart
   # server
+  # shutdown
   # squit
   # stats
   # summon

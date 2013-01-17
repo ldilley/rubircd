@@ -19,12 +19,15 @@
 
 class User
   # Used to create a new user object when a client connects
-  def initialize(nick, ident, hostname, gecos)
+  def initialize(nick, ident, hostname, ip_address, gecos, socket, thread)
     @nick = nick
     @ident = ident
     @hostname = hostname
+    @ip_address = ip_address
     @gecos = gecos
     @is_registered = false
+    @socket = socket
+    @thread = thread
     @umodes = Array.new
     @channels = Array.new
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
@@ -62,5 +65,6 @@ class User
     @channels.delete(channel_name)
   end
 
-  attr_reader :nick, :ident, :hostname, :gecos, :is_registered, :channels
+  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :thread, :channels
+  attr_accessor :socket
 end

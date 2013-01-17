@@ -25,36 +25,57 @@ require_relative 'server'
 
 class Network
   def self.start()
-    server = TCPServer.open(Options.listen_port)
+    begin
+      server = TCPServer.open(Options.listen_port)
+    rescue
+      puts("Unable to listen on TCP port #{Options.listen_port}.")
+      Log.write("Unable to listen on TCP port #{Options.listen_port}.")
+      exit!
+    end
     loop do
-      Thread.start(server.accept) do |client|
+      Thread.start(server.accept) do |client_socket|
         Server.client_count += 1
-        user = Network.register_user(client, Thread.current)
-        Network.welcome(client, user)
-        Network.main_loop(client, user, Thread.current)
+        user = Network.register_user(client_socket, Thread.current)
+        Network.welcome(user)
+        Network.main_loop(user)
       end # Thread
     end # loop
   end # method
 
-  def self.register_user(client, thread)
-    client.puts(":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
-    sock_domain, client_port, client_hostname, client_ip = client.peeraddr
-    client.puts(":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
+  def self.recv(user)
+    return user.socket.gets("\r\n").chomp("\r\n")
+    # Handle exception in case socket goes away...
+    rescue
+      Server.client_count -= 1
+      Server.remove_user(user) # this will affect WHOWAS -- work around this later
+      Thread.kill(user.thread)
+  end
+
+  def self.send(user, data)
+    user.socket.write(data + "\x0D\x0A")
+    # Handle exception in case socket goes away...
+    rescue
+      Server.client_count -= 1
+      Server.remove_user(user) # this will affect WHOWAS -- work around this later
+      Thread.kill(user.thread)
+  end
+
+  def self.register_user(client_socket, connection_thread)
+    sock_domain, client_port, client_hostname, client_ip = client_socket.peeraddr
+    user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
+    Server.add_user(user)
+    Log.write("Received connection from #{user.ip_address}.")
+    Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...") # lookup is already done above
+    Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
     registered = false
-    user = User.new("*", nil, client_hostname, nil)
-    timer_thread = Thread.new() { Network.registration_timer(client) }
+    timer_thread = Thread.new() { Network.registration_timer(user) }
     until(registered) do
-      begin
-        input = client.gets("\r\n").chomp("\r\n")
-      rescue Errno::EBADF => e
-        puts("Client connection closed during registration.")
-        Thread.kill(thread)
-      end
+      input = Network.recv(user)
       if input.empty?
         redo
       end
       input = input.split
-      Command.parse(client, user, input)
+      Command.parse(user, input)
       if user.nick != "*" && user.ident != nil && user.gecos != nil
         registered = true
       else
@@ -64,14 +85,9 @@ class Network
 
     # Ensure we get a valid ping response
     ping_time = Time.now.to_i
-    client.puts("PING :#{ping_time}")
+    Network.send(user, "PING :#{ping_time}")
     loop do
-      begin
-        ping_response = client.gets("\r\n").chomp("\r\n").split
-      rescue Errno::EBADF => e
-        puts("Client connection closed during initial ping.")
-        Thread.kill(thread)
-      end
+      ping_response = Network.recv(user).split
       if ping_response.empty?
         redo
       end
@@ -79,7 +95,6 @@ class Network
         if ping_response[1] == ":#{ping_time}"
           Thread.kill(timer_thread)
           user.set_registered
-          Server.add_user(user)
           return user
         else
           redo # ping response incorrect
@@ -90,45 +105,46 @@ class Network
     end # loop
   end # method
 
-  def self.registration_timer(client)
+  def self.registration_timer(user)
     Kernel.sleep Limits::REGISTRATION_TIMEOUT
-    client.puts("ERROR :Closing link: [Registration timeout]")
-    client.close
-    Server.client_count -= 1
+    Network.send(user, "ERROR :Closing link: [Registration timeout]")
+    begin
+      user.socket.close()
+    rescue
+      Thread.kill(user.thread)
+    ensure
+      Server.client_count -= 1
+      Server.remove_user(user)
+    end
   end
 
-  def self.welcome(client, user)
-    client.puts(Numeric.RPL_WELCOME(user.nick))
-    client.puts(Numeric.RPL_YOURHOST(user.nick))
-    client.puts(Numeric.RPL_CREATED(user.nick))
-    client.puts(Numeric.RPL_MYINFO(user.nick))
-    client.puts(Numeric.RPL_ISUPPORT1(user.nick))
-    client.puts(Numeric.RPL_ISUPPORT2(user.nick))
-    client.puts(Numeric.RPL_LUSERCLIENT(user.nick))
-    client.puts(Numeric.RPL_LUSEROP(user.nick))
-    client.puts(Numeric.RPL_LUSERCHANNELS(user.nick))
-    client.puts(Numeric.RPL_LUSERME(user.nick))
-    client.puts(Numeric.RPL_LOCALUSERS(user.nick))
-    client.puts(Numeric.RPL_GLOBALUSERS(user.nick))
-    client.puts(Numeric.RPL_MOTDSTART(user.nick))
+  def self.welcome(user)
+    Network.send(user, Numeric.RPL_WELCOME(user.nick))
+    Network.send(user, Numeric.RPL_YOURHOST(user.nick))
+    Network.send(user, Numeric.RPL_CREATED(user.nick))
+    Network.send(user, Numeric.RPL_MYINFO(user.nick))
+    Network.send(user, Numeric.RPL_ISUPPORT1(user.nick))
+    Network.send(user, Numeric.RPL_ISUPPORT2(user.nick))
+    Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
+    Network.send(user, Numeric.RPL_LUSEROP(user.nick))
+    Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
+    Network.send(user, Numeric.RPL_LUSERME(user.nick))
+    Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
+    Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
+    Network.send(user, Numeric.RPL_MOTDSTART(user.nick))
     # ToDo: read motd.txt and send line by line below
-    client.puts(Numeric.RPL_MOTD(user.nick, "Welcome!"))
-    client.puts(Numeric.RPL_ENDOFMOTD(user.nick))
+    Network.send(user, Numeric.RPL_MOTD(user.nick, "Welcome!"))
+    Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
   end
 
-  def self.main_loop(client, user, thread)
+  def self.main_loop(user)
     loop do
-      begin
-        input = client.gets("\r\n").chomp("\r\n")
-      rescue IOError => e
-        puts("Client connection closed during main_loop.")
-        Thread.kill(thread)
-      end
+      input = Network.recv(user)
       if input.empty?
         redo
       end
       input = input.split
-      Command.parse(client, user, input)
+      Command.parse(user, input)
     end
   end
 end # class

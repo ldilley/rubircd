@@ -43,18 +43,18 @@ class Numeric
 
   # 004
   def self.RPL_MYINFO(nick)
-    return sprintf(":%s 004 %s :%s %s %s %s", Options.server_name, nick, Options.server_name, Server::VERSION, Server::USER_MODES, Channel::CHANNEL_MODES)
+    return sprintf(":%s 004 %s %s %s %s %s", Options.server_name, nick, Options.server_name, Server::VERSION, Server::USER_MODES, Channel::CHANNEL_MODES)
   end
 
   # Need to break ISUPPORT up to possibly avoid hitting the message length ceiling
   # 005.1
   def self.RPL_ISUPPORT1(nick)
-    return sprintf(":%s 005 %s :AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
+    return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
                    Options.server_name, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
   end
   # 005.2
   def self.RPL_ISUPPORT2(nick)
-    return sprintf(":%s 005 %s :MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", Options.server_name, nick,
+    return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", Options.server_name, nick,
                    Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Limits::TOPICLEN)
   end
 
@@ -67,17 +67,18 @@ class Numeric
 
   # 252
   def self.RPL_LUSEROP(nick)
-    return sprintf(":%s 252 %s :%i IRC Operators online", Options.server_name, nick, Server.oper_count)
+    return sprintf(":%s 252 %s %i :IRC Operators online", Options.server_name, nick, Server.oper_count)
   end
 
   # 253
-  # For unregistered connections -- implement later
-  #def self.RPL_LUSERUNKNOWN(nick)
-  #end
+  # For unregistered connections
+  def self.RPL_LUSERUNKNOWN(nick)
+    return sprintf(":%s 253 %s %i :unknown connection(s)", Options.server_name, nick, Server.unknown_clients)
+  end
 
   # 254
   def self.RPL_LUSERCHANNELS(nick)
-    return sprintf(":%s 254 %s :%i channels formed", Options.server_name, nick, Server.channel_count)
+    return sprintf(":%s 254 %s %i :channels formed", Options.server_name, nick, Server.channel_count)
   end
 
   # 255
@@ -85,19 +86,34 @@ class Numeric
     return sprintf(":%s 255 %s :I have %i clients and %i servers", Options.server_name, nick, Server.client_count, Server.link_count + 1)
   end
 
-  RPL_ADMINME = "Administrative info about #{Options.server_name}:"             # 256
-  RPL_ADMINLOC1 = "Name:     #{Options.admin_name}"                             # 257
-  RPL_ADMINLOC2 = "Nickname: #{Options.admin_nick}"                             # 258
-  RPL_ADMINEMAIL = "E-mail:   #{Options.admin_email}"                           # 259
+  # 256
+  def self.RPL_ADMINME(nick)
+    return sprintf(":%s 256 %s :Administrative info for %s:", Options.server_name, nick, Options.server_name)
+  end
+
+  # 257
+  def self.RPL_ADMINLOC1(nick)
+    return sprintf(":%s 257 %s :Name:     %s", Options.server_name, nick, Options.admin_name)
+  end
+
+  # 258
+  def self.RPL_ADMINLOC2(nick)
+    return sprintf(":%s 258 %s :Nickname: %s", Options.server_name, nick, Options.admin_nick)
+  end
+
+  # 259
+  def self.RPL_ADMINEMAIL(nick)
+    return sprintf(":%s 259 %s :E-mail:   %s", Options.server_name, nick, Options.admin_email)
+  end
 
   # 265
   def self.RPL_LOCALUSERS(nick)
-    return sprintf(":%s 265 %s :Current local users: %i Max: %i", Options.server_name, nick, Server.local_users, Server.local_users_max)
+    return sprintf(":%s 265 %s Current local users: %i Max: %i", Options.server_name, nick, Server.local_users, Server.local_users_max)
   end
 
   # 266
   def self.RPL_GLOBALUSERS(nick)
-    return sprintf(":%s 266 %s :Current global users: %i Max: %i", Options.server_name, nick, Server.global_users, Server.global_users_max)
+    return sprintf(":%s 266 %s Current global users: %i Max: %i", Options.server_name, nick, Server.global_users, Server.global_users_max)
   end
 
   RPL_UNAWAY = "You are no longer marked as being away"                               # 305
@@ -112,7 +128,12 @@ class Numeric
   RPL_TOPIC = "" # 332 -- handle in Command class later
   RPL_TOPICTIME = "" # 333 -- handle in Command class later
   RPL_INVITING = "" # 341 -- handle in Command class later
-  RPL_VERSION = "#{Server::VERSION} #{Options.server_name} :#{Server::RELEASE}" # 351
+
+  # 351
+  def self.RPL_VERSION(nick)
+    return sprintf(":%s 351 %s %s %s :%s", Options.server_name, nick, Server::VERSION, Options.server_name, Server::RELEASE)
+  end
+
   RPL_NAMREPLY = "" # 353 -- handle in Command class later
   RPL_ENDOFNAMES = "End of names list."                                               # 366
   RPL_INFO = "#{Server::VERSION}\nhttp://www.devux.org/projects/jrirc/"               # 371

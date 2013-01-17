@@ -1,2 +1,2 @@
 #!/bin/sh
-jruby --fast --server jrirc.class
+jruby --fast --server jrirc.rb

@@ -32,6 +32,7 @@ class Server
   @@client_count = 0
   @@visible_count = 0
   @@invisible_count = 0
+  @@unknown_count = 0
   @@oper_count = 0
   @@local_users = 0
   @@global_users = 0
@@ -56,5 +57,5 @@ class Server
     @@users
   end
 
-  class << self; attr_accessor :client_count, :visible_count, :invisible_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end
+  class << self; attr_accessor :client_count, :visible_count, :invisible_count, :unknown_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end
 end
