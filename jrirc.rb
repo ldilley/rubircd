@@ -52,6 +52,10 @@ Server.add_user(memoserv)
 Server.add_user(nickserv)
 Server.add_user(operserv)
 puts("done.")
+default_channel = Channel.new(Options.default_channel, Options.admin_nick)
+Server.channel_count = 0
+Server.add_channel(default_channel)
+Server.channel_count += 1
 Log.write("Reserved nicknames populated.")
 Server.start_timestamp = Time.now.asctime
 Server.client_count = 5
@@ -59,6 +63,5 @@ Server.oper_count = 5
 Server.link_count = 0
 Server.visible_count = 5
 Server.invisible_count = 0
-Server.channel_count = 0
 puts("Starting network and waiting for incoming connections... ")
 Network.start()

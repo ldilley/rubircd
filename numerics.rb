@@ -48,13 +48,13 @@ class Numeric
 
   # Need to break ISUPPORT up to possibly avoid hitting the message length ceiling
   # 005.1
-  def self.RPL_ISUPPORT1(nick)
+  def self.RPL_ISUPPORT1(nick, server)
     return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
-                   Options.server_name, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
+                   server, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
   end
   # 005.2
-  def self.RPL_ISUPPORT2(nick)
-    return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", Options.server_name, nick,
+  def self.RPL_ISUPPORT2(nick, server)
+    return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", server, nick,
                    Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Limits::TOPICLEN)
   end
 
@@ -87,23 +87,23 @@ class Numeric
   end
 
   # 256
-  def self.RPL_ADMINME(nick)
-    return sprintf(":%s 256 %s :Administrative info for %s:", Options.server_name, nick, Options.server_name)
+  def self.RPL_ADMINME(nick, server)
+    return sprintf(":%s 256 %s :Administrative info for %s:", server, nick, server)
   end
 
   # 257
-  def self.RPL_ADMINLOC1(nick)
-    return sprintf(":%s 257 %s :Name:     %s", Options.server_name, nick, Options.admin_name)
+  def self.RPL_ADMINLOC1(nick, server)
+    return sprintf(":%s 257 %s :Name:     %s", server, nick, Options.admin_name)
   end
 
   # 258
-  def self.RPL_ADMINLOC2(nick)
-    return sprintf(":%s 258 %s :Nickname: %s", Options.server_name, nick, Options.admin_nick)
+  def self.RPL_ADMINLOC2(nick, server)
+    return sprintf(":%s 258 %s :Nickname: %s", server, nick, Options.admin_nick)
   end
 
   # 259
-  def self.RPL_ADMINEMAIL(nick)
-    return sprintf(":%s 259 %s :E-mail:   %s", Options.server_name, nick, Options.admin_email)
+  def self.RPL_ADMINEMAIL(nick, server)
+    return sprintf(":%s 259 %s :E-mail:   %s", server, nick, Options.admin_email)
   end
 
   # 265
@@ -130,12 +130,20 @@ class Numeric
   RPL_INVITING = "" # 341 -- handle in Command class later
 
   # 351
-  def self.RPL_VERSION(nick)
-    return sprintf(":%s 351 %s %s %s :%s", Options.server_name, nick, Server::VERSION, Options.server_name, Server::RELEASE)
+  def self.RPL_VERSION(nick, server)
+    return sprintf(":%s 351 %s %s %s :%s", server, nick, Server::VERSION, server, Server::RELEASE)
   end
 
-  RPL_NAMREPLY = "" # 353 -- handle in Command class later
-  RPL_ENDOFNAMES = "End of names list."                                               # 366
+  # 353
+  def self.RPL_NAMREPLY(nick, channel, userlist)
+    return sprintf(":%s 353 %s = %s :%s", Options.server_name, nick, channel, userlist)
+  end
+
+  # 366
+  def self.RPL_ENDOFNAMES(nick, channel)
+   return sprintf(":%s 366 %s %s :End of /NAMES list.", Options.server_name, nick, channel)
+  end
+
   RPL_INFO = "#{Server::VERSION}\nhttp://www.devux.org/projects/jrirc/"               # 371
 
   # 372
@@ -157,8 +165,16 @@ class Numeric
 
   RPL_YOUAREOPER = "You are now an IRC Operator"                                      # 381
   RPL_REHASHING = "Rehashing"                                                         # 382
-  RPL_TIME = "#{Time.now.asctime}"                                                    # 391
-  ERR_NOSUCHNICK = "No such nick"                                                     # 401
+
+  # 391
+  def self.RPL_TIME(nick, server)
+    return sprintf(":%s 391 %s %s :%s", server, nick, server, Time.now.asctime)
+  end
+
+  # 401
+  def self.ERR_NOSUCHNICK(nick, given_nick)
+    return sprintf(":%s 401 %s %s :No such nick", Options.server_name, nick, given_nick)
+  end
 
   # 402
   def self.ERR_NOSUCHSERVER(nick, server)
@@ -176,6 +192,16 @@ class Numeric
   # 410
   def self.ERR_INVALIDCAPCMD(nick, command)
     return sprintf(":%s 410 %s %s :Invalid CAP subcommand", Options.server_name, nick, command)
+  end
+
+  # 411
+  def self.ERR_NORECIPIENT(nick, command)
+    return sprintf(":%s 411 %s :No recipient given (%s)", Options.server_name, nick, command)
+  end
+
+  # 412
+  def self.ERR_NOTEXTTOSEND(nick)
+    return sprintf(":%s 412 %s :No text to send", Options.server_name, nick)
   end
 
   # 421

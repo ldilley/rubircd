@@ -37,19 +37,25 @@ class Command
     @@command_map["ADMIN"] = Proc.new() {|user, args| handle_admin(user, args)}
     @@command_map["CAP"] = Proc.new() {|user, args| handle_cap(user, args)}
     @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
+    @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
     @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
     @@command_map["PING"] = Proc.new() {|user, args| handle_ping(user, args)}
+    @@command_map["PRIVMSG"] = Proc.new() {|user, args| handle_privmsg(user, args)}
     @@command_map["QUIT"] = Proc.new() {|user, args| handle_quit(user, args)}
+    @@command_map["TIME"] = Proc.new() {|user, args| handle_time(user, args)}
     @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
     @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
   end
 
   def self.handle_admin(user, args)
-    if args.length < 1 || args[0] == Options.server_name
-      Network.send(user, Numeric.RPL_ADMINME(user.nick))
-      Network.send(user, Numeric.RPL_ADMINLOC1(user.nick))
-      Network.send(user, Numeric.RPL_ADMINLOC2(user.nick))
-      Network.send(user, Numeric.RPL_ADMINEMAIL(user.nick))
+    if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      Network.send(user, Numeric.RPL_ADMINME(user.nick, Options.server_name))
+      Network.send(user, Numeric.RPL_ADMINLOC1(user.nick, Options.server_name))
+      Network.send(user, Numeric.RPL_ADMINLOC2(user.nick, Options.server_name))
+      Network.send(user, Numeric.RPL_ADMINEMAIL(user.nick, Options.server_name))
+    #elsif to handle arbitrary servers when others are linked
+    else
+      Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
     end
   end
 
@@ -86,11 +92,58 @@ class Command
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
       return
     end
-    channel = args[0]
-    if channel[0] != '#'
-      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+    channels = args[0].split(',')
+    if args.length == 2
+      keys = args[1].split(',')
+    end
+    channels.each do |channel|
+      channel_exists = false
+      if channel =~ /[#&+][A-Za-z0-9]/
+        channel_object = Channel.new(channel, user.nick)
+        Server.channels.each do |c|
+          if c.name.casecmp(channel) == 0
+            channel_exists = true
+          end
+        end
+        unless channel_exists
+          Server.add_channel(channel_object)
+          Server.channel_count += 1
+        end
+        user.add_channel(channel)
+        Server.users.each do |u|
+          u.channels.each do |c|
+            if c.casecmp(channel) == 0
+              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")
+            end
+          end
+        end
+        unless channel_exists
+          Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
+        end
+        Command.handle_names(user, channel.split)
+      else
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+      end
+    end
+  end
+
+  def self.handle_names(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
       return
     end
+    userlist = Array.new
+    Server.users.each do |u|
+      u.channels.each do |c|
+        if c.casecmp(args[0].to_s) == 0
+          # ToDo: Add flag prefixes to nicks later
+          userlist.push(u.nick)
+        end
+      end
+    end
+    userlist = userlist[0..-1].join(" ")
+    Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))
+    Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args[0]))
   end
 
   def self.handle_nick(user, args)
@@ -99,7 +152,7 @@ class Command
       return
     end
     if args.length > 1
-      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..args.length].join(" ")))
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" ")))
       return
     end
     # We must have exactly 2 tokens so ensure the nick is valid
@@ -141,6 +194,49 @@ class Command
     end
   end
 
+  def self.handle_privmsg(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "PRIVMSG"))
+      return
+    end
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
+      return
+    end
+    message = args[1..-1].join(" ")
+    message = message[1..-1] # remove leading ':'
+    if args[0] =~ /[#&+][A-Za-z0-9]/
+      Server.users.each do |u|
+        u.channels.each do |c|
+          if c.casecmp(args[0]) == 0 && u.nick != user.nick
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{message}")
+          end
+        end
+      end
+      return
+    end
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{u.nick} :#{message}")
+        return
+      end
+    end
+    if args[0] == '#'
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+    else
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+    end
+  end
+
+  def self.handle_time(user, args)
+    if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      Network.send(user, Numeric.RPL_TIME(user.nick, Options.server_name))
+    #elsif to handle arbitrary servers when others are linked
+    else
+      Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+    end
+  end
+
   def self.handle_user(user, args)
     if args.length < 4
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
@@ -156,8 +252,8 @@ class Command
     if args[0].length <= Limits::IDENTLEN && gecos[0] == ':'
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         user.change_ident(args[0])
-        gecos = args[3..args.length].join(" ")
-        gecos = gecos[1..gecos.length] # remove leading ':'
+        gecos = args[3..-1].join(" ")
+        gecos = gecos[1..-1] # remove leading ':'
         # Truncate gecos field if too long
         if gecos.length > Limits::GECOSLEN
           gecos = gecos[0..Limits::GECOSLEN-1]
@@ -175,14 +271,16 @@ class Command
   end
 
   def self.handle_version(user, args)
-    if args.length < 1 || args[0] == Options.server_name
-      Network.send(user, Numeric.RPL_VERSION(user.nick))
-      Network.send(user, Numeric.RPL_ISUPPORT1(user.nick))
-      Network.send(user, Numeric.RPL_ISUPPORT2(user.nick))
+    if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      Network.send(user, Numeric.RPL_VERSION(user.nick, Options.server_name))
+      Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
+      Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
+    #elsif to handle arbitrary servers when others are linked
+    else
+      Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
     end
   end
 
-  # admin
   # away
   # connect
   # error
@@ -191,18 +289,17 @@ class Command
   # ison
   # kick
   # kill
+  # kline
   # links
   # list
   # mode
   # motd
-  # names
   # notice
   # oper
   # operwall
   # part
   # pass
   # pong
-  # privmsg
   # rehash
   # restart
   # server
@@ -210,12 +307,10 @@ class Command
   # squit
   # stats
   # summon
-  # time
   # topic
   # trace
   # userhost
   # users
-  # version
   # who
   # whois
   # whowas

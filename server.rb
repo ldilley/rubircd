@@ -44,6 +44,7 @@ class Server
   @@link_count = 0
   @@links = Array.new
   @@users = Array.new
+  @@channels = Array.new
 
   def self.add_user(user)
     @@users.push(user)
@@ -53,8 +54,20 @@ class Server
     @@users.delete(user)
   end
 
+  def self.add_channel(channel)
+    @@channels.push(channel)
+  end
+
+  def self.remove_channel(channel)
+    @@channels.delete(channel)
+  end
+
   def self.users
     @@users
+  end
+
+  def self.channels
+    @@channels
   end
 
   class << self; attr_accessor :client_count, :visible_count, :invisible_count, :unknown_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end

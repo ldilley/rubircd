@@ -4,4 +4,5 @@ admin_email: ldilley@devux.org
 network_name: devux.org
 server_name: irc.devux.org
 listen_port: 1997
+default_channel: "#devux"
 debug_mode: true

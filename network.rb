@@ -17,6 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require 'resolv'
 require 'socket'
 require_relative 'commands'
 require_relative 'numerics'
@@ -48,7 +49,9 @@ class Network
     rescue
       Server.client_count -= 1
       Server.remove_user(user) # this will affect WHOWAS -- work around this later
-      Thread.kill(user.thread)
+      if user.thread != nil
+        Thread.kill(user.thread)
+      end
   end
 
   def self.send(user, data)
@@ -57,7 +60,9 @@ class Network
     rescue
       Server.client_count -= 1
       Server.remove_user(user) # this will affect WHOWAS -- work around this later
-      Thread.kill(user.thread)
+      if user.thread != nil
+        Thread.kill(user.thread)
+      end
   end
 
   def self.register_user(client_socket, connection_thread)
@@ -65,8 +70,17 @@ class Network
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     Server.add_user(user)
     Log.write("Received connection from #{user.ip_address}.")
-    Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...") # lookup is already done above
-    Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
+    Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
+    begin
+      hostname = Resolv.getname(client_ip)
+    rescue
+      Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Couldn't look up your hostname")
+      hostname = client_ip
+    else
+      Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{hostname})")
+    ensure
+      user.change_hostname(hostname)
+    end
     registered = false
     timer_thread = Thread.new() { Network.registration_timer(user) }
     until(registered) do
@@ -111,7 +125,9 @@ class Network
     begin
       user.socket.close()
     rescue
-      Thread.kill(user.thread)
+      if user.thread != nil
+        Thread.kill(user.thread)
+      end
     ensure
       Server.client_count -= 1
       Server.remove_user(user)
@@ -123,8 +139,8 @@ class Network
     Network.send(user, Numeric.RPL_YOURHOST(user.nick))
     Network.send(user, Numeric.RPL_CREATED(user.nick))
     Network.send(user, Numeric.RPL_MYINFO(user.nick))
-    Network.send(user, Numeric.RPL_ISUPPORT1(user.nick))
-    Network.send(user, Numeric.RPL_ISUPPORT2(user.nick))
+    Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
+    Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
     Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
     Network.send(user, Numeric.RPL_LUSEROP(user.nick))
     Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
@@ -143,6 +159,7 @@ class Network
       if input.empty?
         redo
       end
+puts input
       input = input.split
       Command.parse(user, input)
     end

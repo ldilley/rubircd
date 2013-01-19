@@ -36,6 +36,7 @@ class Options
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
     @@listen_port = options_file["listen_port"]
+    @@default_channel = options_file["default_channel"]
     @@debug_mode = options_file["debug_mode"]
 
     if @@admin_name == nil
@@ -64,6 +65,11 @@ class Options
       exit!
     end
 
+    if @@default_channel.to_s == nil
+      puts("\nUnable to read default_channel option from options.yml file!")
+      exit!
+    end
+
     if @@debug_mode == nil
       puts("\nUnable to read debug_mode option from options.yml file!")
       exit!
@@ -71,6 +77,11 @@ class Options
 
     if @@listen_port <= 0 || @@listen_port >=65536
       puts("\nlisten_port value is out of range!")
+      exit!
+    end
+
+    unless @@default_channel.to_s =~ /[#&+][A-Za-z0-9]/
+      puts("\ndefault_channel value is not valid!")
       exit!
     end
 
@@ -102,6 +113,10 @@ class Options
 
   def self.listen_port
     return @@listen_port
+  end
+
+  def self.default_channel
+    return @@default_channel
   end
 
   def self.debug_mode

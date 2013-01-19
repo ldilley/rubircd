@@ -41,6 +41,10 @@ class User
     @ident = new_ident
   end
 
+  def change_hostname(new_hostname)
+    @hostname = new_hostname
+  end
+
   def change_gecos(new_gecos)
     @gecos = new_gecos
   end
@@ -57,12 +61,12 @@ class User
     @umodes.delete(umode)
   end
 
-  def add_channel(channel_name)
-    @channels.push(channel_name)
+  def add_channel(channel)
+    @channels.push(channel)
   end
 
-  def remove_channel(channel_name)
-    @channels.delete(channel_name)
+  def remove_channel(channel)
+    @channels.delete(channel)
   end
 
   attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :thread, :channels

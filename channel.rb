@@ -108,4 +108,6 @@ class Channel
   def remove_user(user)
     @users.delete(user)
   end
+
+  attr_reader :name, :founder
 end
