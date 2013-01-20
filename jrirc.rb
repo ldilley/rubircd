@@ -52,6 +52,7 @@ Server.add_user(memoserv)
 Server.add_user(nickserv)
 Server.add_user(operserv)
 puts("done.")
+Server.init_chanmap()
 default_channel = Channel.new(Options.default_channel, Options.admin_nick)
 Server.channel_count = 0
 Server.add_channel(default_channel)

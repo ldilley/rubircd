@@ -47,8 +47,9 @@ class Network
     return user.socket.gets("\r\n").chomp("\r\n")
     # Handle exception in case socket goes away...
     rescue
-      Server.client_count -= 1
-      Server.remove_user(user) # this will affect WHOWAS -- work around this later
+      if Server.remove_user(user) # this will affect WHOWAS -- work around this later
+        Server.client_count -= 1
+      end
       if user.thread != nil
         Thread.kill(user.thread)
       end
@@ -58,8 +59,9 @@ class Network
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
     rescue
-      Server.client_count -= 1
-      Server.remove_user(user) # this will affect WHOWAS -- work around this later
+      if Server.remove_user(user) # this will affect WHOWAS -- work around this later
+        Server.client_count -= 1
+      end
       if user.thread != nil
         Thread.kill(user.thread)
       end
@@ -129,8 +131,9 @@ class Network
         Thread.kill(user.thread)
       end
     ensure
-      Server.client_count -= 1
-      Server.remove_user(user)
+      if Server.remove_user(user)
+        Server.client_count -= 1
+      end
     end
   end
 

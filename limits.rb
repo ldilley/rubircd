@@ -22,11 +22,11 @@ class Limits
   KICKLEN = 256
   MAXBANS = 50
   MAXCHANNELS = 10
-  MAXMSG = 512
+  MAXMSG = 510              # max message length per RFC is 512, but we need 2 bytes to append carriage return and newline
   MODES = 6
   NICKLEN = 32
   TOPICLEN = 308
   IDENTLEN = 10
   GECOSLEN = 150
-  REGISTRATION_TIMEOUT = 10
+  REGISTRATION_TIMEOUT = 20 # allow enough time for hostname lookup timeout
 end

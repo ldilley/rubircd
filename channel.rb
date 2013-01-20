@@ -102,11 +102,16 @@ class Channel
   end
 
   def add_user(user)
-    @users.push(user)
+    user_ref = user
+    @users.push(user_ref)
   end
 
   def remove_user(user)
     @users.delete(user)
+  end
+
+  def users
+    @users
   end
 
   attr_reader :name, :founder

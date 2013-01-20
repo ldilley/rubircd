@@ -39,6 +39,7 @@ class Command
     @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
     @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
     @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
+    @@command_map["NOTICE"] = Proc.new() {|user, args| handle_notice(user, args)}
     @@command_map["PING"] = Proc.new() {|user, args| handle_ping(user, args)}
     @@command_map["PRIVMSG"] = Proc.new() {|user, args| handle_privmsg(user, args)}
     @@command_map["QUIT"] = Proc.new() {|user, args| handle_quit(user, args)}
@@ -100,21 +101,19 @@ class Command
       channel_exists = false
       if channel =~ /[#&+][A-Za-z0-9]/
         channel_object = Channel.new(channel, user.nick)
-        Server.channels.each do |c|
-          if c.name.casecmp(channel) == 0
-            channel_exists = true
-          end
+        if Server.channel_map[channel.to_s.upcase] != nil
+          channel_exists = true
         end
         unless channel_exists
           Server.add_channel(channel_object)
           Server.channel_count += 1
         end
         user.add_channel(channel)
-        Server.users.each do |u|
-          u.channels.each do |c|
-            if c.casecmp(channel) == 0
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")
-            end
+        chan = Server.channel_map[channel.to_s.upcase]
+        unless chan == nil
+          chan.add_user(user)
+          chan.users.each do |u|
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")
           end
         end
         unless channel_exists
@@ -132,14 +131,11 @@ class Command
       Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
       return
     end
-    userlist = Array.new
-    Server.users.each do |u|
-      u.channels.each do |c|
-        if c.casecmp(args[0].to_s) == 0
-          # ToDo: Add flag prefixes to nicks later
-          userlist.push(u.nick)
-        end
-      end
+    userlist = []
+    channel = Server.channel_map[args[0].to_s.upcase]
+    unless channel == nil
+      # ToDo: Add flag prefixes to nicks later
+      channel.users.each {|u| userlist << u.nick}
     end
     userlist = userlist[0..-1].join(" ")
     Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))
@@ -158,12 +154,12 @@ class Command
     # We must have exactly 2 tokens so ensure the nick is valid
     if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
       Server.users.each do |u|
-        if u.nick.casecmp(args[0]) == 0
+        if u.nick.casecmp(args[0]) == 0 && user != u
           Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
           return
         end
       end
-      if user.is_registered
+      if user.is_registered && user.nick != args[0]
         Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
       end
       user.change_nick(args[0])
@@ -171,6 +167,41 @@ class Command
     else
       Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0]))
       return
+    end
+  end
+
+  def self.handle_notice(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "NOTICE"))
+      return
+    end
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
+      return
+    end
+    message = args[1..-1].join(" ")
+    message = message[1..-1] # remove leading ':'
+    if args[0] =~ /[#&+][A-Za-z0-9]/
+      channel = Server.channel_map[args[0].to_s.upcase]
+      unless channel == nil
+        channel.users.each do |u|
+          if u.nick != user.nick
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{args[0]} :#{message}")
+          end
+        end
+      end
+      return
+    end
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{u.nick} :#{message}")
+        return
+      end
+    end
+    if args[0] == '#'
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+    else
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
   end
 
@@ -206,9 +237,10 @@ class Command
     message = args[1..-1].join(" ")
     message = message[1..-1] # remove leading ':'
     if args[0] =~ /[#&+][A-Za-z0-9]/
-      Server.users.each do |u|
-        u.channels.each do |c|
-          if c.casecmp(args[0]) == 0 && u.nick != user.nick
+      channel = Server.channel_map[args[0].to_s.upcase]
+      unless channel == nil
+        channel.users.each do |u|
+          if u.nick != user.nick
             Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{message}")
           end
         end
