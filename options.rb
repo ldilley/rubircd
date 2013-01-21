@@ -1,7 +1,7 @@
 # $Id$
-# jrIRC    
-# Copyright (c) 2013 (see authors.txt for details) 
-# http://www.devux.org/projects/jrirc/
+# RubIRCd - An IRC server written in Ruby
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# http://www.rubircd.org/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

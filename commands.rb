@@ -1,7 +1,7 @@
 # $Id$
-# jrIRC    
-# Copyright (c) 2013 (see authors.txt for details) 
-# http://www.devux.org/projects/jrirc/
+# RubIRCd - An IRC server written in Ruby
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# http://www.rubircd.org/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -313,6 +313,7 @@ class Command
     end
   end
 
+  # Standard commands remaining to be implemented:
   # away
   # connect
   # error
@@ -326,7 +327,6 @@ class Command
   # list
   # mode
   # motd
-  # notice
   # oper
   # operwall
   # part
@@ -346,5 +346,12 @@ class Command
   # who
   # whois
   # whowas
+
+  # Custom commands that may get implemented:
+  # broadcast <message> (administrative command to alert users of anything significant such as an upcoming server outage)
+  # fjoin <channel> <nick> (administrative force join)
+  # fpart <channel> <nick> (administrative force part)
+  # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection)
+  # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
 
 end # class

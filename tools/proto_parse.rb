@@ -1,7 +1,7 @@
 # $Id$
-# jrIRC    
-# Copyright (c) 2013 (see authors.txt for details) 
-# http://www.devux.org/projects/jrirc/
+# RubIRCd - An IRC server written in Ruby
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# http://www.rubircd.org/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
 require 'socket'
 
 # Configurables
-server_name = "irc.devux.org"
+server_name = "irc.chatcube.net"
+network_name = "ChatCube"
 port = 1997
 
 server = TCPServer.open(port)
@@ -45,7 +46,7 @@ loop {
     client.puts("PING :#{Time.now.to_i}")
     incoming = client.gets("\r\n").chomp("\r\n")
     puts(incoming.split)
-    client.puts(":irc.devux.org 001 #{nick} :Welcome to the jrIRC IRC Network #{nick}!")
+    client.puts(":#{server_name} 001 #{nick} :Welcome to the #{network_name} IRC Network #{nick}!")
     users.push(nick)
     while done == 0 do
       message = client.gets("\r\n").chomp("\r\n")

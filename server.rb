@@ -1,7 +1,7 @@
 # $Id$
-# jrIRC    
-# Copyright (c) 2013 (see authors.txt for details) 
-# http://www.devux.org/projects/jrirc/
+# RubIRCd - An IRC server written in Ruby
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# http://www.rubircd.org/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class Server
-  VERSION = "jrIRC v0.1a"
+  VERSION = "RubIRCd v0.1a"
   RELEASE = "maiden voyage"
   MODE_ADMIN = 'a'        # is an IRC administrator
   MODE_BOT = 'b'          # is a bot
