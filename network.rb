@@ -115,6 +115,10 @@ class Network
         redo
       end
       input = input.split
+      # Do not allow access to any other commands until the client is registered
+      unless input[0].to_s.upcase == "NICK" || input[0].to_s.upcase == "QUIT" || input[0].to_s.upcase == "USER"
+       redo
+      end
       Command.parse(user, input)
       if user.nick != "*" && user.ident != nil && user.gecos != nil
         registered = true

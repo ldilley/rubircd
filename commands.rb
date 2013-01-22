@@ -109,6 +109,10 @@ class Command
       keys = args[1].split(',')
     end
     channels.each do |channel|
+      if user.channels.length >= Limits::MAXCHANNELS
+        Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
+        return
+      end
       channel_exists = false
       if channel =~ /[#&+][A-Za-z0-9]/
         channel_object = Channel.new(channel, user.nick)
@@ -242,6 +246,16 @@ class Command
         end
       end
       if user.is_registered && user.nick != args[0]
+        if user.channels.length > 0
+          user.channels.each do |c|
+            chan = Server.channel_map[c.to_s.upcase]
+            chan.users.each do |u|
+              if user.nick != u.nick
+                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
+              end
+            end
+          end
+        end
         Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
       end
       user.change_nick(args[0])
@@ -297,7 +311,42 @@ class Command
   end
 
   def self.handle_quit(user, args)
-    Network.close(user)
+    unless args.length < 1
+      quit_message = args[0..-1].join(" ") # 0 may contain ':' and we already supply it
+      if quit_message[0] == ':'
+        quit_message = quit_message[1..-1]
+      end
+      if quit_message.length > Limits::MAXQUIT
+        quit_message = quit_message[0..Limits::MAXQUIT]
+      end
+    end
+    if user.channels.length > 0
+      user.channels.each do |c|
+        chan = Server.channel_map[c.to_s.upcase]
+        chan.users.each do |u|
+          if args.length < 1 && user.nick != u.nick
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :Client quit")
+          elsif user.nick != u.nick
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{quit_message}")
+          end
+        end
+      end
+    end
+    if args.length < 1
+      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: Client quit)")
+    else
+      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: #{quit_message})")
+    end
+    begin
+      user.socket.close()
+    rescue
+      if Server.remove_user(user)
+        Server.client_count -= 1
+      end
+      if user.thread != nil
+        Thread.kill(user.thread)
+      end
+    end
   end
 
   def self.handle_privmsg(user, args)
