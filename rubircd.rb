@@ -17,6 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+if RUBY_VERSION < "1.9"
+  puts("RubIRCd requires Ruby >=1.9!")
+  exit!
+end
+
 require_relative 'channel'
 require_relative 'log'
 require_relative 'network'
@@ -65,4 +70,16 @@ Server.link_count = 0
 Server.visible_count = 5
 Server.invisible_count = 0
 puts("Starting network and waiting for incoming connections... ")
+if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
+  puts("You are using JRuby which does not support fork()! Use screen, tmux, or launch program into background with \"nohup jruby ./rubircd.rb &\" instead if you do not want to run in the foreground.")
+elsif ARGV[0] != "-f"
+  exit if fork
+  Process.setsid
+  exit if fork
+  Dir.chdir "/" 
+  STDIN.reopen "/dev/null"
+  STDOUT.reopen "/dev/null", "a" 
+  STDERR.reopen "/dev/null", "a" 
+  Process.daemon()
+end
 Network.start()

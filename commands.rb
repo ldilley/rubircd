@@ -37,6 +37,9 @@ class Command
     @@command_map["ADMIN"] = Proc.new() {|user, args| handle_admin(user, args)}
     @@command_map["CAP"] = Proc.new() {|user, args| handle_cap(user, args)}
     @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
+    @@command_map["MODLIST"] = Proc.new() {|user, args| handle_modlist(user, args)}
+    @@command_map["MODLOAD"] = Proc.new() {|user, args| handle_modload(user, args)}
+    @@command_map["MODUNLOAD"] = Proc.new() {|user, args| handle_modunload(user, args)}
     @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
     @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
     @@command_map["NOTICE"] = Proc.new() {|user, args| handle_notice(user, args)}
@@ -46,6 +49,14 @@ class Command
     @@command_map["TIME"] = Proc.new() {|user, args| handle_time(user, args)}
     @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
     @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
+  end
+
+  def self.register_command(command_name, command_proc)
+    @@command_map[command_name.upcase] = command_proc
+  end
+
+  def self.unregister_command(command)
+    @@command_map.delete(command.to_s.upcase)
   end
 
   def self.handle_admin(user, args)
@@ -112,9 +123,7 @@ class Command
         chan = Server.channel_map[channel.to_s.upcase]
         unless chan == nil
           chan.add_user(user)
-          chan.users.each do |u|
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")
-          end
+          chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")}
         end
         unless channel_exists
           Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
@@ -123,6 +132,79 @@ class Command
       else
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
       end
+    end
+  end
+
+  def self.handle_modlist(user, args)
+    # ToDo: if check for admin privileges
+    if Mod.modules == nil
+      Mod.modules = {}
+    end
+    if Mod.modules.length < 1
+      Network.send(user, "No modules are currently loaded.")
+      return
+    end
+    Mod.modules.each {|key, mod| Network.send(user, "#{mod.command_name} (#{mod})")}
+  end
+
+  def self.handle_modload(user, args)
+    # ToDo: if check for admin privileges
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODLOAD"))
+      return
+    end
+    if Mod.modules == nil
+      Mod.modules = {}
+    end
+    begin
+      new_module = eval(File.read("modules/#{args[0]}.rb"))
+      new_module.plugin_init(Command)
+    rescue Errno::ENOENT => e
+      Network.send(user, "Failed to load module: #{args[0]}")
+      Log.write("Failed to load module: #{args[0]}")
+      Log.write(e)
+    rescue LoadError => e
+      Network.send(user, "Failed to load module: #{args[0]}")
+      Log.write("Failed to load module: #{args[0]}")
+      Log.write(e)
+    else
+      mod_exists = Mod.modules[args[0].to_s.upcase]
+      unless mod_exists == nil
+        Network.send(user, "Module already loaded: #{args[0]} (#{mod_exists})")
+        return
+      end
+      Mod.add(new_module)
+      Network.send(user, "Successfully loaded module: #{args[0]} (#{new_module})")
+      Log.write("Successfully loaded module: #{args[0]} (#{new_module})")
+    end
+  end
+
+  def self.handle_modunload(user, args)
+    # ToDo: if check for admin privileges
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODUNLOAD"))
+      return
+    end
+    if Mod.modules == nil || Mod.modules.length < 1
+      Network.send(user, "No modules are currently loaded.")
+      return
+    end
+    mod = Mod.modules[args[0].to_s.upcase]
+    unless mod == nil
+      begin
+        mod_name = args[0]
+        mod.plugin_finish(Command)
+      rescue NameError => e
+        Network.send(user, "Invalid class name for module: #{args[0]}")
+        Log.write(e)
+        return
+      else
+        Mod.modules.delete(args[0].to_s.upcase)
+        Network.send(user, "Successfully unloaded module: #{args[0]} (#{mod})")
+        Log.write("Successfully unloaded module: #{args[0]} (#{mod})")
+      end
+    else
+      Network.send(user, "Module does not exist: #{args[0]}")
     end
   end
 
@@ -215,14 +297,7 @@ class Command
   end
 
   def self.handle_quit(user, args)
-    begin
-      user.socket.close()
-    rescue
-      Thread.kill(user.thread)
-    ensure
-      Server.client_count -= 1
-      Server.remove_user(user)
-    end
+    Network.close(user)
   end
 
   def self.handle_privmsg(user, args)
@@ -355,3 +430,15 @@ class Command
   # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
 
 end # class
+
+class Mod
+  @@modules = {}
+
+  def self.modules
+    @@modules
+  end
+
+  def self.add(mod)
+    @@modules[mod.command_name.upcase] = mod
+  end
+end

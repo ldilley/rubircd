@@ -33,6 +33,13 @@ class Network
       Log.write("Unable to listen on TCP port #{Options.listen_port}.")
       exit!
     end
+    begin
+      ssl_server = TCPServer.open(Options.ssl_port)
+    rescue
+      puts("Unable to listen on TCP port #{Options.ssl_port}.")
+      Log.write("Unable to listen on TCP port #{Options.ssl_port}.")
+      exit!
+    end
     loop do
       Thread.start(server.accept) do |client_socket|
         Server.client_count += 1
@@ -67,9 +74,26 @@ class Network
       end
   end
 
+  def self.close(user)
+    begin
+      user.socket.close()
+    rescue
+      if Server.remove_user(user)
+        Server.client_count -= 1
+      end
+      if user.thread != nil
+        Thread.kill(user.thread)
+      end
+    end
+  end
+
   def self.register_user(client_socket, connection_thread)
     sock_domain, client_port, client_hostname, client_ip = client_socket.peeraddr
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
+    if Server.client_count >= Options.max_connections
+      Network.send(user, "ERROR :Closing link: [Server too busy]")
+      Network.close(user)
+    end
     Server.add_user(user)
     Log.write("Received connection from #{user.ip_address}.")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
@@ -124,17 +148,7 @@ class Network
   def self.registration_timer(user)
     Kernel.sleep Limits::REGISTRATION_TIMEOUT
     Network.send(user, "ERROR :Closing link: [Registration timeout]")
-    begin
-      user.socket.close()
-    rescue
-      if user.thread != nil
-        Thread.kill(user.thread)
-      end
-    ensure
-      if Server.remove_user(user)
-        Server.client_count -= 1
-      end
-    end
+    Network.close(user)
   end
 
   def self.welcome(user)

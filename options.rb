@@ -26,6 +26,7 @@ class Options
   @@network_name = nil
   @@server_name = nil
   @@listen_port = nil
+  @@ssl_port = nil
   @@debug_mode = nil
 
   def self.parse()
@@ -36,7 +37,9 @@ class Options
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
     @@listen_port = options_file["listen_port"]
+    @@ssl_port = options_file["ssl_port"]
     @@default_channel = options_file["default_channel"]
+    @@max_connections = options_file["max_connections"]
     @@debug_mode = options_file["debug_mode"]
 
     if @@admin_name == nil
@@ -65,8 +68,18 @@ class Options
       exit!
     end
 
+    if @@ssl_port == nil
+      puts("\nUnable to read ssl_port option from options.yml file!")
+      exit!
+    end
+
     if @@default_channel.to_s == nil
       puts("\nUnable to read default_channel option from options.yml file!")
+      exit!
+    end
+
+    if @@max_connections == nil
+      puts("\nUnable to read max_connections option from options.yml file!")
       exit!
     end
 
@@ -75,13 +88,28 @@ class Options
       exit!
     end
 
-    if @@listen_port <= 0 || @@listen_port >=65536
+    if @@listen_port <= 0 || @@listen_port >= 65536
       puts("\nlisten_port value is out of range!")
+      exit!
+    end
+
+    if @@ssl_port <= 0 || @@ssl_port >= 65536
+      puts("\nssl_port value is out of range!")
+      exit!
+    end
+
+    if @@listen_port == @@ssl_port
+      puts("\nlisten_port and ssl_port values cannot match!")
       exit!
     end
 
     unless @@default_channel.to_s =~ /[#&+][A-Za-z0-9]/
       puts("\ndefault_channel value is not valid!")
+      exit!
+    end
+
+    if @@max_connections < 10
+      puts("\nmax_connections value is set too low!")
       exit!
     end
 
@@ -115,8 +143,16 @@ class Options
     return @@listen_port
   end
 
+  def self.ssl_port
+    return @@ssl_port
+  end
+
   def self.default_channel
     return @@default_channel
+  end
+
+  def self.max_connections
+    return @@max_connections
   end
 
   def self.debug_mode

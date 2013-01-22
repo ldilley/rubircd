@@ -26,6 +26,8 @@ class User
     @ip_address = ip_address
     @gecos = gecos
     @is_registered = false
+    @is_admin = false
+    @is_operator = false
     @socket = socket
     @thread = thread
     @umodes = Array.new
@@ -69,6 +71,6 @@ class User
     @channels.delete(channel)
   end
 
-  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :thread, :channels
+  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :thread, :channels
   attr_accessor :socket
 end
