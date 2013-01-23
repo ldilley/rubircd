@@ -71,7 +71,7 @@ Server.visible_count = 5
 Server.invisible_count = 0
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
-  puts("You are using JRuby which does not support fork()! Use screen, tmux, or launch program into background with \"nohup jruby ./rubircd.rb &\" instead if you do not want to run in the foreground.")
+  puts("You are using JRuby which does not support fork()!")
 elsif ARGV[0] != "-f"
   exit if fork
   Process.setsid

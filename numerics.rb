@@ -124,9 +124,22 @@ class Numeric
   RPL_WHOISOPERATOR = "is an IRC Operator"                                            # 313
   RPL_CHANNELMODEIS = ""  # 324 -- handle in Command class later
   RPL_CHANNELCREATED = "" # 329 -- handle in Command class later
-  RPL_NOTOPIC = "No topic is set."                                                    # 331
-  RPL_TOPIC = "" # 332 -- handle in Command class later
-  RPL_TOPICTIME = "" # 333 -- handle in Command class later
+
+  # 331
+  def self.RPL_NOTOPIC(nick, channel)
+    return sprintf(":%s 331 %s %s :No topic is set.", Options.server_name, nick, channel)
+  end
+
+  # 332
+  def self.RPL_TOPIC(nick, channel, topic)
+    return sprintf(":%s 332 %s %s :%s", Options.server_name, nick, channel, topic)
+  end
+
+  # 333
+  def self.RPL_TOPICTIME(nick, channel)
+    return sprintf(":%s 333 %s %s %s %i", Options.server_name, nick, channel.name, channel.topic_author, channel.topic_time)
+  end
+
   RPL_INVITING = "" # 341 -- handle in Command class later
 
   # 351
@@ -231,7 +244,12 @@ class Numeric
   end
 
   ERR_USERNOTINCHANNEL = "They aren't on that channel"                                # 441
-  ERR_NOTONCHANNEL = "You're not on that channel"                                     # 442
+
+  # 442
+  def self.ERR_NOTONCHANNEL(nick, channel)
+    return sprintf(":%s 442 %s %s :You're not on that channel", Options.server_name, nick, channel)
+  end
+
   ERR_USERONCHANNEL = "is already on channel"                                         # 443
   ERR_NOTREGISTERED = "Register first."                                               # 451
 

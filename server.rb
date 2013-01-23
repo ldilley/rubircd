@@ -66,7 +66,7 @@ class Server
   end
 
   def self.remove_channel(channel)
-    @@channels.delete(channel)
+    @@channel_map.delete(channel)
   end
 
   def self.users

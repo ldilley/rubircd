@@ -28,6 +28,8 @@ class User
     @is_registered = false
     @is_admin = false
     @is_operator = false
+    @away_message = nil
+    @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
     @thread = thread
     @umodes = Array.new
@@ -71,6 +73,6 @@ class User
     @channels.delete(channel)
   end
 
-  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :thread, :channels
+  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :away_message, :away_since, :thread, :channels
   attr_accessor :socket
 end

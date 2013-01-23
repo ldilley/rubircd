@@ -22,7 +22,7 @@ class Ban
     @creator = creator
     @mask = mask
     @reason = reason
-    @create_timestamp = Time.now
+    @create_timestamp = Time.now.to_i
   end
 
   attr_reader :mask  # This is used to locate the unique mask for ban removal
@@ -54,6 +54,8 @@ class Channel
   @name
   @modes
   @topic
+  @topic_author
+  @topic_time
   @users
   @founder
   @create_timestamp
@@ -67,7 +69,7 @@ class Channel
     @topic = ""
     @users = Array.new
     @founder = founder 
-    @create_timestamp = Time.now
+    @create_timestamp = Time.now.to_i
   end
 
   def add_ban(creator, mask, reason)
@@ -97,8 +99,16 @@ class Channel
     @modes.clear
   end
 
-  def set_topic(new_topic)
+  def set_topic(nick, new_topic)
+    @topic_author = nick
     @topic = new_topic
+    @topic_time = Time.now.to_i
+  end
+
+  def clear_topic()
+    @topic_author = ""
+    @topic = ""
+    @topic_time = ""
   end
 
   def add_user(user)
@@ -114,5 +124,5 @@ class Channel
     @users
   end
 
-  attr_reader :name, :founder
+  attr_reader :name, :topic, :topic_author, :topic_time, :founder
 end

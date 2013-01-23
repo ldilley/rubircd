@@ -43,10 +43,12 @@ class Command
     @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
     @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
     @@command_map["NOTICE"] = Proc.new() {|user, args| handle_notice(user, args)}
+    @@command_map["PART"] = Proc.new() {|user, args| handle_part(user, args)}
     @@command_map["PING"] = Proc.new() {|user, args| handle_ping(user, args)}
     @@command_map["PRIVMSG"] = Proc.new() {|user, args| handle_privmsg(user, args)}
     @@command_map["QUIT"] = Proc.new() {|user, args| handle_quit(user, args)}
     @@command_map["TIME"] = Proc.new() {|user, args| handle_time(user, args)}
+    @@command_map["TOPIC"] = Proc.new() {|user, args| handle_topic(user, args)}
     @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
     @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
   end
@@ -59,6 +61,8 @@ class Command
     @@command_map.delete(command.to_s.upcase)
   end
 
+  # ADMIN
+  # args[0] = optional server name
   def self.handle_admin(user, args)
     if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
       Network.send(user, Numeric.RPL_ADMINME(user.nick, Options.server_name))
@@ -71,6 +75,8 @@ class Command
     end
   end
 
+  # CAP
+  # args[0] = subcommand
   def self.handle_cap(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "CAP"))
@@ -98,6 +104,9 @@ class Command
     end
   end
 
+  # JOIN
+  # args[0 ...] = channel or channels that are comma separated
+  # args[1? ...] = optional key or keys that are comma separated
   def self.handle_join(user, args)
   # ToDo: Handle conditions such as invite only and keys later once channels support those modes
     if args.length < 1
@@ -139,6 +148,8 @@ class Command
     end
   end
 
+  # MODLIST
+  # args[0] = optional server (ToDo: Add ability to specify server to get its modules)
   def self.handle_modlist(user, args)
     # ToDo: if check for admin privileges
     if Mod.modules == nil
@@ -151,6 +162,8 @@ class Command
     Mod.modules.each {|key, mod| Network.send(user, "#{mod.command_name} (#{mod})")}
   end
 
+  # MODLOAD
+  # args[0] = module
   def self.handle_modload(user, args)
     # ToDo: if check for admin privileges
     if args.length < 1
@@ -183,6 +196,8 @@ class Command
     end
   end
 
+  # MODUNLOAD
+  # args[0] = module
   def self.handle_modunload(user, args)
     # ToDo: if check for admin privileges
     if args.length < 1
@@ -212,6 +227,8 @@ class Command
     end
   end
 
+  # NAMES
+  # args[0] = channel
   def self.handle_names(user, args)
     if args.length < 1
       Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
@@ -228,6 +245,8 @@ class Command
     Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args[0]))
   end
 
+  # NICK
+  # args[0] = new nick
   def self.handle_nick(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NONICKNAMEGIVEN(user.nick))
@@ -266,6 +285,9 @@ class Command
     end
   end
 
+  # NOTICE
+  # args[0] = target channel or nick
+  # args[1..-1] = message
   def self.handle_notice(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "NOTICE"))
@@ -301,6 +323,52 @@ class Command
     end
   end
 
+  # PART
+  # args[0] = channel
+  # args[1..-1] = optional part message
+  def self.handle_part(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PART"))
+      return
+    end
+    part_message = ""
+    if args.length > 1
+      part_message = args[1..-1].join(" ") # 0 may contain ':' and we already supply it
+      if part_message[0] == ':'
+        part_message = part_message[1..-1]
+      end
+      if part_message.length > Limits::MAXPART
+        part_message = part_message[0..Limits::MAXPART]
+      end
+    end
+    channels = args[0].split(',')
+    channels.each do |channel|
+      if channel =~ /[#&+][A-Za-z0-9]/
+        if user.channels.any?{|c| c.casecmp(channel) == 0}
+          chan = Server.channel_map[channel.to_s.upcase]
+          unless chan == nil
+            if part_message.length < 1
+              chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")}
+            else
+              chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{part_message}")}
+            end
+            chan.remove_user(user)
+            if chan.users.length < 1
+              Server.remove_channel(channel.upcase)
+            end
+            user.remove_channel(channel)
+          end
+        else
+          Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, channel))
+        end
+      else
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+      end
+    end
+  end
+
+  # PING
+  # args[0] = message
   def self.handle_ping(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PING"))
@@ -310,7 +378,10 @@ class Command
     Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
   end
 
+  # QUIT
+  # args[0..-1] = optional quit message
   def self.handle_quit(user, args)
+    quit_message = ""
     unless args.length < 1
       quit_message = args[0..-1].join(" ") # 0 may contain ':' and we already supply it
       if quit_message[0] == ':'
@@ -325,15 +396,17 @@ class Command
         chan = Server.channel_map[c.to_s.upcase]
         chan.users.each do |u|
           if args.length < 1 && user.nick != u.nick
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :Client quit")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{user.nick}")
           elsif user.nick != u.nick
             Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{quit_message}")
           end
         end
       end
     end
-    if args.length < 1
-      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: Client quit)")
+    if user.nick == '*'
+      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: Client exited)")
+    elsif args.length < 1
+      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: #{user.nick})")
     else
       Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: #{quit_message})")
     end
@@ -349,6 +422,9 @@ class Command
     end
   end
 
+  # PRIVMSG
+  # args[0] = target channel or nick
+  # args[1..-1] = message
   def self.handle_privmsg(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "PRIVMSG"))
@@ -384,6 +460,8 @@ class Command
     end
   end
 
+  # TIME
+  # args[0] = optional server
   def self.handle_time(user, args)
     if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
       Network.send(user, Numeric.RPL_TIME(user.nick, Options.server_name))
@@ -393,6 +471,72 @@ class Command
     end
   end
 
+  # TOPIC
+  # args[0] = channel
+  # args[1..-1] = topic
+  def self.handle_topic(user, args)
+    topic = ""
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "TOPIC"))
+      return
+    end
+    # ToDo: Check if this user is a chanop to avoid extra processing every time TOPIC is issued by regular nicks
+    if args.length > 1
+      topic = args[1..-1].join(" ")
+      if topic[0] == ':' && topic.length > 1
+        topic = topic[1..-1]
+      elsif topic[0] == ':' && topic.length == 1
+        topic = ""
+      end
+      if topic.length >= Limits::TOPICLEN
+        topic = topic[0..Limits::TOPICLEN]
+      end
+    end
+    if args[0] =~ /[#&+][A-Za-z0-9]/ && args.length == 1
+      chan = Server.channel_map[args[0].to_s.upcase]
+      unless chan == nil
+        # ToDo: Add if check for channel modes +p and +s
+        if chan.topic.length == 0
+          Network.send(user, Numeric.RPL_NOTOPIC(user.nick, args[0]))
+          return
+        else
+          Network.send(user, Numeric.RPL_TOPIC(user.nick, args[0], chan.topic))
+          unless topic.length == 0
+            Network.send(user, Numeric.RPL_TOPICTIME(user.nick, chan))
+            puts "here!"
+          end
+          return
+        end
+      # ToDo: else to send numeric here if +p and/or +s are set
+      end
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+      return
+    end
+    if args[0] =~ /[#&+][A-Za-z0-9]/ && args.length > 1
+      if user.channels.any?{|c| c.casecmp(args[0]) == 0}
+        chan = Server.channel_map[args[0].to_s.upcase]
+        unless chan == nil
+          # ToDo: Verify chanop status
+          if topic.length == 0
+            chan.clear_topic()
+          else
+            chan.set_topic(user.nick, topic)
+          end
+          chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{topic}")}
+        end
+      else
+        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+      end
+    else
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+    end
+  end
+
+  # USER
+  # args[0] = ident/username
+  # args[1] = sometimes ident or hostname (can be spoofed... so we ignore this arg)
+  # args[2] = server name (can also be spoofed... so we ignore this arg too)
+  # args[3..-1] = gecos/real name
   def self.handle_user(user, args)
     if args.length < 4
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
@@ -426,6 +570,8 @@ class Command
     end
   end
 
+  # VERSION
+  # args[0] = optional server
   def self.handle_version(user, args)
     if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
       Network.send(user, Numeric.RPL_VERSION(user.nick, Options.server_name))
@@ -453,7 +599,6 @@ class Command
   # motd
   # oper
   # operwall
-  # part
   # pass
   # pong
   # rehash
@@ -463,7 +608,6 @@ class Command
   # squit
   # stats
   # summon
-  # topic
   # trace
   # userhost
   # users

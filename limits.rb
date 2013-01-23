@@ -23,6 +23,7 @@ class Limits
   MAXBANS = 50
   MAXCHANNELS = 10
   MAXMSG = 510              # max message length per RFC is 512, but we need 2 bytes to append carriage return and newline
+  MAXPART = 255
   MAXQUIT = 255
   MODES = 6
   NICKLEN = 32
