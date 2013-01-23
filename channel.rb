@@ -99,8 +99,8 @@ class Channel
     @modes.clear
   end
 
-  def set_topic(nick, new_topic)
-    @topic_author = nick
+  def set_topic(user, new_topic)
+    @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
     @topic = new_topic
     @topic_time = Time.now.to_i
   end

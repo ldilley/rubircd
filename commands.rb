@@ -501,9 +501,8 @@ class Command
           return
         else
           Network.send(user, Numeric.RPL_TOPIC(user.nick, args[0], chan.topic))
-          unless topic.length == 0
+          unless chan.topic.length == 0
             Network.send(user, Numeric.RPL_TOPICTIME(user.nick, chan))
-            puts "here!"
           end
           return
         end
@@ -520,7 +519,7 @@ class Command
           if topic.length == 0
             chan.clear_topic()
           else
-            chan.set_topic(user.nick, topic)
+            chan.set_topic(user, topic)
           end
           chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{topic}")}
         end
