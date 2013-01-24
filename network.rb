@@ -116,8 +116,12 @@ class Network
       end
       input = input.split
       # Do not allow access to any other commands until the client is registered
-      unless input[0].to_s.upcase == "NICK" || input[0].to_s.upcase == "QUIT" || input[0].to_s.upcase == "USER"
-       redo
+      unless input[0].to_s.upcase == "CAP" || input[0].to_s.upcase == "NICK" || input[0].to_s.upcase == "QUIT" || input[0].to_s.upcase == "USER"
+        unless Command.command_map[input[0].to_s.upcase] == nil
+          Network.send(user, Numeric.ERR_NOTREGISTERED(input[0].to_s.upcase))
+          redo
+        end
+        redo
       end
       Command.parse(user, input)
       if user.nick != "*" && user.ident != nil && user.gecos != nil
@@ -168,10 +172,7 @@ class Network
     Network.send(user, Numeric.RPL_LUSERME(user.nick))
     Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
     Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
-    Network.send(user, Numeric.RPL_MOTDSTART(user.nick))
-    # ToDo: read motd.txt and send line by line below
-    Network.send(user, Numeric.RPL_MOTD(user.nick, "Welcome!"))
-    Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
+    Command.handle_motd(user, "")
   end
 
   def self.main_loop(user)
@@ -180,8 +181,14 @@ class Network
       if input.empty?
         redo
       end
-puts input
+      # output raw commands to foreground for now for debugging purposes
+      puts input
       input = input.split
+      if input[0].to_s.upcase == "PING"
+        user.last_ping = Time.now.to_i
+      else
+        user.last_activity = Time.now.to_i
+      end
       Command.parse(user, input)
     end
   end

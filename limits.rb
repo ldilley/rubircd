@@ -30,5 +30,6 @@ class Limits
   TOPICLEN = 308
   IDENTLEN = 10
   GECOSLEN = 150
+  MOTDLINELEN = 80
   REGISTRATION_TIMEOUT = 20 # allow enough time for hostname lookup timeout
 end

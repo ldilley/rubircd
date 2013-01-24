@@ -116,14 +116,57 @@ class Numeric
     return sprintf(":%s 266 %s Current global users: %i Max: %i", Options.server_name, nick, Server.global_users, Server.global_users_max)
   end
 
+  # 301
+  def self.RPL_AWAY(nick, user)
+    return sprintf(":%s 301 %s %s :%s", Options.server_name, nick, user.nick, user.away_message)
+  end
+
   RPL_UNAWAY = "You are no longer marked as being away"                               # 305
   RPL_NOWAWAY = "You have been marked as being away"                                  # 306
   RPL_WHOISREGNICK = "is a registered nick"                                           # 307
   RPL_WHOISADMIN = "is an IRC Server Administrator"                                   # 308
   RPL_WHOISSERVICE = "is a Network Service"                                           # 310
+
+  # 311
+  def self.RPL_WHOISUSER(nick, user)
+    return sprintf(":%s 311 %s %s %s %s * :%s", Options.server_name, nick, user.nick, user.ident, user.hostname, user.gecos)
+  end
+
   RPL_WHOISOPERATOR = "is an IRC Operator"                                            # 313
+
+  # 312
+  def self.RPL_WHOISSERVER(nick, user)
+    return sprintf(":%s 312 %s %s %s :%s", Options.server_name, nick, user.nick, Options.server_name, Options.server_description)
+  end
+
+  # 317
+  def self.RPL_WHOISIDLE(nick, user)
+    idle_seconds = Time.now.to_i - user.last_activity
+    return sprintf(":%s 317 %s %s %i %i :seconds idle, signon time", Options.server_name, nick, user.nick, idle_seconds, user.signon_time)
+  end
+
+  # 318
+  def self.RPL_ENDOFWHOIS(nick, user)
+    return sprintf(":%s 318 %s %s :End of /WHOIS list.", Options.server_name, nick, user.nick)
+  end
+
+  # 319
+  def self.RPL_WHOISCHANNELS(nick, user)
+    channels = user.channels.join(" ")
+    return sprintf(":%s 319 %s %s :%s", Options.server_name, nick, user.nick, channels)
+  end
+
   RPL_CHANNELMODEIS = ""  # 324 -- handle in Command class later
-  RPL_CHANNELCREATED = "" # 329 -- handle in Command class later
+
+  # 328
+  def self.RPL_CHANNEL_URL(nick, channel)
+    return sprintf(":%s 328 %s %s :%s", Options.server_name, nick, channel.name, channel.url)
+  end
+
+  # 329
+  def self.RPL_CREATIONTIME(nick, channel)
+    return sprintf(":%s 329 %s %s %i", Options.server_name, nick, channel.name, channel.create_timestamp)
+  end
 
   # 331
   def self.RPL_NOTOPIC(nick, channel)
@@ -138,6 +181,11 @@ class Numeric
   # 333
   def self.RPL_TOPICTIME(nick, channel)
     return sprintf(":%s 333 %s %s %s %i", Options.server_name, nick, channel.name, channel.topic_author, channel.topic_time)
+  end
+
+  # 338
+  def self.RPL_WHOISACTUALLY(nick, user)
+    return sprintf(":%s 338 %s %s %s :actually using host", Options.server_name, nick, user.nick, user.ip_address)
   end
 
   RPL_INVITING = "" # 341 -- handle in Command class later
@@ -157,23 +205,29 @@ class Numeric
    return sprintf(":%s 366 %s %s :End of /NAMES list.", Options.server_name, nick, channel)
   end
 
-  RPL_INFO = "#{Server::VERSION}\nhttp://www.rubircd.org/"                            # 371
+  # 371
+  def self.RPL_INFO(nick, text)
+    return sprintf(":%s 371 %s :%s", Options.server_name, nick, text)
+  end
 
   # 372
   def self.RPL_MOTD(nick, text)
     return sprintf(":%s 372 %s :- %s", Options.server_name, nick, text)
   end
 
-  RPL_ENDOFINFO = "End of info list."                                                 # 374
+  # 374
+  def self.RPL_ENDOFINFO(nick)
+    return sprintf(":%s 374 %s :End of /INFO list", Options.server_name, nick)
+  end
 
   # 375
   def self.RPL_MOTDSTART(nick)
-    return sprintf(":%s 375 %s :Message of the day:", Options.server_name, nick)
+    return sprintf(":%s 375 %s :- %s Message of the Day -", Options.server_name, nick, Options.server_name)
   end
 
   # 376
   def self.RPL_ENDOFMOTD(nick)
-    return sprintf(":%s 376 %s :End of MOTD", Options.server_name, nick)
+    return sprintf(":%s 376 %s :End of /MOTD command.", Options.server_name, nick)
   end
 
   RPL_YOUAREOPER = "You are now an IRC Operator"                                      # 381
@@ -226,7 +280,10 @@ class Numeric
     return sprintf(":%s 421 %s %s :Unknown command", Options.server_name, nick, command)
   end
 
-  ERR_NOMOTD = "MOTD file is missing"                                                 # 422
+  # 422
+  def self.ERR_NOMOTD(nick)
+    return sprintf(":%s 422 %s :MOTD File is missing", Options.server_name, nick)
+  end
 
   # 431
   def self.ERR_NONICKNAMEGIVEN(nick)
@@ -251,7 +308,11 @@ class Numeric
   end
 
   ERR_USERONCHANNEL = "is already on channel"                                         # 443
-  ERR_NOTREGISTERED = "Register first."                                               # 451
+
+  # 451
+  def self.ERR_NOTREGISTERED(command)
+    return sprintf(":%s 451 %s :Register first.", Options.server_name, command)
+  end
 
   # 461
   def self.ERR_NEEDMOREPARAMS(nick, command)

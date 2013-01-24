@@ -25,17 +25,24 @@ class Options
   @@admin_email = nil
   @@network_name = nil
   @@server_name = nil
+  @@server_description = nil
   @@listen_port = nil
   @@ssl_port = nil
   @@debug_mode = nil
 
   def self.parse()
-    options_file=YAML.load_file("options.yml")
+    begin
+      options_file=YAML.load_file("options.yml")
+    rescue
+      puts("failed. Unable to open options.yml file!")
+      exit!
+    end
     @@admin_name = options_file["admin_name"]
     @@admin_nick = options_file["admin_nick"]
     @@admin_email = options_file["admin_email"]
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
+    @@server_description = options_file["server_description"]
     @@listen_port = options_file["listen_port"]
     @@ssl_port = options_file["ssl_port"]
     @@default_channel = options_file["default_channel"]
@@ -60,6 +67,11 @@ class Options
 
     if @@server_name == nil
       puts("\nUnable to read server_name option from options.yml file!")
+      exit!
+    end
+
+    if @@server_description == nil
+      puts("\nUnable to read server_description option from options.yml file!")
       exit!
     end
 
@@ -137,6 +149,10 @@ class Options
 
   def self.server_name
     return @@server_name
+  end
+
+  def self.server_description
+    return @@server_description
   end
 
   def self.listen_port

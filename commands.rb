@@ -36,10 +36,13 @@ class Command
   def self.register_commands()
     @@command_map["ADMIN"] = Proc.new() {|user, args| handle_admin(user, args)}
     @@command_map["CAP"] = Proc.new() {|user, args| handle_cap(user, args)}
+    @@command_map["INFO"] = Proc.new() {|user, args| handle_info(user, args)}
     @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
+    @@command_map["MODE"] = Proc.new() {|user, args| handle_mode(user, args)}
     @@command_map["MODLIST"] = Proc.new() {|user, args| handle_modlist(user, args)}
     @@command_map["MODLOAD"] = Proc.new() {|user, args| handle_modload(user, args)}
     @@command_map["MODUNLOAD"] = Proc.new() {|user, args| handle_modunload(user, args)}
+    @@command_map["MOTD"] = Proc.new() {|user, args| handle_motd(user, args)}
     @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
     @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
     @@command_map["NOTICE"] = Proc.new() {|user, args| handle_notice(user, args)}
@@ -51,6 +54,7 @@ class Command
     @@command_map["TOPIC"] = Proc.new() {|user, args| handle_topic(user, args)}
     @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
     @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
+    @@command_map["WHOIS"] = Proc.new() {|user, args| handle_whois(user, args)}
   end
 
   def self.register_command(command_name, command_proc)
@@ -104,6 +108,19 @@ class Command
     end
   end
 
+  # INFO
+  # args[0] = optional server name
+  def self.handle_info(user, args)
+    if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      Network.send(user, Numeric.RPL_INFO(user.nick, "#{Server::VERSION}-#{Server::RELEASE}"))
+      Network.send(user, Numeric.RPL_INFO(user.nick, Server::URL))
+      Network.send(user, Numeric.RPL_ENDOFINFO(user.nick))
+    #elsif to handle arbitrary servers when others are linked
+    else
+      Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+    end
+  end
+
   # JOIN
   # args[0 ...] = channel or channels that are comma separated
   # args[1? ...] = optional key or keys that are comma separated
@@ -146,6 +163,15 @@ class Command
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
       end
     end
+  end
+
+  # MODE
+  # args[0] = target channel or nick
+  # args[1] = mode(s)
+  # args[2] = ban mask, limit, or key
+  def self.handle_mode(user, args)
+    # If MODE is issued with a valid channel name and no other args, also send numeric 329
+    Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :MODE support not implemented yet!")
   end
 
   # MODLIST
@@ -224,6 +250,30 @@ class Command
       end
     else
       Network.send(user, "Module does not exist: #{args[0]}")
+    end
+  end
+
+  # MOTD
+  # args[0] = optional server name
+  def self.handle_motd(user, args)
+    if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      if Server.motd.length == 0
+        Network.send(user, Numeric.ERR_NOMOTD(user.nick))
+      else
+        Network.send(user, Numeric.RPL_MOTDSTART(user.nick))
+        Server.motd.each do |line|
+          if line.length > Limits::MOTDLINELEN
+            line = line[0..Limits::MOTDLINELEN-1]
+          end
+          line = line.to_s.delete("\n")
+          line = line.delete("\r")
+          Network.send(user, Numeric.RPL_MOTD(user.nick, line))
+        end
+        Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
+      end
+    #elsif to handle arbitrary servers when others are linked
+    else
+      Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
     end
   end
 
@@ -582,11 +632,36 @@ class Command
     end
   end
 
+  # WHOIS (not RFC 1459 compliant yet)
+  # args[0] = nick
+  def self.handle_whois(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHOIS"))
+    end
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        Network.send(user, Numeric.RPL_WHOISUSER(user.nick, u))
+        if u.channels.length > 0
+          Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u))
+        end
+        Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u))
+        if u.away_message.length > 0
+          Network.send(user, Numeric.RPL_AWAY(user.nick, u))
+        end
+        # ToDo: If hostname cloaking is enabled for this user, do not send this numeric
+        Network.send(user, Numeric.RPL_WHOISACTUALLY(user.nick, u))
+        Network.send(user, Numeric.RPL_WHOISIDLE(user.nick, u))
+        Network.send(user, Numeric.RPL_ENDOFWHOIS(user.nick, u))
+        return
+      end
+    end
+    Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+  end
+
   # Standard commands remaining to be implemented:
   # away
   # connect
   # error
-  # info
   # invite
   # ison
   # kick
@@ -594,8 +669,6 @@ class Command
   # kline
   # links
   # list
-  # mode
-  # motd
   # oper
   # operwall
   # pass
@@ -611,7 +684,6 @@ class Command
   # userhost
   # users
   # who
-  # whois
   # whowas
 
   # Custom commands that may get implemented:
@@ -621,6 +693,9 @@ class Command
   # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection)
   # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
 
+  def self.command_map
+    @@command_map
+  end
 end # class
 
 class Mod

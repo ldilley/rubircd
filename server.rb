@@ -20,6 +20,7 @@
 class Server
   VERSION = "RubIRCd v0.1a"
   RELEASE = "maiden voyage"
+  URL = "http://www.rubircd.org/"
   MODE_ADMIN = 'a'        # is an IRC administrator
   MODE_BOT = 'b'          # is a bot
   MODE_INVISIBLE = 'i'    # invisible in WHO and NAMES output
@@ -75,6 +76,19 @@ class Server
 
   def self.channel_map
     @@channel_map
+  end
+
+  def self.read_motd()
+    begin
+      @@motd = IO.readlines("motd.txt")
+    rescue
+      puts("failed. Unable to open motd.txt file!")
+      exit!
+    end
+  end
+
+  def self.motd
+    @@motd
   end
 
   class << self; attr_accessor :client_count, :visible_count, :invisible_count, :unknown_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end

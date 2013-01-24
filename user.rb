@@ -28,13 +28,15 @@ class User
     @is_registered = false
     @is_admin = false
     @is_operator = false
-    @away_message = nil
+    @away_message = ""
     @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
     @thread = thread
     @umodes = Array.new
     @channels = Array.new
+    @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
+    @last_ping = nil
   end
 
   def change_nick(new_nick)
@@ -73,6 +75,6 @@ class User
     @channels.delete(channel)
   end
 
-  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :away_message, :away_since, :thread, :channels
-  attr_accessor :socket
+  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :away_message, :away_since, :thread, :channels, :signon_time
+  attr_accessor :socket, :last_activity, :last_ping
 end

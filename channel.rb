@@ -57,6 +57,7 @@ class Channel
   @topic_author
   @topic_time
   @users
+  @url
   @founder
   @create_timestamp
 
@@ -124,5 +125,5 @@ class Channel
     @users
   end
 
-  attr_reader :name, :topic, :topic_author, :topic_time, :founder
+  attr_reader :name, :topic, :topic_author, :topic_time, :url, :founder
 end

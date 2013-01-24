@@ -42,6 +42,9 @@ if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
 end
 puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
+print("Reading MotD... ")
+Server.read_motd()
+puts("done.")
 print("Registering commands... ")
 Command.register_commands()
 puts("done.")
