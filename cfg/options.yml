@@ -1,0 +1,51 @@
+# Name of the person who administers this server
+admin_name: Lloyd Dilley
+
+# Nick of the person who administers this server
+admin_nick: lloyd
+
+# E-mail address of the person who administers this server
+admin_email: irc@chatcube.net
+
+# Name of the network
+# This should be set to the same on all linked servers
+network_name: ChatCube
+
+# Name of server
+server_name: irc.chatcube.net
+
+# Comment for the server that is displayed in LINKS output
+# and WHOIS output for all clients connected to this server
+server_description: Powered by RubIRCd!
+
+# Hostname or IP address to use for connections
+# This can also be an IPv6 address
+# Leave blank or comment out to use all interfaces
+listen_host:
+
+# TCP port for incoming plain-text connections
+listen_port: 1997
+
+# TCP port for incoming SSL connections
+# Leave blank or comment out to disable SSL support
+ssl_port: 1998
+
+# Maximum number of simultaneous connections this server
+# will support
+max_connections: 256
+
+# Network I/O type
+# Possible values are:
+# event - uses select()
+# thread - uses multiple threads
+# If using threading, JRuby is recommended
+# If using CRuby/MRI, event is recommended
+# Note: Only thread is supported at the moment
+io_type: event
+
+# Set this option to true to enable debugging or
+# false to disable debugging
+# This option should NOT be enabled on a production
+# server since it may induce a crash if certain
+# exceptions are encountered 
+debug_mode: true

@@ -80,7 +80,7 @@ class Server
 
   def self.read_motd()
     begin
-      @@motd = IO.readlines("motd.txt")
+      @@motd = IO.readlines("cfg/motd.txt")
     rescue
       puts("failed. Unable to open motd.txt file!")
       exit!

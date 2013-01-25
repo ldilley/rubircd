@@ -17,14 +17,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-class Log
-  def self.write(text)
-    begin
-      log_file = File.open("logs/rubircd.log", 'a')
-      log_file.puts("#{Time.now.asctime} -- #{text}")
-      log_file.close()
-    rescue
-      puts("Unable to write log file!")
-    end
-  end
+require 'digest/sha2'
+
+def make_password(plain_text)
+  hash = Digest::SHA2.new(256) << plain_text
+  return hash.to_s
+end
+
+if ARGV.length < 1
+  puts("Not enough arguments. Expected 1 plain-text argument.")
+elsif ARGV.length > 1
+  puts("Too many arguments. Expected 1 plain-text argument.")
+else
+  puts(make_password(ARGV[0].to_s))
 end

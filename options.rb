@@ -32,7 +32,7 @@ class Options
 
   def self.parse()
     begin
-      options_file=YAML.load_file("options.yml")
+      options_file=YAML.load_file("cfg/options.yml")
     rescue
       puts("failed. Unable to open options.yml file!")
       exit!
@@ -43,10 +43,11 @@ class Options
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
     @@server_description = options_file["server_description"]
+    @@listen_host = options_file["listen_host"]
     @@listen_port = options_file["listen_port"]
     @@ssl_port = options_file["ssl_port"]
-    @@default_channel = options_file["default_channel"]
     @@max_connections = options_file["max_connections"]
+    @@io_type = options_file["io_type"]
     @@debug_mode = options_file["debug_mode"]
 
     if @@admin_name == nil
@@ -80,18 +81,13 @@ class Options
       exit!
     end
 
-    if @@ssl_port == nil
-      puts("\nUnable to read ssl_port option from options.yml file!")
-      exit!
-    end
-
-    if @@default_channel.to_s == nil
-      puts("\nUnable to read default_channel option from options.yml file!")
-      exit!
-    end
-
     if @@max_connections == nil
       puts("\nUnable to read max_connections option from options.yml file!")
+      exit!
+    end
+
+    if @@io_type == nil
+      puts("\nUnable to read io_type option from options.yml file!")
       exit!
     end
 
@@ -105,9 +101,16 @@ class Options
       exit!
     end
 
-    if @@ssl_port <= 0 || @@ssl_port >= 65536
-      puts("\nssl_port value is out of range!")
-      exit!
+    unless @@ssl_port == nil
+      begin
+        if @@ssl_port <= 0 || @@ssl_port >= 65536
+          puts("\nssl_port value is out of range!")
+          exit!
+        end
+      rescue
+        puts("\nInvalid ssl_port value!")
+        exit!
+      end
     end
 
     if @@listen_port == @@ssl_port
@@ -115,13 +118,18 @@ class Options
       exit!
     end
 
-    unless @@default_channel.to_s =~ /[#&+][A-Za-z0-9]/
-      puts("\ndefault_channel value is not valid!")
+    if @@max_connections < 10
+      puts("\nmax_connections value is set too low!")
       exit!
     end
 
-    if @@max_connections < 10
-      puts("\nmax_connections value is set too low!")
+    if @@io_type.to_s == "event"
+      puts("\nI/O type \"event\" is not implemented yet!")
+      exit!
+    end
+
+    if @@io_type.to_s != "event" && @@io_type.to_s != "thread"
+      puts("\nio_type value should be set to either event or thread.")
       exit!
     end
 
@@ -155,6 +163,10 @@ class Options
     return @@server_description
   end
 
+  def self.listen_host
+    return @@listen_host
+  end
+
   def self.listen_port
     return @@listen_port
   end
@@ -163,12 +175,12 @@ class Options
     return @@ssl_port
   end
 
-  def self.default_channel
-    return @@default_channel
-  end
-
   def self.max_connections
     return @@max_connections
+  end
+
+  def self.io_type
+    return @@io_type
   end
 
   def self.debug_mode

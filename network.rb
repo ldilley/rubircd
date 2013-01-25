@@ -17,6 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require 'openssl'
 require 'resolv'
 require 'socket'
 require_relative 'commands'
@@ -27,28 +28,84 @@ require_relative 'server'
 class Network
   def self.start()
     begin
-      server = TCPServer.open(Options.listen_port)
-    rescue
-      puts("Unable to listen on TCP port #{Options.listen_port}.")
-      Log.write("Unable to listen on TCP port #{Options.listen_port}.")
+      if Options.listen_host != nil
+        plain_server = TCPServer.open(Options.listen_host, Options.listen_port)
+      else
+        plain_server = TCPServer.open(Options.listen_port)
+      end
+    rescue Errno::EADDRNOTAVAIL => e
+      puts("Invalid listen_host: #{Options.listen_host}")
+      Log.write("Invalid listen_host: #{Options.listen_host}")
+      Log.write(e)
+      exit!
+    rescue SocketError => e
+      puts("Invalid listen_host: #{Options.listen_host}")
+      Log.write("Invalid listen_host: #{Options.listen_host}")
+      Log.write(e)
+      exit!
+    rescue => e
+      puts("Unable to listen on TCP port: #{Options.listen_port}")
+      Log.write("Unable to listen on TCP port: #{Options.listen_port}")
+      Log.write(e)
       exit!
     end
-    begin
-      ssl_server = TCPServer.open(Options.ssl_port)
-    rescue
-      puts("Unable to listen on TCP port #{Options.ssl_port}.")
-      Log.write("Unable to listen on TCP port #{Options.ssl_port}.")
-      exit!
+    unless Options.ssl_port == nil
+      begin
+        if Options.listen_host != nil
+          base_server = TCPServer.open(Options.listen_host, Options.ssl_port)
+        else
+          base_server = TCPServer.open(Options.ssl_port)
+        end
+        ssl_context = OpenSSL::SSL::SSLContext.new
+        ssl_context.cert = OpenSSL::X509::Certificate.new(File.read("cfg/cert.pem"))
+        ssl_context.key = OpenSSL::PKey::RSA.new(File.read("cfg/key.pem"))
+        ssl_server = OpenSSL::SSL::SSLServer.new(base_server, ssl_context)
+      rescue => e
+        puts("Unable to listen on SSL port: #{Options.ssl_port}")
+        Log.write("Unable to listen on SSL port: #{Options.ssl_port}")
+        Log.write(e)
+        exit!
+      end
     end
+    if Options.io_type.to_s == "thread"
+      plain_thread = Thread.new() {Network.plain_connections(plain_server)}
+      unless Options.ssl_port == nil
+        ssl_thread = Thread.new() {Network.ssl_connections(ssl_server)}
+      end
+      # Wait until threads complete before exiting program
+      plain_thread.join()
+      ssl_thread.join()
+    end
+    #else
+    # ToDo: select() stuff here
+    #end
+  end # method
+
+  def self.plain_connections(plain_server)
     loop do
-      Thread.start(server.accept) do |client_socket|
+      Thread.start(plain_server.accept()) do |plain_socket|
         Server.client_count += 1
-        user = Network.register_user(client_socket, Thread.current)
+        user = Network.register_user(plain_socket, Thread.current)
         Network.welcome(user)
         Network.main_loop(user)
-      end # Thread
-    end # loop
-  end # method
+      end
+    end
+  end
+
+  def self.ssl_connections(ssl_server)
+    loop do
+      begin
+        Thread.start(ssl_server.accept()) do |ssl_socket|
+          Server.client_count += 1
+          user = Network.register_user(ssl_socket, Thread.current)
+          Network.welcome(user)
+          Network.main_loop(user)
+        end 
+      rescue
+        # Do nothing here since a plain-text connection likely came in... just continue on with the next connection
+      end
+    end
+  end
 
   def self.recv(user)
     return user.socket.gets("\r\n").chomp("\r\n")
@@ -108,7 +165,7 @@ class Network
       user.change_hostname(hostname)
     end
     registered = false
-    timer_thread = Thread.new() { Network.registration_timer(user) }
+    timer_thread = Thread.new() {Network.registration_timer(user)}
     until(registered) do
       input = Network.recv(user)
       if input.empty?

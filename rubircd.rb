@@ -41,7 +41,16 @@ Log.write("Options loaded.")
 if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
 end
-puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
+if Options.listen_host != nil && Options.ssl_port != nil
+  puts("Server name: #{Options.server_name}\nAddress: #{Options.listen_host}\nTCP port: #{Options.listen_port}\nSSL port: #{Options.ssl_port}")
+elsif Options.listen_host != nil && Options.ssl_port == nil
+  puts("Server name: #{Options.server_name}\nAddress: #{Options.listen_host}\nTCP port: #{Options.listen_port}")
+elsif Options.listen_host == nil && Options.ssl_port != nil
+  puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}\nSSL port: #{Options.ssl_port}")
+else
+  puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
+end
+# ToDo: Add if check to determine if SSL is enabled and print port # if so
 print("Reading MotD... ")
 Server.read_motd()
 puts("done.")
@@ -60,12 +69,9 @@ Server.add_user(memoserv)
 Server.add_user(nickserv)
 Server.add_user(operserv)
 puts("done.")
-Server.init_chanmap()
-default_channel = Channel.new(Options.default_channel, Options.admin_nick)
-Server.channel_count = 0
-Server.add_channel(default_channel)
-Server.channel_count += 1
 Log.write("Reserved nicknames populated.")
+Server.init_chanmap()
+Server.channel_count = 0
 Server.start_timestamp = Time.now.asctime
 Server.client_count = 5
 Server.oper_count = 5
