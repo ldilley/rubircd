@@ -49,13 +49,19 @@ class Numeric
   # Need to break ISUPPORT up to possibly avoid hitting the message length ceiling
   # 005.1
   def self.RPL_ISUPPORT1(nick, server)
-    return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
+    return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s CHANTYPES=#& CHARSET=ascii KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
                    server, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
   end
   # 005.2
   def self.RPL_ISUPPORT2(nick, server)
-    return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s TOPICLEN=%i :are supported by this server", server, nick,
-                   Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Limits::TOPICLEN)
+    if Options.ssl_port != nil
+      return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s SSL=%s:%i STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
+                     Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Options.server_name, Options.ssl_port, Server::STATUS_PREFIXES,
+                     Limits::TOPICLEN)
+    else
+      return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
+                     Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Server::STATUS_PREFIXES, Limits::TOPICLEN)
+    end
   end
 
   RPL_UMODEIS = "" # 221 -- handle in Command class later
@@ -123,8 +129,18 @@ class Numeric
 
   RPL_UNAWAY = "You are no longer marked as being away"                               # 305
   RPL_NOWAWAY = "You have been marked as being away"                                  # 306
-  RPL_WHOISREGNICK = "is a registered nick"                                           # 307
-  RPL_WHOISADMIN = "is an IRC Server Administrator"                                   # 308
+
+  # 307
+  def self.RPL_WHOISREGNICK(nick, user)
+    return sprintf(":%s 307 %s %s is a registered nick", Options.server_name, nick, user.nick)
+  end
+
+  # 308
+  # ToDo: Add server name in reply?
+  def self.RPL_WHOISADMIN(nick, user)
+    return sprintf(":%s 308 %s %s is an IRC Server Administrator", Options.server_name, nick, user.nick)
+  end
+
   RPL_WHOISSERVICE = "is a Network Service"                                           # 310
 
   # 311
@@ -132,11 +148,19 @@ class Numeric
     return sprintf(":%s 311 %s %s %s %s * :%s", Options.server_name, nick, user.nick, user.ident, user.hostname, user.gecos)
   end
 
-  RPL_WHOISOPERATOR = "is an IRC Operator"                                            # 313
+  # 313
+  def self.RPL_WHOISOPERATOR(nick, user)
+    return sprintf(":%s 313 %s %s is an IRC Operator", Options.server_name, nick, user.nick)
+  end
 
   # 312
   def self.RPL_WHOISSERVER(nick, user)
     return sprintf(":%s 312 %s %s %s :%s", Options.server_name, nick, user.nick, Options.server_name, Options.server_description)
+  end
+
+  # 315
+  def self.RPL_ENDOFWHO(nick, target)
+    return sprintf(":%s 315 %s %s :End of /WHO list.", Options.server_name, nick, target)
   end
 
   # 317
@@ -168,6 +192,9 @@ class Numeric
     return sprintf(":%s 329 %s %s %i", Options.server_name, nick, channel.name, channel.create_timestamp)
   end
 
+  # 330 - RPL_WHOISACCOUNT
+  # "is logged in as <NickServ_login>
+
   # 331
   def self.RPL_NOTOPIC(nick, channel)
     return sprintf(":%s 331 %s %s :No topic is set.", Options.server_name, nick, channel)
@@ -193,6 +220,15 @@ class Numeric
   # 351
   def self.RPL_VERSION(nick, server)
     return sprintf(":%s 351 %s %s %s :%s", server, nick, Server::VERSION, server, Server::RELEASE)
+  end
+
+  # 352
+  def self.RPL_WHOREPLY(nick, channel, user, hops)
+    if user.away_message.length > 0
+      return sprintf(":%s 352 %s %s %s %s %s %s G :%i %s", Options.server_name, nick, channel, user.ident, user.hostname, user.server, user.nick, hops, user.gecos)
+    else
+      return sprintf(":%s 352 %s %s %s %s %s %s H :%i %s", Options.server_name, nick, channel, user.ident, user.hostname, user.server, user.nick, hops, user.gecos)
+    end
   end
 
   # 353

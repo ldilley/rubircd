@@ -41,7 +41,7 @@ max_connections: 256
 # If using threading, JRuby is recommended
 # If using CRuby/MRI, event is recommended
 # Note: Only thread is supported at the moment
-io_type: event
+io_type: thread
 
 # Set this option to true to enable debugging or
 # false to disable debugging

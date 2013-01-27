@@ -54,6 +54,7 @@ class Command
     @@command_map["TOPIC"] = Proc.new() {|user, args| handle_topic(user, args)}
     @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
     @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
+    @@command_map["WHO"] = Proc.new() {|user, args| handle_who(user, args)}
     @@command_map["WHOIS"] = Proc.new() {|user, args| handle_whois(user, args)}
   end
 
@@ -595,27 +596,24 @@ class Command
       Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
       return
     end
-    gecos = args[3]
+    ident = args[0]
     # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
     # The 2nd field also matches the 1st (ident string) for certain clients (FYI)
-    if args[0].length <= Limits::IDENTLEN && gecos[0] == ':'
-      if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
-        user.change_ident(args[0])
-        gecos = args[3..-1].join(" ")
+    if ident.length > Limits::IDENTLEN
+      ident = ident[0..Limits::IDENTLEN-1] # truncate ident if it is too long
+    end
+    if ident =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
+      user.change_ident(ident)
+      gecos = args[3..-1].join(" ")
+      if gecos[0] == ':'
         gecos = gecos[1..-1] # remove leading ':'
-        # Truncate gecos field if too long
-        if gecos.length > Limits::GECOSLEN
-          gecos = gecos[0..Limits::GECOSLEN-1]
-        end
-        user.change_gecos(gecos)
-        return
-      else
-        Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident
-        return
       end
+      if gecos.length > Limits::GECOSLEN
+        gecos = gecos[0..Limits::GECOSLEN-1] # truncate gecos if it is too long
+      end
+      user.change_gecos(gecos)
     else
-      # If we arrive here, just truncate the ident and add the gecos anyway? ToDo: ensure ident is still valid...
-      return # ident too long or invalid gecos
+      Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, ident)) # invalid ident
     end
   end
 
@@ -632,11 +630,97 @@ class Command
     end
   end
 
-  # WHOIS (not RFC 1459 compliant yet)
+  # WHO
+  # args[0] = target pattern to match
+  # args[1] = optional 'o' to check for administrators and operators
+  def self.handle_who(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHO"))
+      return
+    end
+    target = args[0]
+    if target[0] == '#' || target[0] == '&'
+      channel = Server.channel_map[target.to_s.upcase]
+      if channel != nil
+        # ToDo: Once MODE is implemented, weed out users who are +i unless they are in the same channel
+        # ToDo: Also calculate hops once server linking support is added
+        if args[1] == 'o'
+          channel.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0))
+            end
+          end
+        else
+          channel.users.each {|u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0))} # target here is the channel
+        end
+        Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
+        return
+      else
+        Network.send(user.nick, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
+        return
+      end
+    else
+      # Target is not a channel, so check nick, gecos, hostname, and server of all users below...
+      # ToDo: Again, need to wait for MODE support to weed out +i users not in the same channel
+      userlist = Array.new
+      pattern = Regexp.escape(target).gsub('\?', '.')
+      pattern = pattern.gsub('\*', '.*?')
+      regx = Regexp.new("^#{pattern}$", Regexp::IGNORECASE)
+      Server.users.each do |u|
+        if u.nick =~ regx
+          userlist.push(u)
+          next unless u == nil
+        elsif u.gecos =~ regx
+          userlist.push(u)
+          next unless u == nil
+        elsif u.hostname =~ regx
+          userlist.push(u)
+          next unless u == nil
+        elsif u.server =~ regx
+          userlist.push(u)
+          next unless u == nil
+        end
+      end
+      same_channel = false
+      userlist.each do |u|
+        same_channel == false
+        if args[1] == 'o'
+          if u.is_admin || u.is_operator
+            user.channels.each do |my_channel|
+              if u.channels.any?{|c| c.casecmp(my_channel) == 0}
+                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+                same_channel = true
+                break
+              end
+            end
+            unless same_channel
+              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, '*', u, 0))
+            end
+          end
+        else
+          user.channels.each do |my_channel|
+            if u.channels.any?{|c| c.casecmp(my_channel) == 0}
+              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+              same_channel = true
+              break
+            end
+          end
+          unless same_channel
+            Network.send(user, Numeric.RPL_WHOREPLY(user.nick, '*', u, 0))
+          end
+        end
+      end
+      Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
+    end
+  end
+
+  # WHOIS
   # args[0] = nick
+  # ToDo: Support wildcards per RFC 1459
   def self.handle_whois(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHOIS"))
+      return
     end
     Server.users.each do |u|
       if u.nick.casecmp(args[0]) == 0
@@ -645,6 +729,16 @@ class Command
           Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u))
         end
         Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u))
+        if u.is_operator && !u.is_admin
+          Network.send(user, Numeric.RPL_WHOISOPERATOR(user.nick, u))
+        end
+        if u.is_admin && !u.is_operator
+          Network.send(user, Numeric.RPL_WHOISADMIN(user.nick, u))
+        end
+        # ToDo: Add is_bot and is_service check later
+        if u.nick_registered
+          Network.send(user, Numeric.RPL_WHOISREGNICK(user.nick, u))
+        end
         if u.away_message.length > 0
           Network.send(user, Numeric.RPL_AWAY(user.nick, u))
         end
@@ -683,7 +777,6 @@ class Command
   # trace
   # userhost
   # users
-  # who
   # whowas
 
   # Custom commands that may get implemented:

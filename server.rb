@@ -30,6 +30,7 @@ class Server
   MODE_SERVER = 's'       # can see server messages such as kills
   MODE_WALLOPS = 'w'      # can receive oper wall messages
   USER_MODES = "abioprsw"
+  STATUS_PREFIXES = "~&@+"
   @@client_count = 0
   @@visible_count = 0
   @@invisible_count = 0

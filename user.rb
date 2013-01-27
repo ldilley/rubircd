@@ -23,11 +23,13 @@ class User
     @nick = nick
     @ident = ident
     @hostname = hostname
+    @server = Options.server_name
     @ip_address = ip_address
     @gecos = gecos
     @is_registered = false
     @is_admin = false
     @is_operator = false
+    @nick_registered = false
     @away_message = ""
     @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
@@ -75,6 +77,6 @@ class User
     @channels.delete(channel)
   end
 
-  attr_reader :nick, :ident, :hostname, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :away_message, :away_since, :thread, :channels, :signon_time
+  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :nick_registered, :away_message, :away_since, :thread, :channels, :signon_time
   attr_accessor :socket, :last_activity, :last_ping
 end
