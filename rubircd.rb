@@ -78,6 +78,11 @@ Server.oper_count = 5
 Server.link_count = 0
 Server.visible_count = 5
 Server.invisible_count = 0
+# FixMe: Calculate local_users, global_users, and max count for each later
+Server.local_users = 0
+Server.global_users = 0
+Server.local_users_max = 0
+Server.global_users_max = 0
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")
@@ -85,10 +90,17 @@ elsif ARGV[0] != "-f"
   exit if fork
   Process.setsid
   exit if fork
-  Dir.chdir "/" 
   STDIN.reopen "/dev/null"
-  STDOUT.reopen "/dev/null", "a" 
-  STDERR.reopen "/dev/null", "a" 
-  Process.daemon()
+  STDOUT.reopen "/dev/null", "a"
+  STDERR.reopen "/dev/null", "a"
+  Process.daemon(nochdir=true, noclose=false)
+  begin
+    pid_file = File.open("rubircd.pid", 'w')
+    pid_file.puts(Process.pid)
+    pid_file.close()
+  rescue
+    Log.write("Unable to write rubircd.pid file!")
+    # FixMe: Should we exit here to make the user fix the PID file problem?
+  end
 end
 Network.start()
