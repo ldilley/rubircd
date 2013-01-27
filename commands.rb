@@ -656,7 +656,7 @@ class Command
         Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
         return
       else
-        Network.send(user.nick, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
         return
       end
     else

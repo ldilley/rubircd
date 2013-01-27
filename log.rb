@@ -20,6 +20,9 @@
 class Log
   def self.write(text)
     begin
+      if Dir["logs"].empty? # this actually returns an array, so we check for emptiness and not nil/true/false
+        Dir.mkdir("logs")
+      end
       log_file = File.open("logs/rubircd.log", 'a')
       log_file.puts("#{Time.now.asctime} -- #{text}")
       log_file.close()
