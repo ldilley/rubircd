@@ -57,6 +57,10 @@ puts("done.")
 print("Registering commands... ")
 Command.register_commands()
 puts("done.")
+if Options.io_type.to_s == "thread"
+  Mod.init_locks()
+  Server.init_locks()
+end
 print("Populating reserved nicknames... ")
 chanserv = User.new("ChanServ", "services", Options.server_name, nil, "Channel Services", nil, nil)
 global = User.new("Global", "services", Options.server_name, nil, "Global Messenger", nil, nil)
@@ -64,6 +68,7 @@ memoserv = User.new("MemoServ", "services", Options.server_name, nil, "Memo Serv
 nickserv = User.new("NickServ", "services", Options.server_name, nil, "Nickname Services", nil, nil)
 operserv = User.new("OperServ", "services", Options.server_name, nil, "Operator Services", nil, nil)
 Server.add_user(chanserv)
+5.times { Server.increment_clients() }
 Server.add_user(global)
 Server.add_user(memoserv)
 Server.add_user(nickserv)
@@ -73,15 +78,12 @@ Log.write("Reserved nicknames populated.")
 Server.init_chanmap()
 Server.channel_count = 0
 Server.start_timestamp = Time.now.asctime
-Server.client_count = 5
 Server.oper_count = 5
 Server.link_count = 0
 Server.visible_count = 5
 Server.invisible_count = 0
-# FixMe: Calculate local_users, global_users, and max count for each later
-Server.local_users = 0
+# FixMe: Calculate global_users and max count later
 Server.global_users = 0
-Server.local_users_max = 0
 Server.global_users_max = 0
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"

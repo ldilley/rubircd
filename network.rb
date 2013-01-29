@@ -84,8 +84,8 @@ class Network
   def self.plain_connections(plain_server)
     loop do
       Thread.start(plain_server.accept()) do |plain_socket|
-        Server.client_count += 1
-        user = Network.register_user(plain_socket, Thread.current)
+        Server.increment_clients()
+        user = Network.register_connection(plain_socket, Thread.current)
         Network.welcome(user)
         Network.main_loop(user)
       end
@@ -96,8 +96,8 @@ class Network
     loop do
       begin
         Thread.start(ssl_server.accept()) do |ssl_socket|
-          Server.client_count += 1
-          user = Network.register_user(ssl_socket, Thread.current)
+          Server.increment_clients()
+          user = Network.register_connection(ssl_socket, Thread.current)
           Network.welcome(user)
           Network.main_loop(user)
         end 
@@ -112,7 +112,7 @@ class Network
     # Handle exception in case socket goes away...
     rescue
       if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-        Server.client_count -= 1
+        Server.decrement_clients()
       end
       if user.thread != nil
         Thread.kill(user.thread)
@@ -124,7 +124,7 @@ class Network
     # Handle exception in case socket goes away...
     rescue
       if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-        Server.client_count -= 1
+        Server.decrement_clients()
       end
       if user.thread != nil
         Thread.kill(user.thread)
@@ -136,7 +136,7 @@ class Network
       user.socket.close()
     rescue
       if Server.remove_user(user)
-        Server.client_count -= 1
+        Server.decrement_clients()
       end
       if user.thread != nil
         Thread.kill(user.thread)
@@ -144,7 +144,8 @@ class Network
     end
   end
 
-  def self.register_user(client_socket, connection_thread)
+  def self.register_connection(client_socket, connection_thread)
+    allowed_commands = ["CAP", "CAPAB", "NICK", "PASS", "QUIT", "USER"]
     sock_domain, client_port, client_hostname, client_ip = client_socket.peeraddr
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     if Server.client_count >= Options.max_connections
@@ -173,7 +174,7 @@ class Network
       end
       input = input.split
       # Do not allow access to any other commands until the client is registered
-      unless input[0].to_s.upcase == "CAP" || input[0].to_s.upcase == "NICK" || input[0].to_s.upcase == "QUIT" || input[0].to_s.upcase == "USER"
+      unless allowed_commands.any? { |c| c.casecmp(input[0].to_s.upcase) == 0 }
         unless Command.command_map[input[0].to_s.upcase] == nil
           Network.send(user, Numeric.ERR_NOTREGISTERED(input[0].to_s.upcase))
           redo
@@ -244,9 +245,9 @@ class Network
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i
       else
-        user.last_activity = Time.now.to_i
+        user.set_last_activity()
       end
       Command.parse(user, input)
     end
   end
-end # class
+end

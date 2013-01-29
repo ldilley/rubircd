@@ -39,10 +39,23 @@ class User
     @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
     @last_ping = nil
+    if Options.io_type.to_s == "thread"
+      # Only create locks for items that can change (ident should not for example)
+      @nick_lock = Mutex.new
+      @hostname_lock = Mutex.new # for vhost support
+      @away_lock = Mutex.new
+      @umodes_lock = Mutex.new
+      @channels_lock = Mutex.new
+      @activity_lock = Mutex.new
+    end
   end
 
   def change_nick(new_nick)
-    @nick = new_nick
+    if Options.io_type.to_s == "thread"
+      @nick_lock.synchronize { @nick = new_nick }
+    else
+      @nick = new_nick
+    end
   end
 
   def change_ident(new_ident)
@@ -50,7 +63,11 @@ class User
   end
 
   def change_hostname(new_hostname)
-    @hostname = new_hostname
+    if Options.io_type.to_s == "thread"
+      @hostname_lock.synchronize { @hostname = new_hostname }
+    else
+      @hostname = new_hostname
+    end
   end
 
   def change_gecos(new_gecos)
@@ -62,21 +79,49 @@ class User
   end
 
   def add_umode(umode)
-    @umodes.push(umode)
+    if Options.io_type.to_s == "thread"
+      @umodes_lock.synchronize { @umodes.push(umode) }
+    else
+      @umodes.push(umode)
+    end
   end
 
   def remove_umode(umode)
-    @umodes.delete(umode)
+    if Options.io_type.to_s == "thread"
+      @umodes_lock.synchronize { @umodes.delete(umode) }
+    else
+      @umodes.delete(umode)
+    end
   end
 
   def add_channel(channel)
-    @channels.push(channel)
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize { @channels.push(channel) }
+    else
+      @channels.push(channel)
+    end
   end
 
   def remove_channel(channel)
-    @channels.delete(channel)
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize { @channels.delete(channel) }
+    else
+      @channels.delete(channel)
+    end
+  end
+
+  def set_last_activity()
+    if Options.io_type.to_s == "thread"
+      @activity_lock.synchronize { @last_activity = Time.now.to_i }
+    else
+      @last_activity = Time.now.to_i
+    end
+  end
+
+  def last_activity
+    @last_activity
   end
 
   attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :nick_registered, :away_message, :away_since, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_activity, :last_ping
+  attr_accessor :socket, :last_ping
 end

@@ -34,28 +34,29 @@ class Command
   end
 
   def self.register_commands()
-    @@command_map["ADMIN"] = Proc.new() {|user, args| handle_admin(user, args)}
-    @@command_map["CAP"] = Proc.new() {|user, args| handle_cap(user, args)}
-    @@command_map["INFO"] = Proc.new() {|user, args| handle_info(user, args)}
-    @@command_map["JOIN"] = Proc.new() {|user, args| handle_join(user, args)}
-    @@command_map["MODE"] = Proc.new() {|user, args| handle_mode(user, args)}
-    @@command_map["MODLIST"] = Proc.new() {|user, args| handle_modlist(user, args)}
-    @@command_map["MODLOAD"] = Proc.new() {|user, args| handle_modload(user, args)}
-    @@command_map["MODUNLOAD"] = Proc.new() {|user, args| handle_modunload(user, args)}
-    @@command_map["MOTD"] = Proc.new() {|user, args| handle_motd(user, args)}
-    @@command_map["NAMES"] = Proc.new() {|user, args| handle_names(user, args)}
-    @@command_map["NICK"] = Proc.new() {|user, args| handle_nick(user, args)}
-    @@command_map["NOTICE"] = Proc.new() {|user, args| handle_notice(user, args)}
-    @@command_map["PART"] = Proc.new() {|user, args| handle_part(user, args)}
-    @@command_map["PING"] = Proc.new() {|user, args| handle_ping(user, args)}
-    @@command_map["PRIVMSG"] = Proc.new() {|user, args| handle_privmsg(user, args)}
-    @@command_map["QUIT"] = Proc.new() {|user, args| handle_quit(user, args)}
-    @@command_map["TIME"] = Proc.new() {|user, args| handle_time(user, args)}
-    @@command_map["TOPIC"] = Proc.new() {|user, args| handle_topic(user, args)}
-    @@command_map["USER"] = Proc.new() {|user, args| handle_user(user, args)}
-    @@command_map["VERSION"] = Proc.new() {|user, args| handle_version(user, args)}
-    @@command_map["WHO"] = Proc.new() {|user, args| handle_who(user, args)}
-    @@command_map["WHOIS"] = Proc.new() {|user, args| handle_whois(user, args)}
+    @@command_map["ADMIN"] = Proc.new()     { |user, args| handle_admin(user, args) }
+    @@command_map["CAP"] = Proc.new()       { |user, args| handle_cap(user, args) }
+    @@command_map["CAPAB"] = Proc.new()     { |user, args| handle_capab(user, args) }
+    @@command_map["INFO"] = Proc.new()      { |user, args| handle_info(user, args) }
+    @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
+    @@command_map["MODE"] = Proc.new()      { |user, args| handle_mode(user, args) }
+    @@command_map["MODLIST"] = Proc.new()   { |user, args| handle_modlist(user, args) }
+    @@command_map["MODLOAD"] = Proc.new()   { |user, args| handle_modload(user, args) }
+    @@command_map["MODUNLOAD"] = Proc.new() { |user, args| handle_modunload(user, args) }
+    @@command_map["MOTD"] = Proc.new()      { |user, args| handle_motd(user, args) }
+    @@command_map["NAMES"] = Proc.new()     { |user, args| handle_names(user, args) }
+    @@command_map["NICK"] = Proc.new()      { |user, args| handle_nick(user, args) }
+    @@command_map["NOTICE"] = Proc.new()    { |user, args| handle_notice(user, args) }
+    @@command_map["PART"] = Proc.new()      { |user, args| handle_part(user, args) }
+    @@command_map["PING"] = Proc.new()      { |user, args| handle_ping(user, args) }
+    @@command_map["PRIVMSG"] = Proc.new()   { |user, args| handle_privmsg(user, args) }
+    @@command_map["QUIT"] = Proc.new()      { |user, args| handle_quit(user, args) }
+    @@command_map["TIME"] = Proc.new()      { |user, args| handle_time(user, args) }
+    @@command_map["TOPIC"] = Proc.new()     { |user, args| handle_topic(user, args) }
+    @@command_map["USER"] = Proc.new()      { |user, args| handle_user(user, args) }
+    @@command_map["VERSION"] = Proc.new()   { |user, args| handle_version(user, args) }
+    @@command_map["WHO"] = Proc.new()       { |user, args| handle_who(user, args) }
+    @@command_map["WHOIS"] = Proc.new()     { |user, args| handle_whois(user, args) }
   end
 
   def self.register_command(command_name, command_proc)
@@ -109,6 +110,13 @@ class Command
     end
   end
 
+  # CAPAB
+  # args[0 ... ?] = stuff from Limits class
+  def self.handle_capab(server, args)
+    # ToDo: Handshaking stuff for server linking
+    #Network.send(server, "CAPAB ...")
+  end
+
   # INFO
   # args[0] = optional server name
   def self.handle_info(user, args)
@@ -154,7 +162,7 @@ class Command
         chan = Server.channel_map[channel.to_s.upcase]
         unless chan == nil
           chan.add_user(user)
-          chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}")}
+          chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}") }
         end
         unless channel_exists
           Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
@@ -186,7 +194,7 @@ class Command
       Network.send(user, "No modules are currently loaded.")
       return
     end
-    Mod.modules.each {|key, mod| Network.send(user, "#{mod.command_name} (#{mod})")}
+    Mod.modules.each { |key, mod| Network.send(user, "#{mod.command_name} (#{mod})") }
   end
 
   # MODLOAD
@@ -289,7 +297,7 @@ class Command
     channel = Server.channel_map[args[0].to_s.upcase]
     unless channel == nil
       # ToDo: Add flag prefixes to nicks later
-      channel.users.each {|u| userlist << u.nick}
+      channel.users.each { |u| userlist << u.nick }
     end
     userlist = userlist[0..-1].join(" ")
     Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))
@@ -395,13 +403,13 @@ class Command
     channels = args[0].split(',')
     channels.each do |channel|
       if channel =~ /[#&+][A-Za-z0-9]/
-        if user.channels.any?{|c| c.casecmp(channel) == 0}
+        if user.channels.any? { |c| c.casecmp(channel) == 0 }
           chan = Server.channel_map[channel.to_s.upcase]
           unless chan == nil
             if part_message.length < 1
-              chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")}
+              chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}") }
             else
-              chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{part_message}")}
+              chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{part_message}") }
             end
             chan.remove_user(user)
             if chan.users.length < 1
@@ -465,7 +473,7 @@ class Command
       user.socket.close()
     rescue
       if Server.remove_user(user)
-        Server.client_count -= 1
+        Server.decrement_clients()
       end
       if user.thread != nil
         Thread.kill(user.thread)
@@ -563,7 +571,7 @@ class Command
       return
     end
     if args[0] =~ /[#&+][A-Za-z0-9]/ && args.length > 1
-      if user.channels.any?{|c| c.casecmp(args[0]) == 0}
+      if user.channels.any? { |c| c.casecmp(args[0]) == 0 }
         chan = Server.channel_map[args[0].to_s.upcase]
         unless chan == nil
           # ToDo: Verify chanop status
@@ -572,7 +580,7 @@ class Command
           else
             chan.set_topic(user, topic)
           end
-          chan.users.each {|u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{topic}")}
+          chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{topic}") }
         end
       else
         Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
@@ -651,7 +659,7 @@ class Command
             end
           end
         else
-          channel.users.each {|u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0))} # target here is the channel
+          channel.users.each { |u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0)) } # target here is the channel
         end
         Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
         return
@@ -687,7 +695,7 @@ class Command
         if args[1] == 'o'
           if u.is_admin || u.is_operator
             user.channels.each do |my_channel|
-              if u.channels.any?{|c| c.casecmp(my_channel) == 0}
+              if u.channels.any? { |c| c.casecmp(my_channel) == 0 }
                 Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                 same_channel = true
                 break
@@ -699,7 +707,7 @@ class Command
           end
         else
           user.channels.each do |my_channel|
-            if u.channels.any?{|c| c.casecmp(my_channel) == 0}
+            if u.channels.any? { |c| c.casecmp(my_channel) == 0 }
               Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
               same_channel = true
               break
@@ -794,11 +802,19 @@ end # class
 class Mod
   @@modules = {}
 
+  def self.init_locks()
+    @@modules_lock = Mutex.new
+  end
+
   def self.modules
     @@modules
   end
 
   def self.add(mod)
-    @@modules[mod.command_name.upcase] = mod
+    if Options.io_type.to_s == "thread"
+      modules_lock.synchronize { @@modules[mod.command_name.upcase] = mod }
+    else
+      @@modules[mod.command_name.upcase] = mod
+    end
   end
 end

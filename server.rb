@@ -43,40 +43,94 @@ class Server
   @@channel_count = 0
   @@link_count = 0
   @@start_timestamp = 0   # holds server startup date and time
-  @@link_count = 0
   @@links = Array.new
   @@users = Array.new
+
+  def self.init_locks()
+    @@client_count_lock = Mutex.new
+    @@channel_count_lock = Mutex.new
+    @@link_count_lock = Mutex.new
+    @@users_lock = Mutex.new
+    @@channels_lock = Mutex.new
+  end
 
   def self.init_chanmap
     @@channel_map = {}
   end
 
+  # ToDo: Pass user as an argument and determine if they are invisible, an operator, unknown, etc.
+  def self.increment_clients()
+    if Options.io_type.to_s == "thread"
+      @@client_count_lock.synchronize do
+        @@client_count += 1
+        @@local_users += 1
+        if @@local_users > @@local_users_max
+          @@local_users_max = @@local_users
+        end
+        # ToDo: Handle global users after server linking is implemented
+      end
+    else
+      @@client_count += 1 
+      @@local_users += 1 
+      if @@local_users > @@local_users_max
+        @@local_users_max = @@local_users
+      end
+    end
+  end
+
+  def self.decrement_clients()
+    if Options.io_type.to_s == "thread"
+      @@client_count_lock.synchronize do
+        @@client_count -= 1 
+        @@local_users -= 1 
+        # ToDo: Handle global users after server linking is implemented
+      end
+    else
+      @@client_count -= 1
+      @@local_users -= 1
+    end
+  end
+
   def self.add_user(user)
-    @@users.push(user)
+    if Options.io_type.to_s == "thread"
+      @@users_lock.synchronize { @@users.push(user) }
+    else
+      @@users.push(user)
+    end
   end
 
   def self.remove_user(user)
-    if @@users.delete(user) != nil
-      return true
+    if Options.io_type.to_s == "thread"
+      @@users_lock.synchronize do
+        if @@users.delete(user) != nil
+          return true
+        else
+          return false
+        end
+      end
     else
-      return false
+      if @@users.delete(user) != nil
+        return true
+      else
+        return false
+      end
     end
   end
 
   def self.add_channel(channel)
-    @@channel_map[channel.name.upcase] = channel
+    if Options.io_type.to_s == "thread"
+      @@channels_lock.synchronize { @@channel_map[channel.name.upcase] = channel }
+    else
+      @@channel_map[channel.name.upcase] = channel
+    end
   end
 
   def self.remove_channel(channel)
-    @@channel_map.delete(channel)
-  end
-
-  def self.users
-    @@users
-  end
-
-  def self.channel_map
-    @@channel_map
+    if Options.io_type.to_s == "thread"
+      @@channels_lock.synchronize { @@channel_map.delete(channel) }
+    else
+      @@channel_map.delete(channel)
+    end
   end
 
   def self.read_motd()
@@ -92,5 +146,29 @@ class Server
     @@motd
   end
 
-  class << self; attr_accessor :client_count, :visible_count, :invisible_count, :unknown_count, :oper_count, :local_users, :global_users, :local_users_max, :global_users_max, :start_timestamp, :channel_count, :link_count end
+  def self.users
+    @@users
+  end
+
+  def self.channel_map
+    @@channel_map
+  end
+
+  def self.client_count
+    if Options.io_type.to_s == "thread"
+      @@client_count
+    else
+      @@client_count
+    end
+  end
+
+  def self.local_users
+    @@local_users
+  end
+
+  def self.local_users_max
+    @@local_users_max
+  end
+
+  class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :start_timestamp, :channel_count, :link_count end
 end

@@ -71,54 +71,118 @@ class Channel
     @users = Array.new
     @founder = founder 
     @create_timestamp = Time.now.to_i
+    if Options.io_type.to_s == "thread"
+      @bans_lock = Mutex.new
+      @modes_lock = Mutex.new
+      @topic_lock = Mutex.new
+      @users_lock = Mutex.new
+    end
   end
 
   def add_ban(creator, mask, reason)
-    ban = Ban.new(creator, mask, reason)
-    @bans.push(ban)
+    if Options.io_type.to_s == "thread"
+      @bans_lock.synchronize do
+        ban = Ban.new(creator, mask, reason)
+        @bans.push(ban)
+      end
+    else
+      ban = Ban.new(creator, mask, reason)
+      @bans.push(ban)
+    end
   end
 
   def remove_ban(mask)
-    @bans.each do |ban|
-      if ban.mask == mask
-        @bans.delete(ban)
-      # else
-      # ToDo: send appropriate RPL
+    if Options.io_type.to_s == "thread"
+      @bans_lock.synchronize do
+        @bans.each do |ban|
+          if ban.mask == mask
+            @bans.delete(ban)
+          # else
+            # ToDo: send appropriate RPL
+          end
+        end
+      end
+    else
+      @bans.each do |ban|
+        if ban.mask == mask
+          @bans.delete(ban)
+        # else
+          # ToDo: send appropriate RPL
+        end
       end
     end
   end
 
   def add_mode(mode)
-    @modes.push(mode)
+    if Options.io_type.to_s == "thread"
+      @modes_lock.synchronize { @modes.push(mode) }
+    else
+      @modes.push(mode)
+    end
   end
 
   def remove_mode(mode)
-    @modes.delete(mode)
+    if Options.io_type.to_s == "thread"
+      @modes_lock.synchronize { @modes.push(mode) }
+    else
+      @modes.delete(mode)
+    end
   end
 
   def clear_modes
-    @modes.clear
+    if Options.io_type.to_s == "thread"
+      @modes_lock.synchronize { @modes.clear() }
+    else
+      @modes.clear()
+    end
   end
 
   def set_topic(user, new_topic)
-    @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
-    @topic = new_topic
-    @topic_time = Time.now.to_i
+    if Options.io_type.to_s == "thread"
+      @topic_lock.synchronize do
+        @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
+        @topic = new_topic
+        @topic_time = Time.now.to_i
+      end
+    else
+      @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
+      @topic = new_topic
+      @topic_time = Time.now.to_i
+    end
   end
 
   def clear_topic()
-    @topic_author = ""
-    @topic = ""
-    @topic_time = ""
+    if Options.io_type.to_s == "thread"
+      @topic_lock.synchronize do
+        @topic_author = ""
+        @topic = ""
+        @topic_time = ""
+      end
+    else
+      @topic_author = ""
+      @topic = ""
+      @topic_time = ""
+    end
   end
 
   def add_user(user)
-    user_ref = user
-    @users.push(user_ref)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize do
+        user_ref = user
+        @users.push(user_ref)
+      end
+    else
+      user_ref = user
+      @users.push(user_ref)
+    end
   end
 
   def remove_user(user)
-    @users.delete(user)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize { @users.delete(user) }
+    else
+      @users.delete(user)
+    end
   end
 
   def users

@@ -20,7 +20,7 @@
 class Module_Test
   def initialize()
     @command_name = "test"
-    @command_proc = Proc.new() {|user, args| on_test(user, args)}
+    @command_proc = Proc.new() { |user, args| on_test(user, args) }
   end
 
   def plugin_init(caller)

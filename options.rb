@@ -186,4 +186,4 @@ class Options
   def self.debug_mode
     return @@debug_mode
   end
-end # class
+end
