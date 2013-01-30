@@ -35,6 +35,7 @@ class Command
 
   def self.register_commands()
     @@command_map["ADMIN"] = Proc.new()     { |user, args| handle_admin(user, args) }
+    @@command_map["AWAY"] = Proc.new()      { |user, args| handle_away(user, args) }
     @@command_map["CAP"] = Proc.new()       { |user, args| handle_cap(user, args) }
     @@command_map["CAPAB"] = Proc.new()     { |user, args| handle_capab(user, args) }
     @@command_map["INFO"] = Proc.new()      { |user, args| handle_info(user, args) }
@@ -47,6 +48,7 @@ class Command
     @@command_map["NAMES"] = Proc.new()     { |user, args| handle_names(user, args) }
     @@command_map["NICK"] = Proc.new()      { |user, args| handle_nick(user, args) }
     @@command_map["NOTICE"] = Proc.new()    { |user, args| handle_notice(user, args) }
+    @@command_map["OPER"] = Proc.new()      { |user, args| handle_oper(user, args) }
     @@command_map["PART"] = Proc.new()      { |user, args| handle_part(user, args) }
     @@command_map["PING"] = Proc.new()      { |user, args| handle_ping(user, args) }
     @@command_map["PRIVMSG"] = Proc.new()   { |user, args| handle_privmsg(user, args) }
@@ -78,6 +80,25 @@ class Command
     #elsif to handle arbitrary servers when others are linked
     else
       Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+    end
+  end
+
+  # AWAY
+  # args[0] = message
+  def self.handle_away(user, args)
+    if args.length < 1
+      user.set_away("")
+      Network.send(user, Numeric.RPL_UNAWAY(user.nick))
+    else
+      message = args[0..-1].join(" ")
+      if message[0] == ':'
+        message = message[1..-1]
+      end
+      if message.length > Limits::AWAYLEN
+        message = message[0..Limits::AWAYLEN-1]
+      end
+      user.set_away(message)
+      Network.send(user, Numeric.RPL_NOWAWAY(user.nick))
     end
   end
 
@@ -315,31 +336,35 @@ class Command
       Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" ")))
       return
     end
+    nickname = args[0..-1].join(" ")
+    if nickname[0] == ':'
+      nickname = nickname[1..-1] # remove leading ':' (fix for Pidgin and possibly other clients)
+    end
     # We must have exactly 2 tokens so ensure the nick is valid
-    if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
+    if nickname =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && nickname.length >=1 && nickname.length <= Limits::NICKLEN
       Server.users.each do |u|
-        if u.nick.casecmp(args[0]) == 0 && user != u
-          Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
+        if u.nick.casecmp(nickname) == 0 && user != u
+          Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", nickname))
           return
         end
       end
-      if user.is_registered && user.nick != args[0]
+      if user.is_registered && user.nick != nickname
         if user.channels.length > 0
           user.channels.each do |c|
             chan = Server.channel_map[c.to_s.upcase]
             chan.users.each do |u|
               if user.nick != u.nick
-                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
+                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{nickname}")
               end
             end
           end
         end
-        Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
+        Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{nickname}")
       end
-      user.change_nick(args[0])
+      user.change_nick(nickname)
       return
     else
-      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0]))
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname))
       return
     end
   end
@@ -380,6 +405,13 @@ class Command
     else
       Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
+  end
+
+  # OPER
+  # args[0] = nick
+  # args[1] = password
+  def self.handle_oper(user, args)
+  # ToDo: Work more on this again tomorrow night... too tired :~(
   end
 
   # PART
@@ -771,7 +803,6 @@ class Command
   # kline
   # links
   # list
-  # oper
   # operwall
   # pass
   # pong

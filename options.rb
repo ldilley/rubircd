@@ -18,6 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require 'yaml'
+require_relative 'user'
 
 class Options
   @@admin_name = nil
@@ -185,5 +186,30 @@ class Options
 
   def self.debug_mode
     return @@debug_mode
+  end
+end
+
+class Opers
+  def self.parse()
+    begin
+      opers_file=YAML.load_file("cfg/opers.yml")
+    rescue
+      puts("failed. Unable to open opers.yml file!")
+      exit!
+    end
+    opers_file.each do |key, value|
+      if key.to_s == "admins"
+        Oper.add_admin_entry(value)
+      end
+      if key.to_s == "opers"
+        Oper.add_oper_entry(value)
+      end
+    end
+    # To read from handle_oper:
+    #Oper.admins.each do |key, value|
+    #  key.each do |k, v|
+    #    puts v
+    #  end
+    #end
   end
 end

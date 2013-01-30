@@ -127,8 +127,15 @@ class Numeric
     return sprintf(":%s 301 %s %s :%s", Options.server_name, nick, user.nick, user.away_message)
   end
 
-  RPL_UNAWAY = "You are no longer marked as being away"                               # 305
-  RPL_NOWAWAY = "You have been marked as being away"                                  # 306
+  # 305
+  def self.RPL_UNAWAY(nick)
+    return sprintf(":%s 305 %s :You are no longer marked as being away", Options.server_name, nick)
+  end
+
+  # 306
+  def self.RPL_NOWAWAY(nick)
+    return sprintf(":%s 306 %s :You have been marked as being away", Options.server_name, nick)
+  end
 
   # 307
   def self.RPL_WHOISREGNICK(nick, user)

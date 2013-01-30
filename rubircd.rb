@@ -38,6 +38,7 @@ print("Parsing options file... ")
 Options.parse()
 puts("done.")
 Log.write("Options loaded.")
+Opers.parse()
 if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
 end

@@ -67,10 +67,11 @@ class Network
         exit!
       end
     end
+    #connection_check_thread = Thread.new() { Network.connection_checker() }
     if Options.io_type.to_s == "thread"
-      plain_thread = Thread.new() {Network.plain_connections(plain_server)}
+      plain_thread = Thread.new() { Network.plain_connections(plain_server) }
       unless Options.ssl_port == nil
-        ssl_thread = Thread.new() {Network.ssl_connections(ssl_server)}
+        ssl_thread = Thread.new() { Network.ssl_connections(ssl_server) }
       end
       # Wait until threads complete before exiting program
       plain_thread.join()
@@ -81,6 +82,20 @@ class Network
     #end
   end # method
 
+  # Future periodic ping checker
+  #def self.connection_checker()
+  #  loop do
+  #    Server.users.each do |u|
+  #      unless u.thread == nil
+  #        if u.thread.status == "sleep"
+  #          Thread.kill(u.thread)
+  #        end
+  #      end
+  #    end
+  #    sleep 10
+  #  end
+  #end
+
   def self.plain_connections(plain_server)
     loop do
       Thread.start(plain_server.accept()) do |plain_socket|
@@ -90,6 +105,10 @@ class Network
         Network.main_loop(user)
       end
     end
+    rescue SocketError => e
+      puts "Open file descriptor limit reached!"
+      # We likely cannot write to the log file in this state, but try anyway...
+      Log.write("Open file descriptor limit reached!")
   end
 
   def self.ssl_connections(ssl_server)
@@ -101,6 +120,10 @@ class Network
           Network.welcome(user)
           Network.main_loop(user)
         end 
+      rescue SocketError => e
+        puts "Open file descriptor limit reached!"
+        # We likely cannot write to the log file in this state, but try anyway...
+        Log.write("Open file descriptor limit reached!")
       rescue
         # Do nothing here since a plain-text connection likely came in... just continue on with the next connection
       end
@@ -108,18 +131,27 @@ class Network
   end
 
   def self.recv(user)
-    return user.socket.gets("\r\n").chomp("\r\n")
+    data = user.socket.gets("\r\n").chomp("\r\n")
+    if data.length > Limits::MAXMSG
+      data = data[0..Limits::MAXMSG-1]
+    end
+    return data
     # Handle exception in case socket goes away...
     rescue
-      if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-        Server.decrement_clients()
-      end
-      if user.thread != nil
-        Thread.kill(user.thread)
-      end
+      # Testing close() method instead of original code below for a bit...
+      Network.close(user)
+      #if Server.remove_user(user) # this will affect WHOWAS -- work around this later
+      #  Server.decrement_clients()
+      #end
+      #if user.thread != nil
+      #  Thread.kill(user.thread)
+      #end
   end
 
   def self.send(user, data)
+    if data.length > Limits::MAXMSG
+      data = data[0..Limits::MAXMSG-1]
+    end
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
     rescue
@@ -135,10 +167,18 @@ class Network
     begin
       user.socket.close()
     rescue
+      #
+    ensure
+      if user.channels.length > 0
+        user.channels.each do |c|
+          chan = Server.channel_map[c.to_s.upcase]
+          chan.remove_user(user)
+        end
+      end
       if Server.remove_user(user)
         Server.decrement_clients()
       end
-      if user.thread != nil
+      unless user.thread == nil
         Thread.kill(user.thread)
       end
     end
@@ -236,6 +276,9 @@ class Network
   def self.main_loop(user)
     loop do
       input = Network.recv(user)
+      if input == nil
+        return
+      end
       if input.empty?
         redo
       end

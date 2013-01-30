@@ -78,6 +78,30 @@ class User
     @is_registered = true
   end
 
+  def set_away(message)
+    if Options.io_type.to_s == "thread"
+      @away_lock.synchronize do
+        @away_message = message
+        if message.length < 1
+          @away_since = ""
+        else
+          @away_since = Time.now.to_i
+        end
+      end
+    else
+      @away_message = message
+      @away_since = Time.now.to_i
+    end
+  end
+
+  def away_message
+    @away_message
+  end
+
+  def away_since
+    @away_since
+  end
+
   def add_umode(umode)
     if Options.io_type.to_s == "thread"
       @umodes_lock.synchronize { @umodes.push(umode) }
@@ -122,6 +146,27 @@ class User
     @last_activity
   end
 
-  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :nick_registered, :away_message, :away_since, :thread, :channels, :signon_time
+  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :nick_registered, :thread, :channels, :signon_time
   attr_accessor :socket, :last_ping
+end
+
+class Oper
+  @@admins = []
+  @@opers = []
+
+  def self.add_admin_entry(source_array)
+    @@admins = Marshal.load(Marshal.dump(source_array))
+  end
+
+  def self.add_oper_entry(source_array)
+    @@opers = Marshal.load(Marshal.dump(source_array))
+  end
+
+  def self.admins
+    @@admins
+  end
+
+  def self.opers
+    @@opers
+  end
 end

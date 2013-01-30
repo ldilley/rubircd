@@ -1,0 +1,18 @@
+admins:
+  - nick: lloyd
+    hash: secret
+    host: "*.chatcube.net"
+
+  - nick: Jimbo
+    hash: password
+    host: "*.com"
+
+
+opers:
+  - nick: foo
+    hash: bar
+    host: "*"
+
+  - nick: John
+    hash: Doe
+    host: "127.0.0.1"
