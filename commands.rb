@@ -17,6 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require 'digest/sha2'
 require_relative 'numerics'
 require_relative 'options'
 require_relative 'server'
@@ -411,7 +412,74 @@ class Command
   # args[0] = nick
   # args[1] = password
   def self.handle_oper(user, args)
-  # ToDo: Work more on this again tomorrow night... too tired :~(
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "OPER"))
+      return
+    end
+    admin_nick = nil
+    oper_nick = nil
+    Server.admins.each do |admin|
+      if admin.nick.casecmp(args[0]) == 0
+        admin_nick = admin.nick
+      end
+    end
+    Server.opers.each do |oper|
+      if oper.nick.casecmp(args[0]) == 0
+        oper_nick = oper.nick
+      end
+    end
+    if admin_nick == nil && oper_nick == nil
+      Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+      return
+    end
+    hash = Digest::SHA2.new(256) << args[1]
+    unless admin_nick == nil
+      Server.admins.each do |admin|
+        if admin.nick == admin_nick && admin.hash == hash.to_s
+          if admin.host == nil || admin.host == "" || admin.host == '*'
+            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            user.set_admin()
+            return
+          end
+          hostmask = admin.host.to_s.gsub('\*', '.*?')
+          regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
+          if user.hostname =~ regx
+            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            user.set_admin()
+            return
+          else
+            Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+            return
+          end
+        else
+          Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+          return
+        end
+      end
+    end
+    unless oper_nick == nil
+      Server.opers.each do |oper|
+        if oper.nick == oper_nick && oper.hash == hash.to_s
+          if oper.host == nil || oper.host == "" || oper.host == '*'
+            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            user.set_operator()
+            return
+          end
+          hostmask = oper.host.to_s.gsub('\*', '.*?')
+          regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
+          if user.hostname =~ regx
+            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            user.set_operator()
+            return
+          else
+            Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+            return
+          end
+        else
+          Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+        end
+      end
+    end
   end
 
   # PART

@@ -1,18 +1,27 @@
+# nick cannot be empty!
+# hash cannot be empty!
+# host is optional. Set to "", blank, or * for any host.
+# To create a password hash, use your Ruby interpreter to run the following:
+# ruby tools/create_password.rb <plaintext_password>
+# or
+# jruby tools/create_password.rb <plaintext_password>
+# This will generate a SHA256 hash which should be pretty solid.
+
 admins:
   - nick: lloyd
-    hash: secret
+    hash: 2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b # secret
     host: "*.chatcube.net"
 
   - nick: Jimbo
-    hash: password
+    hash: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8 # password
     host: "*.com"
 
 
 opers:
   - nick: foo
-    hash: bar
-    host: "*"
+    hash: fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9 # bar
+    host: "*"                                                              # equivalent to no host
 
   - nick: John
-    hash: Doe
+    hash: fd53ef835b15485572a6e82cf470dcb41fd218ae5751ab7531c956a2a6bcd3c7 # Doe
     host: "127.0.0.1"

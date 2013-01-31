@@ -273,7 +273,11 @@ class Numeric
     return sprintf(":%s 376 %s :End of /MOTD command.", Options.server_name, nick)
   end
 
-  RPL_YOUAREOPER = "You are now an IRC Operator"                                      # 381
+  # 381
+  def self.RPL_YOUAREOPER(nick)
+    return sprintf(":%s 381 %s :You are now an IRC Operator", Options.server_name, nick)
+  end
+
   RPL_REHASHING = "Rehashing"                                                         # 382
 
   # 391
@@ -378,4 +382,9 @@ class Numeric
   ERR_BADCHANNELKEY = "Cannot join channel (+k)"                                      # 475
   ERR_NOPRIVILEGES = "Permission Denied- You're not an IRC operator"                  # 481
   ERR_CHANOPRIVSNEEDED = "You're not channel operator"                                # 482
+
+  # 491
+  def self.ERR_NOOPERHOST(nick)
+    return sprintf(":%s 491 %s :Invalid credentials", Options.server_name, nick)
+  end
 end

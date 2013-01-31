@@ -45,6 +45,8 @@ class Server
   @@start_timestamp = 0   # holds server startup date and time
   @@links = Array.new
   @@users = Array.new
+  @@admins = Array.new
+  @@opers = Array.new
 
   def self.init_locks()
     @@client_count_lock = Mutex.new
@@ -133,6 +135,14 @@ class Server
     end
   end
 
+  def self.add_admin(admin)
+    @@admins.push(admin)
+  end
+
+  def self.add_oper(oper)
+    @@opers.push(oper)
+  end
+
   def self.read_motd()
     begin
       @@motd = IO.readlines("cfg/motd.txt")
@@ -168,6 +178,14 @@ class Server
 
   def self.local_users_max
     @@local_users_max
+  end
+
+  def self.admins
+    @@admins
+  end
+
+  def self.opers
+    @@opers
   end
 
   class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :start_timestamp, :channel_count, :link_count end

@@ -74,8 +74,16 @@ class User
     @gecos = new_gecos
   end
 
-  def set_registered
+  def set_registered()
     @is_registered = true
+  end
+
+  def set_admin()
+    @is_admin = true
+  end
+
+  def set_operator()
+    @is_operator = true
   end
 
   def set_away(message)
@@ -151,22 +159,21 @@ class User
 end
 
 class Oper
-  @@admins = []
-  @@opers = []
-
-  def self.add_admin_entry(source_array)
-    @@admins = Marshal.load(Marshal.dump(source_array))
+  def initialize(nick, hash, host)
+    @nick = nick
+    @hash = hash
+    @host = host
   end
 
-  def self.add_oper_entry(source_array)
-    @@opers = Marshal.load(Marshal.dump(source_array))
+  def nick
+    @nick
   end
 
-  def self.admins
-    @@admins
+  def hash
+    @hash
   end
 
-  def self.opers
-    @@opers
+  def host
+    @host
   end
 end

@@ -194,22 +194,35 @@ class Opers
     begin
       opers_file=YAML.load_file("cfg/opers.yml")
     rescue
-      puts("failed. Unable to open opers.yml file!")
-      exit!
+      Log.write("Unable to open opers.yml file!")
+      return
     end
     opers_file.each do |key, value|
       if key.to_s == "admins"
-        Oper.add_admin_entry(value)
+        value.each do |subkey|
+          if subkey["nick"] == nil || subkey["nick"] == ""
+            Log.write("Invalid nick in opers.yml file!")
+          end
+          if subkey["hash"] == nil || subkey["hash"] == "" || subkey["hash"].length < 32
+            Log.write("Invalid hash in opers.yml file!")
+          end
+          admin = Oper.new(subkey["nick"], subkey["hash"], subkey["host"])
+          Server.add_admin(admin)
+        end
       end
       if key.to_s == "opers"
-        Oper.add_oper_entry(value)
+        value.each do |subkey|
+          if subkey["nick"] == nil || subkey["nick"] == ""
+            Log.write("Invalid nick in opers.yml file!")
+          end
+          if subkey["hash"] == nil || subkey["hash"] == "" || subkey["hash"].length < 32
+            Log.write("Invalid hash in opers.yml file!")
+          end
+          oper = Oper.new(subkey["nick"], subkey["hash"], subkey["host"])
+          Server.add_oper(oper)
+        end
       end
     end
-    # To read from handle_oper:
-    #Oper.admins.each do |key, value|
-    #  key.each do |k, v|
-    #    puts v
-    #  end
-    #end
+    Log.write("Admin/Oper entries loaded.")
   end
 end
