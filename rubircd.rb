@@ -86,6 +86,7 @@ Server.invisible_count = 0
 # FixMe: Calculate global_users and max count later
 Server.global_users = 0
 Server.global_users_max = 0
+Modules.parse()
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")

@@ -189,6 +189,20 @@ class Options
   end
 end
 
+class Modules
+  def self.parse()
+    begin
+      modules_file=YAML.load_file("cfg/modules.yml")
+    rescue
+      Log.write("Unable to open modules.yml file!")
+      return
+    end
+    modules_file.each do |key, values|
+      values.each { |module_name| Command.handle_modload(nil, module_name) }
+    end
+  end
+end
+
 class Opers
   def self.parse()
     begin

@@ -223,6 +223,9 @@ class Command
   # args[0] = module
   def self.handle_modload(user, args)
     # ToDo: if check for admin privileges
+    if args == nil
+      return
+    end
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODLOAD"))
       return
@@ -230,26 +233,44 @@ class Command
     if Mod.modules == nil
       Mod.modules = {}
     end
+    if args.is_a? String
+      mod_name = args
+    else
+      mod_name = args[0]
+    end
+    if mod_name.length >= 4
+      if mod_name[-3, 3] == ".rb"
+        mod_name = mod_name[0..-4] # remove .rb extension if the user included it in the module name
+      end
+    end  
     begin
-      new_module = eval(File.read("modules/#{args[0]}.rb"))
+      new_module = eval(File.read("modules/#{mod_name}.rb"))
       new_module.plugin_init(Command)
     rescue Errno::ENOENT => e
-      Network.send(user, "Failed to load module: #{args[0]}")
-      Log.write("Failed to load module: #{args[0]}")
+      unless user == nil # called during startup for module autoload, so don't send message down the socket
+        Network.send(user, "Failed to load module: #{mod_name}")
+      end
+      Log.write("Failed to load module: #{mod_name}")
       Log.write(e)
     rescue LoadError => e
-      Network.send(user, "Failed to load module: #{args[0]}")
-      Log.write("Failed to load module: #{args[0]}")
+      unless user == nil # called during startup for module autoload, so don't send message down the socket
+        Network.send(user, "Failed to load module: #{mod_name}")
+      end
+      Log.write("Failed to load module: #{mod_name}")
       Log.write(e)
     else
-      mod_exists = Mod.modules[args[0].to_s.upcase]
+      mod_exists = Mod.modules[mod_name.to_s.upcase]
       unless mod_exists == nil
-        Network.send(user, "Module already loaded: #{args[0]} (#{mod_exists})")
-        return
+        unless user == nil # called during startup for module autoload, so don't send message down the socket
+          Network.send(user, "Module already loaded: #{mod_name} (#{mod_exists})")
+          return
+        end
       end
       Mod.add(new_module)
-      Network.send(user, "Successfully loaded module: #{args[0]} (#{new_module})")
-      Log.write("Successfully loaded module: #{args[0]} (#{new_module})")
+      unless user == nil # called during startup for module autoload, so don't send message down the socket
+        Network.send(user, "Successfully loaded module: #{mod_name} (#{new_module})")
+      end
+      Log.write("Successfully loaded module: #{mod_name} (#{new_module})")
     end
   end
 
@@ -911,7 +932,7 @@ class Mod
 
   def self.add(mod)
     if Options.io_type.to_s == "thread"
-      modules_lock.synchronize { @@modules[mod.command_name.upcase] = mod }
+      @@modules_lock.synchronize { @@modules[mod.command_name.upcase] = mod }
     else
       @@modules[mod.command_name.upcase] = mod
     end

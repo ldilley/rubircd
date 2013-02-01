@@ -1,0 +1,7 @@
+# Add the modules you wish to load at start below
+# Omit the ".rb" extension (module name is base name of script)
+# You can comment out unwanted modules with '#'
+modules:
+  - fjoin # force join
+  - fnick # force nick
+# - test  # sample module
