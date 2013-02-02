@@ -171,7 +171,7 @@ class Command
         return
       end
       channel_exists = false
-      if channel =~ /[#&+][A-Za-z0-9]/
+      if channel =~ /[#&][A-Za-z0-9]/
         channel_object = Channel.new(channel, user.nick)
         if Server.channel_map[channel.to_s.upcase] != nil
           channel_exists = true
@@ -199,10 +199,106 @@ class Command
   # MODE
   # args[0] = target channel or nick
   # args[1] = mode(s)
-  # args[2] = ban mask, limit, or key
+  # args[2] = nick, ban mask, limit, or key
+  # ToDo: Check if user has chanop, founder, or admin privs before setting channel modes
+  #       Also allow more than one 'b' and/or 'o' mode at once up to MAXTARGETS/PARAMS? and limit the rest
+  #       Add flag prefixes somewhere upon setting the appropriate modes
+  #       Handle bans, limit, and key
+  #       Handle umodes
   def self.handle_mode(user, args)
-    # If MODE is issued with a valid channel name and no other args, also send numeric 329
-    Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :MODE support not implemented yet!")
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODE"))
+      return
+    end
+    target = args[0]
+    if args.length >= 2
+      mode_string = args[1]
+      modes_to_add = ""
+      modes_to_remove = ""
+      was_add = true
+      args[1].each_char do |char|
+        if char == '+'
+          was_add = true
+          next unless char == nil
+        end
+        if char == '-'
+          was_add = false
+          next unless char == nil
+        end
+        if was_add
+          modes_to_add << char
+        else
+          modes_to_remove << char
+        end
+      end
+      final_add_modes = ""
+      final_remove_modes = ""
+    end
+    if target[0] == '#' || target[0] == '&'
+      channel = Server.channel_map[target.to_s.upcase]
+      unless channel == nil
+        if args.length == 1
+          Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join("")))
+          Network.send(user, Numeric.RPL_CREATIONTIME(user.nick, channel))
+          return
+        end
+        if modes_to_add.length == 0 && modes_to_remove.length == 0
+          return
+        end
+        user.channels.each do |c|
+          unless channel.name.casecmp(c) == 0
+            Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target[0]))
+            return
+          end
+        end
+        unless modes_to_add == nil
+          modes_to_add.each_char do |mode|
+            if Channel::CHANNEL_MODES.include?(mode.to_s.downcase)
+              unless channel.modes.include?(mode.to_s.downcase)
+                final_add_modes << mode.to_s.downcase
+              end
+            else
+              Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
+            end
+          end
+        end
+        unless modes_to_remove == nil
+          modes_to_remove.each_char do |mode|
+            if Channel::CHANNEL_MODES.include?(mode.to_s.downcase)
+              if channel.modes.include?(mode.to_s.downcase)
+                final_remove_modes << mode.to_s.downcase
+              end
+            else
+              Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
+            end
+          end
+        end
+        unless final_add_modes.length == 0
+          final_add_modes.each_char do |mode|
+            channel.add_mode(mode)
+          end
+        end
+        unless final_remove_modes.length == 0
+          final_remove_modes.each_char do |mode|
+            channel.remove_mode(mode)
+          end
+        end
+        channel.users.each do |u|
+          if final_add_modes.length == 0 && final_remove_modes.length == 0
+            return
+          elsif final_add_modes.length > 0 && final_remove_modes.length > 0
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}-#{final_remove_modes}")
+          elsif final_add_modes.length > 0 && final_remove_modes.length == 0
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}")
+          elsif final_add_modes.length == 0 && final_remove_modes.length > 0
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} -#{final_remove_modes}")
+          end
+        end
+      else
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target[0]))
+        return
+      end
+    end
   end
 
   # MODLIST

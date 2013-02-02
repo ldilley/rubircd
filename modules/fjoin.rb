@@ -39,4 +39,4 @@ class Module_FJoin
     # ToDo: Add command
   end
 end
-Module_Fjoin.new
+Module_FJoin.new

@@ -39,4 +39,4 @@ class Module_FNick
     # ToDo: Add command
   end
 end
-Module_Fnick.new
+Module_FNick.new

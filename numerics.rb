@@ -187,7 +187,10 @@ class Numeric
     return sprintf(":%s 319 %s %s :%s", Options.server_name, nick, user.nick, channels)
   end
 
-  RPL_CHANNELMODEIS = ""  # 324 -- handle in Command class later
+  # 324
+  def self.RPL_CHANNELMODEIS(nick, channel, modes)
+    return sprintf(":%s 324 %s %s +%s", Options.server_name, nick, channel, modes)
+  end
 
   # 328
   def self.RPL_CHANNEL_URL(nick, channel)
@@ -377,6 +380,12 @@ class Numeric
   end
 
   ERR_CHANNELISFULL = "Cannot join channel (+l)"                                      # 471
+
+  # 472
+  def self.ERR_UNKNOWNMODE(nick, mode)
+    return sprintf(":%s 472 %s %c :is unknown mode char to me", Options.server_name, nick, mode)
+  end
+
   ERR_INVITEONLYCHAN = "Cannot join channel (+i)"                                     # 473
   ERR_BANNEDFROMCHAN = "Cannot join channel (+b)"                                     # 474
   ERR_BADCHANNELKEY = "Cannot join channel (+k)"                                      # 475

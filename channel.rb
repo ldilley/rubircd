@@ -189,5 +189,13 @@ class Channel
     @users
   end
 
+  def modes
+    @modes
+  end
+
+  def create_timestamp
+    @create_timestamp
+  end
+
   attr_reader :name, :topic, :topic_author, :topic_time, :url, :founder
 end
