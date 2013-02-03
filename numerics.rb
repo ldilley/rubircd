@@ -251,6 +251,16 @@ class Numeric
    return sprintf(":%s 366 %s %s :End of /NAMES list.", Options.server_name, nick, channel)
   end
 
+  # 367
+  def self.RPL_BANLIST(nick, channel, ban_mask, create_timestamp)
+    return sprintf(":%s 367 %s %s %s :%s", Options.server_name, nick, channel, ban_mask, create_timestamp)
+  end
+
+  # 368
+  def self.RPL_ENDOFBANLIST(nick, channel)
+    return sprintf(":%s 368 %s %s :End of channel ban list", Options.server_name, nick, channel)
+  end
+
   # 371
   def self.RPL_INFO(nick, text)
     return sprintf(":%s 371 %s :%s", Options.server_name, nick, text)

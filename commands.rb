@@ -199,9 +199,9 @@ class Command
   # MODE
   # args[0] = target channel or nick
   # args[1] = mode(s)
-  # args[2] = nick, ban mask, limit, or key
+  # args[2..-1] = nick, ban mask, limit, and/or key
   # ToDo: Check if user has chanop, founder, or admin privs before setting channel modes
-  #       Also allow more than one 'b' and/or 'o' mode at once up to MAXTARGETS/PARAMS? and limit the rest
+  #       Also allow more than one 'b' and/or 'o' mode at once up to MAXPARAMS (3?) and limit the rest
   #       Add flag prefixes somewhere upon setting the appropriate modes
   #       Handle bans, limit, and key
   #       Handle umodes
@@ -245,6 +245,13 @@ class Command
         if modes_to_add.length == 0 && modes_to_remove.length == 0
           return
         end
+        if modes_to_add.length == 1 && modes_to_add == 'b'
+          channel.bans.each do |ban|
+            Network.send(user, Numeric.RPL_BANLIST(user.nick, channel.name, ban.creator, ban.create_timestamp))
+          end
+          Network.send(user, Numeric.RPL_ENDOFBANLIST(user.nick, channel.name))
+          return
+        end
         user.channels.each do |c|
           unless channel.name.casecmp(c) == 0
             Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target[0]))
@@ -253,9 +260,9 @@ class Command
         end
         unless modes_to_add == nil
           modes_to_add.each_char do |mode|
-            if Channel::CHANNEL_MODES.include?(mode.to_s.downcase)
-              unless channel.modes.include?(mode.to_s.downcase)
-                final_add_modes << mode.to_s.downcase
+            if Channel::CHANNEL_MODES.include?(mode)
+              unless channel.modes.include?(mode)
+                final_add_modes << mode
               end
             else
               Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
@@ -264,9 +271,9 @@ class Command
         end
         unless modes_to_remove == nil
           modes_to_remove.each_char do |mode|
-            if Channel::CHANNEL_MODES.include?(mode.to_s.downcase)
-              if channel.modes.include?(mode.to_s.downcase)
-                final_remove_modes << mode.to_s.downcase
+            if Channel::CHANNEL_MODES.include?(mode)
+              if channel.modes.include?(mode)
+                final_remove_modes << mode
               end
             else
               Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
@@ -274,13 +281,45 @@ class Command
           end
         end
         unless final_add_modes.length == 0
+          # Remove duplicate modes that take no arguments
+          # Also remove modes that are given when no arguments to them are provided
+          modelist = ""
+          final_add_modes.each_char do |mode|
+            unless modelist.include?(mode)
+              modelist << mode
+            end
+            if modelist =~ /[filkmnprst]/
+              final_add_modes.delete(mode)
+            end
+            if args[2] == nil
+              if modelist =~ /[abflkov]/
+                final_add_modes.delete(mode)
+              end
+            end
+          end
+          final_add_modes = modelist
           final_add_modes.each_char do |mode|
             channel.add_mode(mode)
           end
         end
         unless final_remove_modes.length == 0
+          modelist = ""
           final_remove_modes.each_char do |mode|
-            channel.remove_mode(mode)
+            unless modelist.include?(mode)
+              modelist << mode
+            end
+            if modelist =~ /[filkmnprst]/
+              final_remove_modes.delete(mode)
+            end
+            if args[2] == nil
+              if modelist =~ /[abflkov]/
+                final_remove_modes.delete(mode)
+              end
+            end
+          end
+          final_remove_modes = modelist
+          final_remove_modes.each_char do |mode|
+            channel.add_mode(mode)
           end
         end
         channel.users.each do |u|

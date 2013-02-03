@@ -25,7 +25,7 @@ class Ban
     @create_timestamp = Time.now.to_i
   end
 
-  attr_reader :mask  # This is used to locate the unique mask for ban removal
+  attr_reader :creator, :mask, :reason, :create_timestamp
 end
 
 class Channel
@@ -123,7 +123,7 @@ class Channel
 
   def remove_mode(mode)
     if Options.io_type.to_s == "thread"
-      @modes_lock.synchronize { @modes.push(mode) }
+      @modes_lock.synchronize { @modes.delete(mode) }
     else
       @modes.delete(mode)
     end
@@ -183,6 +183,10 @@ class Channel
     else
       @users.delete(user)
     end
+  end
+
+  def bans
+    @bans
   end
 
   def users
