@@ -204,7 +204,6 @@ class Command
   #       Also allow more than one 'b' and/or 'o' mode at once up to MAXPARAMS (3?) and limit the rest
   #       Add flag prefixes somewhere upon setting the appropriate modes
   #       Handle bans, limit, and key
-  #       Handle umodes
   def self.handle_mode(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODE"))
@@ -336,6 +335,87 @@ class Command
       else
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target[0]))
         return
+      end
+    else
+      if args[0] == user.nick && args[1] == nil
+        Network.send(user, Numeric.RPL_UMODEIS(user.nick, user.umodes.join("")))
+        return
+      end
+      if args[0] == user.nick && args[1] != nil
+        unless modes_to_add == nil
+          modes_to_add.each_char do |mode|
+            if Server::USER_MODES.include?(mode)
+              unless user.umodes.include?(mode)
+                final_add_modes << mode
+              end
+            else
+              Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
+            end
+          end
+        end
+        unless modes_to_remove == nil
+          modes_to_remove.each_char do |mode|
+            if Server::USER_MODES.include?(mode)
+              if user.umodes.include?(mode)
+                final_remove_modes << mode
+              end
+            else
+              Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
+            end
+          end
+        end
+        unless final_add_modes.length == 0
+          # Remove duplicate + umodes
+          modelist = ""
+          final_add_modes.each_char do |mode|
+            unless modelist.include?(mode)
+              modelist << mode
+            end
+            if modelist =~ /[#{Server::USER_MODES}]/
+              final_add_modes.delete(mode)
+            end
+          end
+          final_add_modes = modelist
+          final_add_modes.each_char do |mode|
+            user.add_umode(mode)
+          end
+        end
+        # Remove duplicate - umodes
+        unless final_remove_modes.length == 0
+          modelist = ""
+          final_remove_modes.each_char do |mode|
+            unless modelist.include?(mode)
+              modelist << mode
+            end
+            if modelist =~ /[#{Server::USER_MODES}]/
+              final_remove_modes.delete(mode)
+            end
+          end
+          final_remove_modes = modelist
+          final_remove_modes.each_char do |mode|
+            user.remove_umode(mode)
+          end
+        end
+        if final_add_modes.length == 0 && final_remove_modes.length == 0
+          return
+        elsif final_add_modes.length > 0 && final_remove_modes.length > 0
+          Network.send(user, ":#{user.nick} MODE #{user.nick} +#{final_add_modes}-#{final_remove_modes}")
+        elsif final_add_modes.length > 0 && final_remove_modes.length == 0
+          Network.send(user, ":#{user.nick} MODE #{user.nick} +#{final_add_modes}")
+        elsif final_add_modes.length == 0 && final_remove_modes.length > 0
+          Network.send(user, ":#{user.nick} MODE #{user.nick} -#{final_remove_modes}")
+        end
+        return
+      end
+      if args[0] != user.nick
+        Server.users.each do |u|
+          if u.nick.casecmp(args[0]) == 0 && args[1] == nil
+            Network.send(user, Numeric.ERR_USERSDONTMATCH1(user.nick))
+          elsif u.nick.casecmp(args[0]) == 0 && args[1] != nil
+            Network.send(user, Numeric.ERR_USERSDONTMATCH2(user.nick))
+          end
+        end
+        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
       end
     end
   end

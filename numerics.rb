@@ -64,7 +64,10 @@ class Numeric
     end
   end
 
-  RPL_UMODEIS = "" # 221 -- handle in Command class later
+  # 221
+  def self.RPL_UMODEIS(nick, mode)
+    return sprintf(":%s 221 %s +%s", Options.server_name, nick, mode)
+  end
 
   # 251
   def self.RPL_LUSERCLIENT(nick)
@@ -405,5 +408,15 @@ class Numeric
   # 491
   def self.ERR_NOOPERHOST(nick)
     return sprintf(":%s 491 %s :Invalid credentials", Options.server_name, nick)
+  end
+
+  # 502.1
+  def self.ERR_USERSDONTMATCH1(nick) 
+    return sprintf(":%s 502 %s :Can't view modes for other users", Options.server_name, nick)
+  end
+
+  # 502.2
+  def self.ERR_USERSDONTMATCH2(nick)
+    return sprintf(":%s 502 %s :Can't change mode for other users", Options.server_name, nick)
   end
 end

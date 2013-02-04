@@ -150,6 +150,10 @@ class User
     end
   end
 
+  def umodes
+    @umodes
+  end
+
   def last_activity
     @last_activity
   end
