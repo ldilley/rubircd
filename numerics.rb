@@ -55,12 +55,12 @@ class Numeric
   # 005.2
   def self.RPL_ISUPPORT2(nick, server)
     if Options.ssl_port != nil
-      return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s SSL=%s:%i STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
-                     Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Options.server_name, Options.ssl_port, Server::STATUS_PREFIXES,
-                     Limits::TOPICLEN)
+      return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s SSL=%s:%i STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
+                     Limits::MAXTARGETS, Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Options.server_name, Options.ssl_port, 
+                     Server::STATUS_PREFIXES, Limits::TOPICLEN)
     else
-      return sprintf(":%s 005 %s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
-                     Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Server::STATUS_PREFIXES, Limits::TOPICLEN)
+      return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
+                     Limits::MAXTARGETS, Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Server::STATUS_PREFIXES, Limits::TOPICLEN)
     end
   end
 
@@ -191,8 +191,14 @@ class Numeric
   end
 
   # 324
-  def self.RPL_CHANNELMODEIS(nick, channel, modes)
-    return sprintf(":%s 324 %s %s +%s", Options.server_name, nick, channel, modes)
+  def self.RPL_CHANNELMODEIS(nick, channel, modes, limit, key)
+    if limit == nil && key != nil
+      return sprintf(":%s 324 %s %s +%s %s", Options.server_name, nick, channel, modes, key)
+    elsif key != nil && key == nil
+      return sprintf(":%s 324 %s %s +%s %i", Options.server_name, nick, channel, modes, limit)
+    else
+      return sprintf(":%s 324 %s %s +%s %i %s", Options.server_name, nick, channel, modes, limit, key)
+    end
   end
 
   # 328
@@ -385,6 +391,11 @@ class Numeric
   # 462
   def self.ERR_ALREADYREGISTERED(nick)
     return sprintf(":%s 462 %s :You may not reregister", Options.server_name, nick)
+  end
+
+  # 467
+  def self.ERR_KEYSET(nick, channel)
+    return sprintf(":%s 467 %s %s :Channel key already set", Options.server_name, nick, channel)
   end
 
   # 468

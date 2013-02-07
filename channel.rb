@@ -52,6 +52,8 @@ class Channel
   ISUPPORT_PREFIX = "(afov)&~@+"
   @bans
   @name
+  @key
+  @limit
   @modes
   @topic
   @topic_author
@@ -64,6 +66,8 @@ class Channel
   def initialize(name, founder)
     @bans = Array.new
     @name = name
+    @key = nil
+    @limit = nil
     @modes = Array.new
     @modes.push('n')
     @modes.push('t')
@@ -77,6 +81,14 @@ class Channel
       @topic_lock = Mutex.new
       @users_lock = Mutex.new
     end
+  end
+
+  def set_key(key)
+    @key = key
+  end
+
+  def set_limit(limit)
+    @limit = limit
   end
 
   def add_ban(creator, mask, reason)
@@ -201,5 +213,5 @@ class Channel
     @create_timestamp
   end
 
-  attr_reader :name, :topic, :topic_author, :topic_time, :url, :founder
+  attr_reader :name, :key, :limit, :topic, :topic_author, :topic_time, :url, :founder
 end
