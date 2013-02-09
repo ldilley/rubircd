@@ -200,10 +200,10 @@ class Command
   # args[0] = target channel or nick
   # args[1] = mode(s)
   # args[2..-1] = nick, ban mask, limit, and/or key
-  # ToDo: Check if user has chanop, founder, or admin privs before setting channel modes
-  #       Also allow more than one 'b' and/or 'o' mode at once up to MAXPARAMS (3?) and limit the rest
-  #       Add flag prefixes somewhere upon setting the appropriate modes
-  #       Handle bans, limit, and key
+  # ToDo: Check if user has chanop, founder, or admin privs before setting channel modes (not implemented for testing purposes at the moment)
+  #       Also allow more than one 'b' and/or 'o' mode at once up to Limits::MODES (6) and limit the rest
+  #       Add flag prefixes somewhere upon setting the appropriate modes or channel modes for each user
+  #       Handle ban additional and removal
   def self.handle_mode(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODE"))
@@ -211,7 +211,6 @@ class Command
     end
     target = args[0]
     if args.length >= 2
-      mode_string = args[1]
       modes_to_add = ""
       modes_to_remove = ""
       was_add = true
@@ -232,7 +231,12 @@ class Command
       end
       final_add_modes = ""
       final_remove_modes = ""
-      mode_args = {}
+    end
+    if args.length >= 3
+      mode_args = args[2..-1] # this should be the starting ban mask/key/limit/nick
+      arg_index = 0
+    else
+      mode_args = []
     end
     if target[0] == '#' || target[0] == '&'
       channel = Server.channel_map[target.to_s.upcase]
@@ -260,13 +264,13 @@ class Command
           Network.send(user, Numeric.RPL_ENDOFBANLIST(user.nick, channel.name))
           return
         end
-        channel_exists = false
+        user_on_channel = false
         user.channels.each do |c|
           if channel.name.casecmp(c) == 0
-            channel_exists = true
+            user_on_channel = true
           end
         end
-        unless channel_exists
+        unless user_on_channel
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target))
           return
         end
@@ -287,7 +291,9 @@ class Command
         unless modes_to_remove == nil
           modes_to_remove.each_char do |mode|
             if Channel::CHANNEL_MODES.include?(mode)
-              if channel.modes.include?(mode)
+              if mode == 'o' || mode == 'v'
+                final_remove_modes << mode
+              elsif channel.modes.include?(mode)
                 final_remove_modes << mode
               end
             else
@@ -309,73 +315,79 @@ class Command
           end
           # Match up modes that take arguments with their corresponding argument
           if args.length >= 3
-            arg_index = 2 # this should be the starting key/limit/ban mask/nick
-            mode_count = 0
             modelist.each_char do |mode|
+              #if mode == 'b'
+                # ToDo: Handle ban mask in regex
               if mode == 'k'
-                if args[arg_index] =~ /[[:punct:]A-Za-z0-9]/
+                if mode_args[arg_index] =~ /[[:punct:]A-Za-z0-9]/
                   if channel.modes.include?(mode)
                     channel.remove_mode(mode)
                   end
-                  channel.set_key(args[arg_index])
-                  mode_args[:key] = args[arg_index]
-                  mode_count += 1
-                  unless arg_index >= args.length
-                    arg_index += 1
-                  end
+                  channel.set_key(mode_args[arg_index])
                 else
-                  modelist.delete(mode)
+                  # Invalid key provided
+                  modelist = modelist.delete(mode)
+                  mode_args.delete_at(arg_index)
                   unless channel.key == nil
                     channel.set_key(nil)
                   end
                 end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
+                end
               elsif mode == 'l'
-                if args[arg_index].to_i.is_a? Integer
-                  if args[arg_index].to_i >= 0
-                    if channel.modes.include?(mode)
-                      channel.remove_mode(mode)
-                    end
-                    channel.set_limit(args[arg_index])
-                    mode_args[:limit] = args[arg_index]
-                    mode_count += 1
-                    unless arg_index >= args.length
-                      arg_index += 1
-                    end
-                  else
-                    modelist.delete(mode)
-                    unless channel.limit == nil
-                      channel.set_limit(nil)
-                    end
+                if mode_args[arg_index] =~ /\d/ && mode_args[arg_index].to_i >= 0
+                  if channel.modes.include?(mode)
+                    channel.remove_mode(mode)
                   end
+                  channel.set_limit(mode_args[arg_index])
                 else
-                  modelist.delete(mode)
+                  # Invalid limit provided (not an integer)
+                  modelist = modelist.delete(mode)
+                  mode_args.delete_at(arg_index)
                   unless channel.limit == nil
                     channel.set_limit(nil)
                   end
+                end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
+                end
+              elsif mode == 'o'
+                nick_exists = false
+                channel.users.each do |u|
+                  if u.nick == mode_args[arg_index]
+                    nick_exists = true
+                  end
+                end
+                unless nick_exists
+                  modelist = modelist.delete(mode)
+                  Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                  mode_args.delete_at(arg_index)
+                end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
+                end
+              elsif mode == 'v'
+                nick_exists = false
+                channel.users.each do |u|
+                  if u.nick == args[arg_index]
+                    nick_exists = true
+                  end
+                end
+                unless nick_exists
+                  modelist = modelist.delete(mode)
+                  Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                  mode_args.delete_at(arg_index)
+                end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
                 end
               end
             end
           end
           final_add_modes = modelist
-          if final_add_modes.length > Limits::MODES
-            final_add_modes = final_add_modes[0..Limits::MODES-1]
-            unless final_add_modes.include?('k')
-              if mode_args.has_key?(:key)
-                mode_args.delete(:key)
-                channel.set_key(nil)
-              end
-            end
-            unless final_add_modes.include?('l')
-              if mode_args.has_key?(:limit)
-                mode_args.delete(:limit)
-                channel.set_limit(nil)
-              end
-            end
-          end
           final_add_modes.each_char do |mode|
-            if mode =~ /[abfov]/
-              # Handle chanop, etc. here
-            else
+            unless mode =~ /[abfov]/
               channel.add_mode(mode)
             end
           end
@@ -394,15 +406,26 @@ class Command
                 final_remove_modes.delete(mode)
               end
             end
+            if mode == 'o'
+              nick_exists = false
+              channel.users.each do |u|
+                if u.nick == mode_args[arg_index]
+                  nick_exists = true
+                end
+              end
+              unless nick_exists
+                modelist = modelist.delete(mode)
+                Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                mode_args.delete_at(arg_index)
+              end
+              unless arg_index >= mode_args.length
+                arg_index += 1
+              end
+            end
           end
           final_remove_modes = modelist
-          if final_remove_modes.length > Limits::MODES
-            final_remove_modes = final_remove_modes[0..Limits::MODES-1]
-          end
           final_remove_modes.each_char do |mode|
-            if mode =~ /[abfov]/
-              # Handle chanop, etc. here
-            else
+            unless mode =~ /[abfov]/
               if mode == 'k'
                 channel.set_key(nil)
               end
@@ -413,16 +436,15 @@ class Command
             end
           end
         end
-
         channel.users.each do |u|
           if final_add_modes.length == 0 && final_remove_modes.length == 0
             return
           elsif final_add_modes.length > 0 && final_remove_modes.length > 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}-#{final_remove_modes} #{mode_args.values.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}-#{final_remove_modes} #{mode_args.join(" ")}")
           elsif final_add_modes.length > 0 && final_remove_modes.length == 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes} #{mode_args.values.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes} #{mode_args.join(" ")}")
           elsif final_add_modes.length == 0 && final_remove_modes.length > 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} -#{final_remove_modes} #{mode_args.values.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} -#{final_remove_modes} #{mode_args.join(" ")}")
           end
         end
       else
@@ -541,7 +563,7 @@ class Command
     if Mod.modules == nil
       Mod.modules = {}
     end
-    if args.is_a? String
+    if args.is_a?(String)
       mod_name = args
     else
       mod_name = args[0]
