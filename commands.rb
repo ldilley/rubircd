@@ -40,7 +40,9 @@ class Command
     @@command_map["CAP"] = Proc.new()       { |user, args| handle_cap(user, args) }
     @@command_map["CAPAB"] = Proc.new()     { |user, args| handle_capab(user, args) }
     @@command_map["INFO"] = Proc.new()      { |user, args| handle_info(user, args) }
+    @@command_map["ISON"] = Proc.new()      { |user, args| handle_ison(user, args) }
     @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
+    @@command_map["KILL"] = Proc.new()      { |user, args| handle_kill(user, args) }
     @@command_map["MODE"] = Proc.new()      { |user, args| handle_mode(user, args) }
     @@command_map["MODLIST"] = Proc.new()   { |user, args| handle_modlist(user, args) }
     @@command_map["MODLOAD"] = Proc.new()   { |user, args| handle_modload(user, args) }
@@ -152,6 +154,30 @@ class Command
     end
   end
 
+  # ISON
+  # args[0..-1] = nick or space-separated nicks
+  def self.handle_ison(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "ISON"))
+      return
+    end
+    nicklist = args[0..-1].join(" ")
+    # Check for and remove leading ':' if exists
+    if nicklist[0] == ':'
+      nicklist = nicklist[1..-1]
+    end
+    args = nicklist.split
+    good_nicks = []
+    Server.users.each do |u|
+      args.each do |n|
+        if u.nick.casecmp(n) == 0
+          good_nicks << u.nick
+        end
+      end
+    end
+    Network.send(user, Numeric.RPL_ISON(user.nick, good_nicks))
+  end
+
   # JOIN
   # args[0 ...] = channel or channels that are comma separated
   # args[1? ...] = optional key or keys that are comma separated
@@ -193,6 +219,46 @@ class Command
       else
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
       end
+    end
+  end
+
+  # KILL
+  # args[0] = target nick
+  # args[1..-1] = message
+  def self.handle_kill(user, args)
+    unless  user.is_operator || user.is_admin
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KILL"))
+      return
+    end
+    if args.length >= 2
+      kill_message = args[1..-1].join(" ")
+      if kill_message[0] == ':'
+        kill_message = kill_message[1..-1]
+      end
+    else
+      kill_message = "No reason given"
+    end
+    kill_target = nil
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        kill_target = u
+      end
+    end
+    unless kill_target == nil
+      # ToDo: Send server/operwall message
+      kill_target.channels.each do |c|
+        chan = Server.channel_map[c.to_s.upcase]
+        unless chan == nil
+          chan.users.each { |u| Network.send(u, ":#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} QUIT :Killed by #{user.nick} (#{kill_message}\)") }
+        end
+      end
+      Network.close(kill_target)
+    else
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
   end
 
@@ -1212,13 +1278,10 @@ class Command
   end
 
   # Standard commands remaining to be implemented:
-  # away
   # connect
   # error
   # invite
-  # ison
   # kick
-  # kill
   # kline
   # links
   # list

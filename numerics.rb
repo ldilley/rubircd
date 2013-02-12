@@ -130,6 +130,11 @@ class Numeric
     return sprintf(":%s 301 %s %s :%s", Options.server_name, nick, user.nick, user.away_message)
   end
 
+  # 303
+  def self.RPL_ISON(nick, nicks)
+    return sprintf(":%s 303 %s :%s", Options.server_name, nick, nicks.join(" "))
+  end
+
   # 305
   def self.RPL_UNAWAY(nick)
     return sprintf(":%s 305 %s :You are no longer marked as being away", Options.server_name, nick)
@@ -413,7 +418,12 @@ class Numeric
   ERR_INVITEONLYCHAN = "Cannot join channel (+i)"                                     # 473
   ERR_BANNEDFROMCHAN = "Cannot join channel (+b)"                                     # 474
   ERR_BADCHANNELKEY = "Cannot join channel (+k)"                                      # 475
-  ERR_NOPRIVILEGES = "Permission Denied- You're not an IRC operator"                  # 481
+
+  # 481
+  def self.ERR_NOPRIVILEGES(nick)
+    return sprintf(":%s 481 %s :Permission Denied - You're not an IRC operator", Options.server_name, nick)
+  end
+
   ERR_CHANOPRIVSNEEDED = "You're not channel operator"                                # 482
 
   # 491
