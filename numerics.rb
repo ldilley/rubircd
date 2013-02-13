@@ -398,6 +398,11 @@ class Numeric
     return sprintf(":%s 462 %s :You may not reregister", Options.server_name, nick)
   end
 
+  # 464
+  def self.ERR_PASSWDMISMATCH(nick)
+    return sprintf(":%s 464 %s :Password incorrect", Options.server_name, nick)
+  end
+
   # 467
   def self.ERR_KEYSET(nick, channel)
     return sprintf(":%s 467 %s %s :Channel key already set", Options.server_name, nick, channel)

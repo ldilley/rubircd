@@ -50,6 +50,7 @@ class Options
     @@max_connections = options_file["max_connections"]
     @@io_type = options_file["io_type"]
     @@debug_mode = options_file["debug_mode"]
+    @@control_hash = options_file["control_hash"]
 
     if @@admin_name == nil
       puts("\nUnable to read admin_name option from options.yml file!")
@@ -94,6 +95,11 @@ class Options
 
     if @@debug_mode == nil
       puts("\nUnable to read debug_mode option from options.yml file!")
+      exit!
+    end
+
+    if @@control_hash == nil
+      puts("\nUnable to read control_hash option from options.yml file!")
       exit!
     end
 
@@ -186,6 +192,10 @@ class Options
 
   def self.debug_mode
     return @@debug_mode
+  end
+
+  def self.control_hash
+    return @@control_hash
   end
 end
 

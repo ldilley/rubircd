@@ -18,6 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require 'digest/sha2'
+require 'rbconfig'
 require_relative 'numerics'
 require_relative 'options'
 require_relative 'server'
@@ -39,6 +40,7 @@ class Command
     @@command_map["AWAY"] = Proc.new()      { |user, args| handle_away(user, args) }
     @@command_map["CAP"] = Proc.new()       { |user, args| handle_cap(user, args) }
     @@command_map["CAPAB"] = Proc.new()     { |user, args| handle_capab(user, args) }
+    @@command_map["DIE"] = Proc.new()       { |user, args| handle_die(user, args) }
     @@command_map["INFO"] = Proc.new()      { |user, args| handle_info(user, args) }
     @@command_map["ISON"] = Proc.new()      { |user, args| handle_ison(user, args) }
     @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
@@ -56,6 +58,7 @@ class Command
     @@command_map["PING"] = Proc.new()      { |user, args| handle_ping(user, args) }
     @@command_map["PRIVMSG"] = Proc.new()   { |user, args| handle_privmsg(user, args) }
     @@command_map["QUIT"] = Proc.new()      { |user, args| handle_quit(user, args) }
+    @@command_map["RESTART"] = Proc.new()   { |user, args| handle_restart(user, args) }
     @@command_map["TIME"] = Proc.new()      { |user, args| handle_time(user, args) }
     @@command_map["TOPIC"] = Proc.new()     { |user, args| handle_topic(user, args) }
     @@command_map["USER"] = Proc.new()      { |user, args| handle_user(user, args) }
@@ -139,6 +142,26 @@ class Command
   def self.handle_capab(server, args)
     # ToDo: Handshaking stuff for server linking
     #Network.send(server, "CAPAB ...")
+  end
+
+  # DIE
+  # args[0] = password
+  def self.handle_die(user, args)
+    unless user.is_admin
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "DIE"))
+      return
+    end
+    hash = Digest::SHA2.new(256) << args[0]
+    if Options.control_hash == hash.to_s
+      # ToDo: Cleanly exit (write any klines, etc.)
+      exit!
+    else
+      Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
+    end
   end
 
   # INFO
@@ -954,6 +977,44 @@ class Command
     Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
   end
 
+  # PRIVMSG
+  # args[0] = target channel or nick
+  # args[1..-1] = message
+  def self.handle_privmsg(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "PRIVMSG"))
+      return
+    end
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
+      return
+    end
+    message = args[1..-1].join(" ")
+    message = message[1..-1] # remove leading ':'
+    if args[0] =~ /[#&+][A-Za-z0-9]/
+      channel = Server.channel_map[args[0].to_s.upcase]
+      unless channel == nil
+        channel.users.each do |u|
+          if u.nick != user.nick
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{message}")
+          end
+        end
+      end
+      return
+    end
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{u.nick} :#{message}")
+        return
+      end
+    end
+    if args[0] == '#'
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+    else
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+    end
+  end
+
   # QUIT
   # args[0..-1] = optional quit message
   def self.handle_quit(user, args)
@@ -998,41 +1059,36 @@ class Command
     end
   end
 
-  # PRIVMSG
-  # args[0] = target channel or nick
-  # args[1..-1] = message
-  def self.handle_privmsg(user, args)
+  # RESTART
+  # args[0] = password
+  def self.handle_restart(user, args)
+    unless user.is_admin
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
     if args.length < 1
-      Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "PRIVMSG"))
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "RESTART"))
       return
     end
-    if args.length < 2
-      Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
-      return
-    end
-    message = args[1..-1].join(" ")
-    message = message[1..-1] # remove leading ':'
-    if args[0] =~ /[#&+][A-Za-z0-9]/
-      channel = Server.channel_map[args[0].to_s.upcase]
-      unless channel == nil
-        channel.users.each do |u|
-          if u.nick != user.nick
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{message}")
-          end
+    hash = Digest::SHA2.new(256) << args[0]
+    if Options.control_hash == hash.to_s
+      # ToDo: Write any klines, etc.)
+      if RbConfig::CONFIG['host_os'] =~ /mswin|win|mingw/
+        if RUBY_PLATFORM == "java"
+          exec("start cmd /C #{File.expand_path(File.dirname(__FILE__))}/rubircd.bat")
+        else
+          exec("start cmd /C ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb")
+        end
+      else
+        current_pid = Process.pid
+        if RUBY_PLATFORM == "java"
+          system("kill #{current_pid} && sleep 5 && #{File.expand_path(File.dirname(__FILE__))}/rubircd.sh&")
+        else
+          system("kill #{current_pid} && sleep 5 && ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb&")
         end
       end
-      return
-    end
-    Server.users.each do |u|
-      if u.nick.casecmp(args[0]) == 0
-        Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{u.nick} :#{message}")
-        return
-      end
-    end
-    if args[0] == '#'
-      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
     else
-      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+      Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
     end
   end
 
@@ -1289,9 +1345,7 @@ class Command
   # pass
   # pong
   # rehash
-  # restart
   # server
-  # shutdown
   # squit
   # stats
   # summon
