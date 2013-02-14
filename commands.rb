@@ -42,6 +42,7 @@ class Command
     @@command_map["CAPAB"] = Proc.new()     { |user, args| handle_capab(user, args) }
     @@command_map["DIE"] = Proc.new()       { |user, args| handle_die(user, args) }
     @@command_map["INFO"] = Proc.new()      { |user, args| handle_info(user, args) }
+    @@command_map["INVITE"] = Proc.new()    { |user, args| handle_invite(user, args) }
     @@command_map["ISON"] = Proc.new()      { |user, args| handle_ison(user, args) }
     @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
     @@command_map["KILL"] = Proc.new()      { |user, args| handle_kill(user, args) }
@@ -56,6 +57,7 @@ class Command
     @@command_map["OPER"] = Proc.new()      { |user, args| handle_oper(user, args) }
     @@command_map["PART"] = Proc.new()      { |user, args| handle_part(user, args) }
     @@command_map["PING"] = Proc.new()      { |user, args| handle_ping(user, args) }
+    @@command_map["PONG"] = Proc.new()      { |user, args| handle_pong(user, args) }
     @@command_map["PRIVMSG"] = Proc.new()   { |user, args| handle_privmsg(user, args) }
     @@command_map["QUIT"] = Proc.new()      { |user, args| handle_quit(user, args) }
     @@command_map["RESTART"] = Proc.new()   { |user, args| handle_restart(user, args) }
@@ -174,6 +176,44 @@ class Command
     #elsif to handle arbitrary servers when others are linked
     else
       Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+    end
+  end
+
+  # INVITE
+  # args[0] = nick
+  # args[1] = channel
+  def self.handle_invite(user, args)
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "INVITE"))
+      return
+    end
+    # ToDo: Check for chanop status once a place for users' channel modes is figured out
+    target_user = nil
+    Server.users.each do |u|
+      if u.nick.casecmp(args[0]) == 0
+        target_user = u
+      end
+    end
+    if target_user == nil
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+      return
+    end
+    unless user.channels.any? { |c| c.casecmp(args[1]) == 0 }
+      Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[1]))
+      return
+    end
+    if target_user.channels.any? { |c| c.casecmp(args[1]) == 0 }
+      Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, args[0], args[1]))
+      return
+    end
+    Network.send(user, Numeric.RPL_INVITING(user.nick, args[0], args[1]))
+    if target_user.away_message.length > 0
+      Network.send(user, Numeric.RPL_AWAY(user.nick, target_user))
+    end
+    Network.send(target_user, ":#{user.nick}!#{user.ident}@#{user.hostname} INVITE #{args[0]} :#{args[1]}")
+    chan = Server.channel_map[args[1].to_s.upcase]
+    unless chan == nil
+      chan.users.each { |u| Network.send(u, ":#{Options.server_name} NOTICE @#{args[1]} :#{user.nick} invited #{args[0]} into channel #{args[1]}") }
     end
   end
 
@@ -970,11 +1010,33 @@ class Command
   # args[0] = message
   def self.handle_ping(user, args)
     if args.length < 1
-      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PING"))
+      Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
       return
     end
-    # ToDo: Handle ERR_NOORIGIN (409)?
     Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
+  end
+
+  # PONG
+  # args[0] = server
+  # args[1] = optional destination server to forward to
+  def self.handle_pong(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
+      return
+    end
+    if args.length >= 2
+      # ToDo: Handle server forwarding once server linking is supported
+      Server.users.each do |u|
+        if u.nick.casecmp(args[1]) == 0
+          if Options.server_name.casecmp(args[0]) == 0
+            Network.send(u, ":#{user.nick} PONG #{Options.server_name} #{u.nick}")
+            return
+          end
+        end
+      end
+      return
+    end
+    # Set user's last ping response time
   end
 
   # PRIVMSG
@@ -1080,11 +1142,10 @@ class Command
           exec("start cmd /C ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb")
         end
       else
-        current_pid = Process.pid
         if RUBY_PLATFORM == "java"
-          system("kill #{current_pid} && sleep 5 && #{File.expand_path(File.dirname(__FILE__))}/rubircd.sh&")
+          system("kill #{Process.pid} && sleep 5 && #{File.expand_path(File.dirname(__FILE__))}/rubircd.sh&")
         else
-          system("kill #{current_pid} && sleep 5 && ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb&")
+          system("kill #{Process.pid} && sleep 5 && ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb&")
         end
       end
     else
@@ -1336,14 +1397,12 @@ class Command
   # Standard commands remaining to be implemented:
   # connect
   # error
-  # invite
   # kick
   # kline
   # links
   # list
   # operwall
   # pass
-  # pong
   # rehash
   # server
   # squit

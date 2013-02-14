@@ -239,7 +239,10 @@ class Numeric
     return sprintf(":%s 338 %s %s %s :actually using host", Options.server_name, nick, user.nick, user.ip_address)
   end
 
-  RPL_INVITING = "" # 341 -- handle in Command class later
+  # 341
+  def self.RPL_INVITING(nick, given_nick, channel)
+    return sprintf(":%s 341 %s %s %s", Options.server_name, nick, given_nick, channel)
+  end
 
   # 351
   def self.RPL_VERSION(nick, server)
@@ -334,6 +337,11 @@ class Numeric
     return sprintf(":%s 405 %s %s :You have joined too many channels", Options.server_name, nick, channel)
   end
 
+  # 409
+  def self.ERR_NOORIGIN(nick)
+    return sprintf(":%s 409 %s :No origin specified", Options.server_name, nick)
+  end
+
   # 410
   def self.ERR_INVALIDCAPCMD(nick, command)
     return sprintf(":%s 410 %s %s :Invalid CAP subcommand", Options.server_name, nick, command)
@@ -381,7 +389,10 @@ class Numeric
     return sprintf(":%s 442 %s %s :You're not on that channel", Options.server_name, nick, channel)
   end
 
-  ERR_USERONCHANNEL = "is already on channel"                                         # 443
+  # 443
+  def self.ERR_USERONCHANNEL(nick, given_nick, channel)
+    return sprintf(":%s 443 %s %s %s :is already on channel", Options.server_name, nick, given_nick, channel)
+  end
 
   # 451
   def self.ERR_NOTREGISTERED(command)
