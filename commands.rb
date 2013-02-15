@@ -46,6 +46,7 @@ class Command
     @@command_map["ISON"] = Proc.new()      { |user, args| handle_ison(user, args) }
     @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
     @@command_map["KILL"] = Proc.new()      { |user, args| handle_kill(user, args) }
+    @@command_map["LIST"] = Proc.new()      { |user, args| handle_list(user, args) }
     @@command_map["MODE"] = Proc.new()      { |user, args| handle_mode(user, args) }
     @@command_map["MODLIST"] = Proc.new()   { |user, args| handle_modlist(user, args) }
     @@command_map["MODLOAD"] = Proc.new()   { |user, args| handle_modload(user, args) }
@@ -64,6 +65,8 @@ class Command
     @@command_map["TIME"] = Proc.new()      { |user, args| handle_time(user, args) }
     @@command_map["TOPIC"] = Proc.new()     { |user, args| handle_topic(user, args) }
     @@command_map["USER"] = Proc.new()      { |user, args| handle_user(user, args) }
+    @@command_map["USERHOST"] = Proc.new()  { |user, args| handle_userhost(user, args) }
+    @@command_map["USERS"] = Proc.new()     { |user, args| handle_users(user, args) }
     @@command_map["VERSION"] = Proc.new()   { |user, args| handle_version(user, args) }
     @@command_map["WHO"] = Proc.new()       { |user, args| handle_who(user, args) }
     @@command_map["WHOIS"] = Proc.new()     { |user, args| handle_whois(user, args) }
@@ -255,12 +258,15 @@ class Command
       keys = args[1].split(',')
     end
     channels.each do |channel|
+      if user.channels.any? { |uc| uc.casecmp(channel) == 0 }
+        return # user is already on channel
+      end
       if user.channels.length >= Limits::MAXCHANNELS
         Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
         return
       end
       channel_exists = false
-      if channel =~ /[#&][A-Za-z0-9]/
+      if channel =~ /[#&][A-Za-z0-9_!-]/
         channel_object = Channel.new(channel, user.nick)
         if Server.channel_map[channel.to_s.upcase] != nil
           channel_exists = true
@@ -323,6 +329,35 @@ class Command
     else
       Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
+  end
+
+  # LIST
+  # args[0..-2] = optional space-separated channels
+  # args[-1] = optional server (ToDo: Handle this later -- wildcards are also allowed)
+  def self.handle_list(user, args)
+    Network.send(user, Numeric.RPL_LISTSTART(user.nick))
+    if args.length >= 1
+      chan = nil
+      args.each do |a|
+        chan = Server.channel_map[a.to_s.upcase]
+        unless chan == nil
+          if chan.modes.include?('s') && !user.channels.any? { |uc| uc.casecmp(chan.name) == 0 } # do not list secret channels unless user is a member
+            next unless chan == nil
+          else
+            Network.send(user, Numeric.RPL_LIST(user.nick, chan))
+          end
+        end
+      end
+    else
+      Server.channel_map.values.each do |c|
+        if c.modes.include?('s') && !user.channels.any? { |uc| uc.casecmp(c.name) == 0 } # do not list secret channels unless user is a member
+          next unless c == nil
+        else
+          Network.send(user, Numeric.RPL_LIST(user.nick, c))
+        end
+      end
+    end
+    Network.send(user, Numeric.RPL_LISTEND(user.nick))
   end
 
   # MODE
@@ -864,7 +899,7 @@ class Command
     end
     message = args[1..-1].join(" ")
     message = message[1..-1] # remove leading ':'
-    if args[0] =~ /[#&+][A-Za-z0-9]/
+    if args[0] =~ /[#&+][A-Za-z0-9_!-]/
       channel = Server.channel_map[args[0].to_s.upcase]
       unless channel == nil
         channel.users.each do |u|
@@ -982,7 +1017,7 @@ class Command
     end
     channels = args[0].split(',')
     channels.each do |channel|
-      if channel =~ /[#&+][A-Za-z0-9]/
+      if channel =~ /[#&+][A-Za-z0-9_!-]/
         if user.channels.any? { |c| c.casecmp(channel) == 0 }
           chan = Server.channel_map[channel.to_s.upcase]
           unless chan == nil
@@ -1053,7 +1088,7 @@ class Command
     end
     message = args[1..-1].join(" ")
     message = message[1..-1] # remove leading ':'
-    if args[0] =~ /[#&+][A-Za-z0-9]/
+    if args[0] =~ /[#&+][A-Za-z0-9_!-]/
       channel = Server.channel_map[args[0].to_s.upcase]
       unless channel == nil
         channel.users.each do |u|
@@ -1185,7 +1220,7 @@ class Command
         topic = topic[0..Limits::TOPICLEN]
       end
     end
-    if args[0] =~ /[#&+][A-Za-z0-9]/ && args.length == 1
+    if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length == 1
       chan = Server.channel_map[args[0].to_s.upcase]
       unless chan == nil
         # ToDo: Add if check for channel modes +p and +s
@@ -1204,7 +1239,7 @@ class Command
       Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
       return
     end
-    if args[0] =~ /[#&+][A-Za-z0-9]/ && args.length > 1
+    if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
       if user.channels.any? { |c| c.casecmp(args[0]) == 0 }
         chan = Server.channel_map[args[0].to_s.upcase]
         unless chan == nil
@@ -1257,6 +1292,39 @@ class Command
     else
       Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, ident)) # invalid ident
     end
+  end
+
+  # USERHOST
+  # args[0..-1] = space-separated nicks
+  def self.handle_userhost(user, args)
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USERHOST"))
+      return
+    end
+    userhost_list = []
+    args.each do |a|
+      if userhost_list.length >= Limits::MAXTARGETS
+        break
+      end
+      Server.users.each do |u|
+        if u.nick.casecmp(a) == 0
+          if u.is_admin
+            userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
+          else
+            userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"
+          end
+        end
+      end
+    end
+    Network.send(user, Numeric.RPL_USERHOST(user.nick, userhost_list))
+  end
+
+  # USERS
+  # This command takes no args, is not RFC compliant (in that it does not return information in the format described by the RFC),
+  # and is also handled the same way DALnet and EFNet handles it.
+  def self.handle_users(user, args)
+    Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
+    Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
   end
 
   # VERSION
@@ -1368,7 +1436,22 @@ class Command
       if u.nick.casecmp(args[0]) == 0
         Network.send(user, Numeric.RPL_WHOISUSER(user.nick, u))
         if u.channels.length > 0
-          Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u))
+          channel_list = []
+          chan = nil
+          u.channels.each do |c|
+            chan = Server.channel_map[c.upcase]
+            unless chan == nil
+              # Hide private/secret channel from output unless user is a member of the target's channel
+              if chan.modes.include?('p') || chan.modes.include?('s')
+                if user.channels.any? { |uc| uc.casecmp(c) == 0 }
+                  channel_list << c
+                end
+              else
+                channel_list << c
+              end
+            end
+          end
+          Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u, channel_list))
         end
         Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u))
         if u.is_operator && !u.is_admin
@@ -1395,29 +1478,32 @@ class Command
   end
 
   # Standard commands remaining to be implemented:
-  # connect
-  # error
+  # connect  - 0.3a
+  # error    - 0.3a
   # kick
   # kline
-  # links
-  # list
+  # links    - 0.3a
+  # lusers
+  # map      - 0.3a (requires oper/admin privileges)
   # operwall
   # pass
   # rehash
-  # server
-  # squit
+  # server   - 0.3a
+  # squit    - 0.3a
   # stats
   # summon
-  # trace
-  # userhost
-  # users
+  # trace    - 0.3a
   # whowas
+
+  # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
   # Custom commands that may get implemented:
   # broadcast <message> (administrative command to alert users of anything significant such as an upcoming server outage)
   # fjoin <channel> <nick> (administrative force join)
   # fpart <channel> <nick> (administrative force part)
   # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection)
+  # silence
+  # uptime
   # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
 
   def self.command_map

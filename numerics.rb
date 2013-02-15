@@ -130,6 +130,11 @@ class Numeric
     return sprintf(":%s 301 %s %s :%s", Options.server_name, nick, user.nick, user.away_message)
   end
 
+  # 302
+  def self.RPL_USERHOST(nick, userhost_list)
+    return sprintf(":%s 302 %s :%s", Options.server_name, nick, userhost_list.join(" "))
+  end
+
   # 303
   def self.RPL_ISON(nick, nicks)
     return sprintf(":%s 303 %s :%s", Options.server_name, nick, nicks.join(" "))
@@ -190,9 +195,24 @@ class Numeric
   end
 
   # 319
-  def self.RPL_WHOISCHANNELS(nick, user)
-    channels = user.channels.join(" ")
-    return sprintf(":%s 319 %s %s :%s", Options.server_name, nick, user.nick, channels)
+  def self.RPL_WHOISCHANNELS(nick, user, channels)
+    return sprintf(":%s 319 %s %s :%s", Options.server_name, nick, user.nick, channels.join(" "))
+  end
+
+  # 321 - deprecated
+  def self.RPL_LISTSTART(nick)
+    return sprintf(":%s 321 %s Channel :Users Name", Options.server_name, nick)
+  end
+
+  # 322
+  # Returning modes is not standard, but more informative (InspIRCd does this)
+  def self.RPL_LIST(nick, channel)
+    return sprintf(":%s 322 %s %s %i :[+%s] %s", Options.server_name, nick, channel.name, channel.users.length, channel.modes.join(""), channel.topic)
+  end
+
+  # 323
+  def self.RPL_LISTEND(nick)
+    return sprintf(":%s 323 %s :End of /LIST", Options.server_name, nick)
   end
 
   # 324
