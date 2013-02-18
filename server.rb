@@ -18,8 +18,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class Server
-  VERSION = "RubIRCd v0.1a"
-  RELEASE = "maiden voyage"
+  VERSION = "RubIRCd v0.2a"
+  RELEASE = "mildly dangerous"
   URL = "http://www.rubircd.org/"
   MODE_ADMIN = 'a'        # is an IRC administrator
   MODE_BOT = 'b'          # is a bot
@@ -43,6 +43,8 @@ class Server
   @@channel_count = 0
   @@link_count = 0
   @@start_timestamp = 0   # holds server startup date and time
+  @@data_recv = 0         # amount of data server has received in bytes since it started
+  @@data_sent = 0         # amount of data server has sent in bytes since it started
   @@links = Array.new
   @@users = Array.new
   @@admins = Array.new
@@ -54,6 +56,8 @@ class Server
     @@link_count_lock = Mutex.new
     @@users_lock = Mutex.new
     @@channels_lock = Mutex.new
+    @@data_recv_lock = Mutex.new
+    @@data_sent_lock = Mutex.new
   end
 
   def self.init_chanmap
@@ -83,8 +87,8 @@ class Server
   def self.decrement_clients()
     if Options.io_type.to_s == "thread"
       @@client_count_lock.synchronize do
-        @@client_count -= 1 
-        @@local_users -= 1 
+        @@client_count -= 1
+        @@local_users -= 1
         # ToDo: Handle global users after server linking is implemented
       end
     else
@@ -105,6 +109,9 @@ class Server
     if Options.io_type.to_s == "thread"
       @@users_lock.synchronize do
         if @@users.delete(user) != nil
+          if user.is_admin || user.is_operator
+            Server.oper_count -= 1
+          end
           return true
         else
           return false
@@ -112,6 +119,9 @@ class Server
       end
     else
       if @@users.delete(user) != nil
+        if user.is_admin || user.is_operator
+          Server.oper_count -= 1
+        end
         return true
       else
         return false
@@ -141,6 +151,26 @@ class Server
 
   def self.add_oper(oper)
     @@opers.push(oper)
+  end
+
+  def self.add_data_recv(amount)
+    if Options.io_type.to_s == "thread"
+      @@data_recv_lock.synchronize do
+        @@data_recv += amount
+      end
+    else
+      @@data_recv += amount
+    end
+  end
+
+  def self.add_data_sent(amount)
+    if Options.io_type.to_s == "thread"
+      @@data_sent_lock.synchronize do
+        @@data_sent += amount
+      end
+    else
+      @@data_sent += amount
+    end
   end
 
   def self.read_motd()
@@ -186,6 +216,14 @@ class Server
 
   def self.opers
     @@opers
+  end
+
+  def self.data_recv
+    @@data_recv
+  end
+
+  def self.data_sent
+    @@data_sent
   end
 
   class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :start_timestamp, :channel_count, :link_count end

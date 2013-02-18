@@ -39,16 +39,16 @@ class Channel
   FLAG_FOUNDER = '~'
   MODE_BAN = 'b'        # ban
   MODE_INVITE = 'i'     # invite only
-  MODE_LIMIT = 'l'      # limit set
   MODE_LOCKED = 'k'     # key set
+  MODE_LIMIT = 'l'      # limit set
   MODE_MODERATED = 'm'  # only voiced users can chat
   MODE_NOEXTERN = 'n'   # no external PRIVMSG
   MODE_PRIVATE = 'p'    # will not show up in LIST output
   MODE_REGISTERED = 'r' # channel is registered
   MODE_SECRET = 's'     # will not show up in LIST or WHOIS output
   MODE_TOPIC = 't'      # only channel operators can change topic
-  CHANNEL_MODES = "abfilkmnoprstv"
-  ISUPPORT_CHANNEL_MODES = "b,l,k,imnprst" # comma separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
+  CHANNEL_MODES = "abfiklmnoprstv"
+  ISUPPORT_CHANNEL_MODES = "b,k,l,imnprst" # comma separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
   ISUPPORT_PREFIX = "(afov)&~@+"
   @bans
   @name
@@ -61,6 +61,7 @@ class Channel
   @users
   @url
   @founder
+  @is_registered
   @create_timestamp
 
   def initialize(name, founder)
@@ -73,7 +74,8 @@ class Channel
     @modes.push('t')
     @topic = ""
     @users = Array.new
-    @founder = founder 
+    @founder = founder
+    @is_registered = false
     @create_timestamp = Time.now.to_i
     if Options.io_type.to_s == "thread"
       @bans_lock = Mutex.new
@@ -163,6 +165,10 @@ class Channel
     end
   end
 
+  def set_registered()
+    @is_registered = true
+  end
+
   def clear_topic()
     if Options.io_type.to_s == "thread"
       @topic_lock.synchronize do
@@ -213,5 +219,5 @@ class Channel
     @create_timestamp
   end
 
-  attr_reader :name, :key, :limit, :topic, :topic_author, :topic_time, :url, :founder
+  attr_reader :name, :key, :limit, :topic, :topic_author, :topic_time, :url, :founder, :is_registered
 end

@@ -45,11 +45,14 @@ class Command
     @@command_map["INVITE"] = Proc.new()    { |user, args| handle_invite(user, args) }
     @@command_map["ISON"] = Proc.new()      { |user, args| handle_ison(user, args) }
     @@command_map["JOIN"] = Proc.new()      { |user, args| handle_join(user, args) }
+    @@command_map["KICK"] = Proc.new()      { |user, args| handle_kick(user, args) }
     @@command_map["KILL"] = Proc.new()      { |user, args| handle_kill(user, args) }
     @@command_map["LIST"] = Proc.new()      { |user, args| handle_list(user, args) }
+    @@command_map["LUSERS"] = Proc.new()    { |user| handle_lusers(user) }
     @@command_map["MODE"] = Proc.new()      { |user, args| handle_mode(user, args) }
     @@command_map["MODLIST"] = Proc.new()   { |user, args| handle_modlist(user, args) }
     @@command_map["MODLOAD"] = Proc.new()   { |user, args| handle_modload(user, args) }
+    @@command_map["MODRELOAD"] = Proc.new() { |user, args| handle_modreload(user, args) }
     @@command_map["MODUNLOAD"] = Proc.new() { |user, args| handle_modunload(user, args) }
     @@command_map["MOTD"] = Proc.new()      { |user, args| handle_motd(user, args) }
     @@command_map["NAMES"] = Proc.new()     { |user, args| handle_names(user, args) }
@@ -62,11 +65,13 @@ class Command
     @@command_map["PRIVMSG"] = Proc.new()   { |user, args| handle_privmsg(user, args) }
     @@command_map["QUIT"] = Proc.new()      { |user, args| handle_quit(user, args) }
     @@command_map["RESTART"] = Proc.new()   { |user, args| handle_restart(user, args) }
+    @@command_map["STATS"] = Proc.new()     { |user, args| handle_stats(user, args) }
+    @@command_map["SUMMON"] = Proc.new()    { |user| handle_summon(user) }
     @@command_map["TIME"] = Proc.new()      { |user, args| handle_time(user, args) }
     @@command_map["TOPIC"] = Proc.new()     { |user, args| handle_topic(user, args) }
     @@command_map["USER"] = Proc.new()      { |user, args| handle_user(user, args) }
     @@command_map["USERHOST"] = Proc.new()  { |user, args| handle_userhost(user, args) }
-    @@command_map["USERS"] = Proc.new()     { |user, args| handle_users(user, args) }
+    @@command_map["USERS"] = Proc.new()     { |user| handle_users(user) }
     @@command_map["VERSION"] = Proc.new()   { |user, args| handle_version(user, args) }
     @@command_map["WHO"] = Proc.new()       { |user, args| handle_who(user, args) }
     @@command_map["WHOIS"] = Proc.new()     { |user, args| handle_whois(user, args) }
@@ -122,23 +127,17 @@ class Command
     end
     case args[0].to_s.upcase
       when "ACK"
-        return
       when "CLEAR"
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
-        return
       when "END"
-        return
       when "LIST"
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
-        return
       when "LS"
+        # Add "multi-prefix userhost-in-names tls" once NAMESX, UHNAMES, and STARTTLS are supported
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
-        return
       when "REQ"
-        return
       else
         Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
-        return
     end
   end
 
@@ -216,6 +215,7 @@ class Command
     Network.send(target_user, ":#{user.nick}!#{user.ident}@#{user.hostname} INVITE #{args[0]} :#{args[1]}")
     chan = Server.channel_map[args[1].to_s.upcase]
     unless chan == nil
+      # ToDo: Only send to chanops?
       chan.users.each { |u| Network.send(u, ":#{Options.server_name} NOTICE @#{args[1]} :#{user.nick} invited #{args[0]} into channel #{args[1]}") }
     end
   end
@@ -291,11 +291,77 @@ class Command
     end
   end
 
+  # KICK
+  # args[0] = channel
+  # args[1? ...] = comma-separated users
+  # args[2?...-1] = optional reason
+  def self.handle_kick(user, args)
+    if args.length < 2
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KICK"))
+      return
+    end
+    chan = Server.channel_map[args[0].to_s.upcase]
+    if chan == nil
+      Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+      return
+    end
+    user.channels.each do |c|
+      unless c.casecmp(chan.name) == 0
+        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+        return
+      end
+    end
+    nicks = args[1].split(',')
+    reason = ""
+    if args.length >= 3
+      reason = args[2..-1].join(" ")
+      if reason[0] == ':'
+        reason = reason[1..-1] # remove leading ':'
+      end
+      if reason.length > Limits::KICKLEN
+        reason = reason[0..Limits::KICKLEN-1]
+      end
+    end
+    good_nicks = []
+    nicks.each do |n|
+      if Server.users.any? { |u| u.nick.casecmp(n) == 0 }
+        good_nicks << n
+      else
+        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, n))
+      end
+    end
+    good_nicks.each do |n|
+      Server.users.each do |u|
+        if u.nick.casecmp(n) == 0
+          if !u.channels.any? { |c| c.casecmp(chan.name) == 0 }
+            Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
+          elsif (u.is_admin && !user.is_admin) || u.is_service
+            Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
+            if u.is_admin
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
+            end
+          else
+            if reason.length > 0
+              chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{reason}") }
+            else
+              chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
+            end
+            chan.remove_user(u)
+            u.remove_channel(chan.name)
+            unless chan.users.length > 0 || chan.is_registered
+              Server.remove_channel(chan)
+            end
+          end
+        end
+      end
+    end
+  end
+
   # KILL
   # args[0] = target nick
   # args[1..-1] = message
   def self.handle_kill(user, args)
-    unless  user.is_operator || user.is_admin
+    unless user.is_operator || user.is_admin || user.is_service
       Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
       return
     end
@@ -318,6 +384,13 @@ class Command
       end
     end
     unless kill_target == nil
+      if (kill_target.is_admin && !user.is_admin) || kill_target.is_service
+        Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, kill_target.nick))
+        if kill_target.is_admin
+          Network.send(kill_target, ":#{Options.server_name} NOTICE #{kill_target.nick} :#{user.nick} attempted to kill you!")
+        end
+        return
+      end
       # ToDo: Send server/operwall message
       kill_target.channels.each do |c|
         chan = Server.channel_map[c.to_s.upcase]
@@ -325,6 +398,7 @@ class Command
           chan.users.each { |u| Network.send(u, ":#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} QUIT :Killed by #{user.nick} (#{kill_message}\)") }
         end
       end
+      Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}: #{kill_message}")
       Network.close(kill_target)
     else
       Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
@@ -332,8 +406,7 @@ class Command
   end
 
   # LIST
-  # args[0..-2] = optional space-separated channels
-  # args[-1] = optional server (ToDo: Handle this later -- wildcards are also allowed)
+  # args[0..-1] = optional space-separated channels
   def self.handle_list(user, args)
     Network.send(user, Numeric.RPL_LISTSTART(user.nick))
     if args.length >= 1
@@ -358,6 +431,17 @@ class Command
       end
     end
     Network.send(user, Numeric.RPL_LISTEND(user.nick))
+  end
+
+  # LUSERS
+  # This command takes no args and is not RFC compliant as a result (behaves the same way on InspIRCd)
+  def self.handle_lusers(user)
+    Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
+    Network.send(user, Numeric.RPL_LUSEROP(user.nick))
+    Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
+    Network.send(user, Numeric.RPL_LUSERME(user.nick))
+    Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
+    Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
   end
 
   # MODE
@@ -702,7 +786,10 @@ class Command
   # MODLIST
   # args[0] = optional server (ToDo: Add ability to specify server to get its modules)
   def self.handle_modlist(user, args)
-    # ToDo: if check for admin privileges
+    unless user.is_admin
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
     if Mod.modules == nil
       Mod.modules = {}
     end
@@ -716,7 +803,12 @@ class Command
   # MODLOAD
   # args[0] = module
   def self.handle_modload(user, args)
-    # ToDo: if check for admin privileges
+    unless user == nil
+      unless user.is_admin 
+        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        return
+      end
+    end
     if args == nil
       return
     end
@@ -768,10 +860,28 @@ class Command
     end
   end
 
+  # MODRELOAD
+  # args[0] = module
+  def self.handle_modreload(user, args)
+    unless user.is_admin 
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODRELOAD"))
+      return
+    end
+    Command.handle_modunload(user, args)
+    Command.handle_modload(user, args)
+  end
+
   # MODUNLOAD
   # args[0] = module
   def self.handle_modunload(user, args)
-    # ToDo: if check for admin privileges
+    unless user.is_admin 
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODUNLOAD"))
       return
@@ -1053,25 +1163,14 @@ class Command
 
   # PONG
   # args[0] = server
-  # args[1] = optional destination server to forward to
   def self.handle_pong(user, args)
     if args.length < 1
       Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
       return
     end
-    if args.length >= 2
-      # ToDo: Handle server forwarding once server linking is supported
-      Server.users.each do |u|
-        if u.nick.casecmp(args[1]) == 0
-          if Options.server_name.casecmp(args[0]) == 0
-            Network.send(u, ":#{user.nick} PONG #{Options.server_name} #{u.nick}")
-            return
-          end
-        end
-      end
-      return
+    if Options.server_name.casecmp(args[0]) == 0
+      # Set user's last ping response time
     end
-    # Set user's last ping response time
   end
 
   # PRIVMSG
@@ -1186,6 +1285,49 @@ class Command
     else
       Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
     end
+  end
+
+  # STATS
+  # args[0] = symbol
+  # args[1] = optional server
+  def self.handle_stats(user, args)
+    unless user.is_operator || user.is_admin || user.is_service
+      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      return
+    end
+    if args.length < 1
+      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "STATS"))
+      return
+    end
+    # ToDo: Handle optional server argument after linking is in a working state
+    symbol = args[0].to_s
+    if symbol.length > 1 && symbol[0] == ':'
+      symbol = symbol[1]
+    else
+      symbol = symbol[0]
+    end
+    case symbol
+      when 'c' # command statistics
+      when 'd' # data transferred
+      when 'g' # glines
+      when 'i' # online admins and operators with idle times
+      when 'k' # klines
+      when 'l' # current client links
+      when 'm' # memory usage for certain data structures
+      when 'o' # configured opers and admins
+      when 'p' # configured server ports
+      when 'q' # reserved nicks (qlines)
+      when 's' # configured server links
+      when 'u' # uptime
+      when 'z' # zlines
+    end
+    Network.send(user, Numeric.RPL_ENDOFSTATS(user.nick, symbol))
+  end
+
+  # SUMMON
+  # This command is part of the RFC, but will not be implemented since there is little practical use for it.
+  def self.handle_summon(user)
+    Network.send(user, Numeric.ERR_SUMMONDISABLED(user.nick))
   end
 
   # TIME
@@ -1308,7 +1450,7 @@ class Command
       end
       Server.users.each do |u|
         if u.nick.casecmp(a) == 0
-          if u.is_admin
+          if u.is_admin || u.is_operator
             userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
           else
             userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"
@@ -1322,7 +1464,7 @@ class Command
   # USERS
   # This command takes no args, is not RFC compliant (in that it does not return information in the format described by the RFC),
   # and is also handled the same way DALnet and EFNet handles it.
-  def self.handle_users(user, args)
+  def self.handle_users(user)
     Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
     Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
   end
@@ -1461,7 +1603,7 @@ class Command
           Network.send(user, Numeric.RPL_WHOISADMIN(user.nick, u))
         end
         # ToDo: Add is_bot and is_service check later
-        if u.nick_registered
+        if u.is_nick_registered
           Network.send(user, Numeric.RPL_WHOISREGNICK(user.nick, u))
         end
         if u.away_message.length > 0
@@ -1480,31 +1622,36 @@ class Command
   # Standard commands remaining to be implemented:
   # connect  - 0.3a
   # error    - 0.3a
-  # kick
+  # gline    - 0.3a
   # kline
   # links    - 0.3a
-  # lusers
   # map      - 0.3a (requires oper/admin privileges)
   # operwall
   # pass
   # rehash
   # server   - 0.3a
   # squit    - 0.3a
-  # stats
-  # summon
   # trace    - 0.3a
   # whowas
+  # zline
 
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
-  # Custom commands that may get implemented:
+  # Custom commands that may get implemented as modules:
   # broadcast <message> (administrative command to alert users of anything significant such as an upcoming server outage)
   # fjoin <channel> <nick> (administrative force join)
   # fpart <channel> <nick> (administrative force part)
   # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection)
+  # identify
+  # ijoin <channel> (administrative command to join a channel while being invisible to its members)
+  # jupe
+  # knock
+  # rules
+  # shun
   # silence
-  # uptime
+  # userip
   # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
+  # watch
 
   def self.command_map
     @@command_map

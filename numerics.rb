@@ -64,6 +64,11 @@ class Numeric
     end
   end
 
+  # 219
+  def self.RPL_ENDOFSTATS(nick, symbol)
+    return sprintf(":%s 221 %s %c :End of /STATS report", Options.server_name, nick, symbol)
+  end
+
   # 221
   def self.RPL_UMODEIS(nick, mode)
     return sprintf(":%s 221 %s +%s", Options.server_name, nick, mode)
@@ -402,7 +407,10 @@ class Numeric
     return sprintf(":%s 433 %s %s :Nickname is already in use.", Options.server_name, nick, given_nick)
   end
 
-  ERR_USERNOTINCHANNEL = "They aren't on that channel"                                # 441
+  # 441
+  def self.ERR_USERNOTINCHANNEL(nick, given_nick, channel)
+    return sprintf(":%s 441 %s %s %s :They aren't on that channel", Options.server_name, nick, given_nick, channel)
+  end
 
   # 442
   def self.ERR_NOTONCHANNEL(nick, channel)
@@ -412,6 +420,11 @@ class Numeric
   # 443
   def self.ERR_USERONCHANNEL(nick, given_nick, channel)
     return sprintf(":%s 443 %s %s %s :is already on channel", Options.server_name, nick, given_nick, channel)
+  end
+
+  # 445
+  def self.ERR_SUMMONDISABLED(nick)
+    return sprintf(":%s 445 %s :SUMMON is not implemented.", Options.server_name, nick)
   end
 
   # 451
@@ -457,7 +470,12 @@ class Numeric
 
   # 481
   def self.ERR_NOPRIVILEGES(nick)
-    return sprintf(":%s 481 %s :Permission Denied - You're not an IRC operator", Options.server_name, nick)
+    return sprintf(":%s 481 %s :You do not have the required privileges", Options.server_name, nick)
+  end
+
+  # 485
+  def self.ERR_ATTACKDENY(nick, given_nick)
+    return sprintf(":%s 485 %s :Cannot ban, kick, kill, or deop %s. %s is an IRC Administrator or Service.", Options.server_name, nick, given_nick, given_nick)
   end
 
   ERR_CHANOPRIVSNEEDED = "You're not channel operator"                                # 482

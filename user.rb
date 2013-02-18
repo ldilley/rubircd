@@ -29,7 +29,8 @@ class User
     @is_registered = false
     @is_admin = false
     @is_operator = false
-    @nick_registered = false
+    @is_service = false
+    @is_nick_registered = false
     @away_message = ""
     @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
@@ -39,6 +40,8 @@ class User
     @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
     @last_ping = nil
+    @data_recv = 0                 # amount of data client has received from us in bytes
+    @data_sent = 0                 # amount of data client has sent to us in bytes
     if Options.io_type.to_s == "thread"
       # Only create locks for items that can change (ident should not for example)
       @nick_lock = Mutex.new
@@ -80,10 +83,20 @@ class User
 
   def set_admin()
     @is_admin = true
+    Server.oper_count += 1
   end
 
   def set_operator()
     @is_operator = true
+    Server.oper_count += 1
+  end
+
+  def set_service()
+    @is_service = true
+  end
+
+  def set_nick_registered()
+    @is_nick_registered = true
   end
 
   def set_away(message)
@@ -158,8 +171,8 @@ class User
     @last_activity
   end
 
-  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :nick_registered, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping
+  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :is_service, :is_nick_registered, :thread, :channels, :signon_time
+  attr_accessor :socket, :last_ping, :data_recv, :data_sent
 end
 
 class Oper

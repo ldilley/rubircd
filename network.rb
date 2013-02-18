@@ -135,6 +135,10 @@ class Network
     if data.length > Limits::MAXMSG
       data = data[0..Limits::MAXMSG-1]
     end
+    unless data == nil
+      Server.add_data_recv(data.length)
+      user.data_recv += data.length
+    end
     return data
     # Handle exception in case socket goes away...
     rescue
@@ -151,6 +155,10 @@ class Network
   def self.send(user, data)
     if data.length > Limits::MAXMSG
       data = data[0..Limits::MAXMSG-1]
+    end
+    unless data == nil
+      Server.add_data_sent(data.length)
+      user.data_sent += data.length
     end
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
