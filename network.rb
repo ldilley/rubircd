@@ -131,7 +131,8 @@ class Network
   end
 
   def self.recv(user)
-    data = user.socket.gets("\r\n").chomp("\r\n")
+    #data = user.socket.gets("\r\n").chomp("\r\n")
+    data = user.socket.gets().chomp("\r\n") # ircII fix
     if data.length > Limits::MAXMSG
       data = data[0..Limits::MAXMSG-1]
     end
@@ -240,13 +241,14 @@ class Network
     # Ensure we get a valid ping response
     ping_time = Time.now.to_i
     Network.send(user, "PING :#{ping_time}")
+    Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** If you are having problems connecting due to ping timeouts, please type /quote PONG #{ping_time} or /raw PONG #{ping_time} now.")
     loop do
       ping_response = Network.recv(user).split
       if ping_response.empty?
         redo
       end
       if ping_response[0] =~ /(^pong$)/i && ping_response.length == 2
-        if ping_response[1] == ":#{ping_time}"
+        if ping_response[1] == ":#{ping_time}" || ping_response[1] == "#{ping_time}"
           Thread.kill(timer_thread)
           user.set_registered
           return user
