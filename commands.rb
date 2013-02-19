@@ -941,7 +941,7 @@ class Command
         return
       else
         Mod.modules.delete(args[0].to_s.upcase)
-        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, args[0]))
+        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, args[0], "#{mod}"))
         Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
       end
     else

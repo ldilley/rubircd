@@ -551,8 +551,8 @@ class Numeric
   end
 
   # 973
-  def self.RPL_UNLOADEDMODULE(nick, module_name)
-    return sprintf(":%s 973 %s %s :Module successfully unloaded.", Options.server_name, nick, module_name)
+  def self.RPL_UNLOADEDMODULE(nick, module_name, module_address)
+    return sprintf(":%s 973 %s %s :Module successfully unloaded @ %s", Options.server_name, nick, module_name, module_address)
   end
 
   # 974
