@@ -32,6 +32,13 @@ class Command
       Network.send(user, Numeric.ERR_UNKNOWNCOMMAND(user.nick, input[0]))
       return
     end
+    unless input == nil
+      if input.length > 1
+        Command.update_counter(input[0].to_s.upcase, input[0].length + 1 + input[1..-1].join(" ").length) # +1 for space between command and args
+      else
+        Command.update_counter(input[0].to_s.upcase, input[0].length)
+      end
+    end
     handler.call(user, input[1..-1])
   end
 
@@ -83,6 +90,26 @@ class Command
 
   def self.unregister_command(command)
     @@command_map.delete(command.to_s.upcase)
+  end
+
+  def self.init_counters()
+    @@command_counter_map = {}
+    if Options.io_type.to_s == "thread"
+      @@command_counter_lock = Mutex.new
+    end
+    @@command_map.keys.each { |k| @@command_counter_map["#{k}"] = Command_Counter.new }
+  end
+
+  def self.update_counter(command, recv_bytes)
+    if Options.io_type.to_s == "thread"
+      @@command_counter_lock.synchronize do
+        @@command_counter_map["#{command}"].increment_counter()
+        @@command_counter_map["#{command}"].add_amount_recv(recv_bytes)
+      end
+    else
+      @@command_counter_map["#{command}"].increment_counter()
+      @@command_counter_map["#{command}"].add_amount_recv(recv_bytes)
+    end
   end
 
   # ADMIN
@@ -162,6 +189,7 @@ class Command
     hash = Digest::SHA2.new(256) << args[0]
     if Options.control_hash == hash.to_s
       # ToDo: Cleanly exit (write any klines, etc.)
+      Log.write("DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
       exit!
     else
       Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
@@ -248,7 +276,7 @@ class Command
   # args[0 ...] = channel or channels that are comma separated
   # args[1? ...] = optional key or keys that are comma separated
   def self.handle_join(user, args)
-  # ToDo: Handle conditions such as invite only and keys later once channels support those modes
+    # ToDo: Handle conditions such as invite only and keys later once channels support those modes
     if args.length < 1
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
       return
@@ -398,7 +426,7 @@ class Command
           chan.users.each { |u| Network.send(u, ":#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} QUIT :Killed by #{user.nick} (#{kill_message}\)") }
         end
       end
-      Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}: #{kill_message}")
+      Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{kill_message}")
       Network.close(kill_target)
     else
       Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
@@ -794,10 +822,11 @@ class Command
       Mod.modules = {}
     end
     if Mod.modules.length < 1
-      Network.send(user, "No modules are currently loaded.")
+      Network.send(user, Numeric.RPL_ENDOFMODLIST(user.nick))
       return
     end
-    Mod.modules.each { |key, mod| Network.send(user, "#{mod.command_name} (#{mod})") }
+    Mod.modules.each { |key, mod| Network.send(user, Numeric.RPL_MODLIST(user.nick, mod.command_name, mod)) }
+    Network.send(user, Numeric.RPL_ENDOFMODLIST(user.nick))
   end
 
   # MODLOAD
@@ -834,13 +863,22 @@ class Command
       new_module.plugin_init(Command)
     rescue Errno::ENOENT => e
       unless user == nil # called during startup for module autoload, so don't send message down the socket
-        Network.send(user, "Failed to load module: #{mod_name}")
+        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
       end
       Log.write("Failed to load module: #{mod_name}")
       Log.write(e)
     rescue LoadError => e
       unless user == nil # called during startup for module autoload, so don't send message down the socket
-        Network.send(user, "Failed to load module: #{mod_name}")
+        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
+      end
+      Log.write("Failed to load module: #{mod_name}")
+      Log.write(e)
+    rescue NameError => e
+      unless user == nil # called during startup for module autoload, so don't send message down the socket
+        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
       end
       Log.write("Failed to load module: #{mod_name}")
       Log.write(e)
@@ -848,13 +886,14 @@ class Command
       mod_exists = Mod.modules[mod_name.to_s.upcase]
       unless mod_exists == nil
         unless user == nil # called during startup for module autoload, so don't send message down the socket
-          Network.send(user, "Module already loaded: #{mod_name} (#{mod_exists})")
+          Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, "Module already loaded @ #{mod_exists}"))
           return
         end
       end
       Mod.add(new_module)
       unless user == nil # called during startup for module autoload, so don't send message down the socket
-        Network.send(user, "Successfully loaded module: #{mod_name} (#{new_module})")
+        Network.send(user, Numeric.RPL_LOADEDMODULE(user.nick, mod_name, new_module))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} called MODLOAD for module: #{mod_name}")
       end
       Log.write("Successfully loaded module: #{mod_name} (#{new_module})")
     end
@@ -887,7 +926,7 @@ class Command
       return
     end
     if Mod.modules == nil || Mod.modules.length < 1
-      Network.send(user, "No modules are currently loaded.")
+      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "No modules are currently loaded."))
       return
     end
     mod = Mod.modules[args[0].to_s.upcase]
@@ -896,16 +935,17 @@ class Command
         mod_name = args[0]
         mod.plugin_finish(Command)
       rescue NameError => e
-        Network.send(user, "Invalid class name for module: #{args[0]}")
+        Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Invalid class name."))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{args[0]}.")
         Log.write(e)
         return
       else
         Mod.modules.delete(args[0].to_s.upcase)
-        Network.send(user, "Successfully unloaded module: #{args[0]} (#{mod})")
-        Log.write("Successfully unloaded module: #{args[0]} (#{mod})")
+        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, args[0]))
+        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
       end
     else
-      Network.send(user, "Module does not exist: #{args[0]}")
+      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Module does not exist."))
     end
   end
 
@@ -1269,6 +1309,7 @@ class Command
     hash = Digest::SHA2.new(256) << args[0]
     if Options.control_hash == hash.to_s
       # ToDo: Write any klines, etc.)
+      Log.write("RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
       if RbConfig::CONFIG['host_os'] =~ /mswin|win|mingw/
         if RUBY_PLATFORM == "java"
           exec("start cmd /C #{File.expand_path(File.dirname(__FILE__))}/rubircd.bat")
@@ -1308,7 +1349,9 @@ class Command
     end
     case symbol
       when 'c' # command statistics
+        @@command_counter_map.each { |key, value| Network.send(user, Numeric.RPL_STATSCOMMANDS(user.nick, key, value.command_count, value.command_recv_bytes)) }
       when 'd' # data transferred
+        #Network.send(user, Numeric.RPL_
       when 'g' # glines
       when 'i' # online admins and operators with idle times
       when 'k' # klines
@@ -1626,12 +1669,13 @@ class Command
   # kline
   # links    - 0.3a
   # map      - 0.3a (requires oper/admin privileges)
-  # operwall
+  # operwall (alias to wallops)
   # pass
   # rehash
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a
+  # wallops
   # whowas
   # zline
 
@@ -1676,4 +1720,21 @@ class Mod
       @@modules[mod.command_name.upcase] = mod
     end
   end
+end
+
+class Command_Counter
+  def initialize()
+    @command_count = 0
+    @command_recv_bytes = 0
+  end
+
+  def increment_counter()
+    @command_count += 1
+  end
+
+  def add_amount_recv(amount)
+    @command_recv_bytes += amount
+  end
+
+  attr_reader :command_count, :command_recv_bytes
 end

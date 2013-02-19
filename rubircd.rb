@@ -57,6 +57,7 @@ Server.read_motd()
 puts("done.")
 print("Registering commands... ")
 Command.register_commands()
+Command.init_counters()
 puts("done.")
 if Options.io_type.to_s == "thread"
   Mod.init_locks()

@@ -23,8 +23,7 @@ require_relative 'options'
 require_relative 'server'
 
 class Numeric
-  # Do not be alarmed by gaps between numeric IDs. Some are reserved, many are unused,
-  # and others are defined in separate classes.
+  # Do not be alarmed by gaps between numeric IDs. Some are reserved and many are unused.
 
   # 001
   def self.RPL_WELCOME(nick)
@@ -62,6 +61,11 @@ class Numeric
       return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
                      Limits::MAXTARGETS, Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Server::STATUS_PREFIXES, Limits::TOPICLEN)
     end
+  end
+
+  # 212
+  def self.RPL_STATSCOMMANDS(nick, command, count, recv_bytes)
+    return sprintf(":%s 212 %s %s %i %i", Options.server_name, nick, command, count, recv_bytes)
   end
 
   # 219
@@ -166,7 +170,10 @@ class Numeric
     return sprintf(":%s 308 %s %s is an IRC Server Administrator", Options.server_name, nick, user.nick)
   end
 
-  RPL_WHOISSERVICE = "is a Network Service"                                           # 310
+  # 310
+  def self.RPL_WHOISSERVICE(nick, user)
+    return sprintf(":%s 310 %s %s is a Network Service", Options.server_name, nick, user.nick)
+  end
 
   # 311
   def self.RPL_WHOISUSER(nick, user)
@@ -333,7 +340,10 @@ class Numeric
     return sprintf(":%s 381 %s :You are now an IRC Operator", Options.server_name, nick)
   end
 
-  RPL_REHASHING = "Rehashing"                                                         # 382
+  # 382
+  def self.RPL_REHASHING(nick, config_file)
+    return sprintf(":%s 382 %s %s :Rehashing", Options.server_name, nick, config_file)
+  end
 
   # 391
   def self.RPL_TIME(nick, server)
@@ -355,7 +365,10 @@ class Numeric
     return sprintf(":%s 403 %s %s :Invalid channel name", Options.server_name, nick, channel)
   end
 
-  ERR_CANNOTSENDTOCHAN = "Cannot send to channel"                                     # 404
+  # 404
+  def self.ERR_CANNOTSENDTOCHAN(nick, channel)
+    return sprintf(":%s 404 %s %s :Cannot send to channel", Options.server_name, nick, channel)
+  end
 
   # 405
   def self.ERR_TOOMANYCHANNELS(nick, channel)
@@ -457,16 +470,30 @@ class Numeric
     return sprintf(":%s 468 %s %s :Invalid username", Options.server_name, nick, username)
   end
 
-  ERR_CHANNELISFULL = "Cannot join channel (+l)"                                      # 471
+  # 471
+  def self.ERR_CHANNELISFULL(nick, channel)
+    return sprintf(":%s 471 %s %s :Cannot join channel (+l)", Options.server_name, nick, channel)
+  end
 
   # 472
   def self.ERR_UNKNOWNMODE(nick, mode)
     return sprintf(":%s 472 %s %c :is unknown mode char to me", Options.server_name, nick, mode)
   end
 
-  ERR_INVITEONLYCHAN = "Cannot join channel (+i)"                                     # 473
-  ERR_BANNEDFROMCHAN = "Cannot join channel (+b)"                                     # 474
-  ERR_BADCHANNELKEY = "Cannot join channel (+k)"                                      # 475
+  # 473
+  def self.ERR_INVITEONLYCHAN(nick, channel)
+    return sprintf(":%s 473 %s %s :Cannot join channel (+i)", Options.server_name, nick, channel)
+  end
+
+  # 474
+  def self.ERR_BANNEDFROMCHAN(nick, channel)
+    return sprintf(":%s 474 %s %s :Cannot join channel (+b)", Options.server_name, nick, channel)
+  end
+
+  # 475
+  def self.ERR_BADCHANNELKEY(nick, channel)
+    return sprintf(":%s 475 %s %s :Cannot join channel (+k)", Options.server_name, nick, channel)
+  end
 
   # 481
   def self.ERR_NOPRIVILEGES(nick)
@@ -493,5 +520,48 @@ class Numeric
   # 502.2
   def self.ERR_USERSDONTMATCH2(nick)
     return sprintf(":%s 502 %s :Can't change mode for other users", Options.server_name, nick)
+  end
+
+
+  # Below are non-standard numerics (following the lead from InspIRCd)
+
+  # 670
+  def self.RPL_STARTTLS(nick)
+    return sprintf(":%s 670 %s :STARTTLS successful, go ahead with TLS handshake", Options.server_name, nick)
+  end
+
+  # 691
+  def self.ERR_STARTTLSFAILURE(nick)
+    return sprintf(":%s 691 %s :STARTTLS failure", Options.server_name, nick)
+  end
+
+  # 700
+  def self.RPL_MODLIST(nick, module_name, module_address)
+    return sprintf(":%s 700 %s :%s \(%s\)", Options.server_name, nick, module_name, module_address)
+  end
+
+  # 703
+  def self.RPL_ENDOFMODLIST(nick)
+    return sprintf(":%s 703 %s :End of MODLIST command", Options.server_name, nick)
+  end
+
+  # 972
+  def self.ERR_CANTUNLOADMODULE(nick, module_name, reason)
+    return sprintf(":%s 972 %s %s :Failed to unload module: %s", Options.server_name, nick, module_name, reason)
+  end
+
+  # 973
+  def self.RPL_UNLOADEDMODULE(nick, module_name)
+    return sprintf(":%s 973 %s %s :Module successfully unloaded.", Options.server_name, nick, module_name)
+  end
+
+  # 974
+  def self.ERR_CANTLOADMODULE(nick, module_name, reason)
+    return sprintf(":%s 974 %s %s :Failed to load module: %s", Options.server_name, nick, module_name, reason)
+  end
+
+  # 975
+  def self.RPL_LOADEDMODULE(nick, module_name, module_address)
+    return sprintf(":%s 975 %s %s :Module successfully loaded @ %s", Options.server_name, nick, module_name, module_address)
   end
 end
