@@ -999,18 +999,32 @@ class Command
       return
     end
     if args.length > 1
-      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" ")))
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" "), "Nicknames cannot contain spaces."))
       return
     end
     nickname = args[0..-1].join(" ")
     if nickname[0] == ':'
-      nickname = nickname[1..-1] # remove leading ':' (fix for Pidgin and possibly other clients)
+      nickname = nickname[1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
     end
     # We must have exactly 2 tokens so ensure the nick is valid
     if nickname =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && nickname.length >=1 && nickname.length <= Limits::NICKLEN
       Server.users.each do |u|
         if u.nick.casecmp(nickname) == 0 && user != u
-          Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", nickname))
+          unless user.is_registered
+            Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", nickname))
+          else
+            Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, nickname))
+          end
+          return
+        end
+      end
+      Server.reserved_nicks.each do |n|
+        if n.casecmp(nickname) == 0 && user.nick != n
+          unless user.is_registered
+            Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", nickname, "Reserved nickname"))
+          else
+            Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname, "Reserved nickname"))
+          end
           return
         end
       end
@@ -1030,7 +1044,7 @@ class Command
       user.change_nick(nickname)
       return
     else
-      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname))
+      Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname, "Nickname contains invalid characters."))
       return
     end
   end
@@ -1208,8 +1222,8 @@ class Command
       Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
       return
     end
-    if Options.server_name.casecmp(args[0]) == 0
-      # Set user's last ping response time
+    if Options.server_name.casecmp(args[0]) == 0 || args[0].to_s.casecmp(":#{Options.server_name}") == 0
+      user.last_ping = Time.now.to_i
     end
   end
 

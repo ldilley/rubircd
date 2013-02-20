@@ -49,6 +49,7 @@ class Server
   @@users = Array.new
   @@admins = Array.new
   @@opers = Array.new
+  @@reserved_nicks = Array.new
 
   def self.init_locks()
     @@client_count_lock = Mutex.new
@@ -153,6 +154,10 @@ class Server
     @@opers.push(oper)
   end
 
+  def self.add_reserved_nick(nick)
+    @@reserved_nicks.push(nick)
+  end
+
   def self.add_data_recv(amount)
     if Options.io_type.to_s == "thread"
       @@data_recv_lock.synchronize do
@@ -216,6 +221,10 @@ class Server
 
   def self.opers
     @@opers
+  end
+
+  def self.reserved_nicks
+    @@reserved_nicks
   end
 
   def self.data_recv

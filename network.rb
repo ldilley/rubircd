@@ -67,7 +67,7 @@ class Network
         exit!
       end
     end
-    #connection_check_thread = Thread.new() { Network.connection_checker() }
+    connection_check_thread = Thread.new() { Network.connection_checker() }
     if Options.io_type.to_s == "thread"
       plain_thread = Thread.new() { Network.plain_connections(plain_server) }
       unless Options.ssl_port == nil
@@ -82,19 +82,30 @@ class Network
     #end
   end # method
 
-  # Future periodic ping checker
-  #def self.connection_checker()
-  #  loop do
-  #    Server.users.each do |u|
-  #      unless u.thread == nil
-  #        if u.thread.status == "sleep"
-  #          Thread.kill(u.thread)
-  #        end
-  #      end
-  #    end
-  #    sleep 10
-  #  end
-  #end
+  # Periodic PING check
+  def self.connection_checker()
+    loop do
+      Server.users.each do |u|
+        unless u.is_registered
+          next unless u == nil
+        end
+        if Time.now.to_i - u.last_ping > 60
+          begin
+            u.socket.close()
+          rescue
+            if Server.remove_user(u)
+              Server.decrement_clients()
+            end
+            if u.thread != nil
+              Thread.kill(u.thread)
+            end
+          end
+        end
+        sleep 10
+        Network.send(u, "PING :#{Options.server_name}")
+      end
+    end
+  end
 
   def self.plain_connections(plain_server)
     loop do
@@ -132,7 +143,7 @@ class Network
 
   def self.recv(user)
     #data = user.socket.gets("\r\n").chomp("\r\n")
-    data = user.socket.gets().chomp("\r\n") # ircII fix
+    data = user.socket.gets().chomp("\r\n") # ircII fix -- blocking should be fine here until client sends EoL when in threaded mode
     if data.length > Limits::MAXMSG
       data = data[0..Limits::MAXMSG-1]
     end
@@ -164,12 +175,13 @@ class Network
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
     rescue
-      if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-        Server.decrement_clients()
-      end
-      if user.thread != nil
-        Thread.kill(user.thread)
-      end
+      Network.close(user)
+    #  if Server.remove_user(user) # this will affect WHOWAS -- work around this later
+    #    Server.decrement_clients()
+    #  end
+    #  if user.thread != nil
+    #    Thread.kill(user.thread)
+    #  end
   end
 
   def self.close(user)
@@ -181,7 +193,15 @@ class Network
       if user.channels.length > 0
         user.channels.each do |c|
           chan = Server.channel_map[c.to_s.upcase]
+          chan.users.each do |u|
+            unless user.nick == u.nick
+              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :Connection closed")
+            end
+          end
           chan.remove_user(user)
+          unless chan.modes.include?('r') || chan.users.length > 0
+            Server.remove_channel(chan)
+          end
         end
       end
       if Server.remove_user(user)
@@ -194,7 +214,7 @@ class Network
   end
 
   def self.register_connection(client_socket, connection_thread)
-    allowed_commands = ["CAP", "CAPAB", "NICK", "PASS", "QUIT", "USER"]
+    allowed_commands = ["CAP", "CAPAB", "NICK", "PASS", "QUIT", "SERVER", "USER"]
     sock_domain, client_port, client_hostname, client_ip = client_socket.peeraddr
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     if Server.client_count >= Options.max_connections
@@ -294,7 +314,14 @@ class Network
       end
       # output raw commands to foreground for now for debugging purposes
       puts input
-      input = input.split
+      if input.include?(':')
+        total_input = input.split(':')
+        input = total_input[0].split
+        input << total_input[1]
+      else
+        input = input.split
+      end
+puts input
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i
       else

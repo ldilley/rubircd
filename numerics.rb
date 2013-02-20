@@ -411,8 +411,8 @@ class Numeric
   end
 
   # 432
-  def self.ERR_ERRONEOUSNICKNAME(nick, given_nick)
-    return sprintf(":%s 432 %s %s :Erroneous Nickname", Options.server_name, nick, given_nick)
+  def self.ERR_ERRONEOUSNICKNAME(nick, given_nick, reason)
+    return sprintf(":%s 432 %s %s :Erroneous Nickname: %s", Options.server_name, nick, given_nick, reason)
   end
 
   # 433

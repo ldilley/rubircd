@@ -39,7 +39,7 @@ class User
     @channels = Array.new
     @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
-    @last_ping = nil
+    @last_ping = Time.now.to_i
     @data_recv = 0                 # amount of data client has received from us in bytes
     @data_sent = 0                 # amount of data client has sent to us in bytes
     if Options.io_type.to_s == "thread"

@@ -64,25 +64,16 @@ if Options.io_type.to_s == "thread"
   Server.init_locks()
 end
 print("Populating reserved nicknames... ")
-chanserv = User.new("ChanServ", "services", Options.server_name, nil, "Channel Services", nil, nil)
-global = User.new("Global", "services", Options.server_name, nil, "Global Messenger", nil, nil)
-memoserv = User.new("MemoServ", "services", Options.server_name, nil, "Memo Services", nil, nil)
-nickserv = User.new("NickServ", "services", Options.server_name, nil, "Nickname Services", nil, nil)
-operserv = User.new("OperServ", "services", Options.server_name, nil, "Operator Services", nil, nil)
-Server.add_user(chanserv)
-5.times { Server.increment_clients() }
-Server.add_user(global)
-Server.add_user(memoserv)
-Server.add_user(nickserv)
-Server.add_user(operserv)
+reserved_nicks = ["ChanServ", "Global", "MemoServ", "NickServ", "OperServ", "X"]
+reserved_nicks.each { |nick| Server.add_reserved_nick(nick) }
 puts("done.")
 Log.write("Reserved nicknames populated.")
 Server.init_chanmap()
 Server.channel_count = 0
 Server.start_timestamp = Time.now.asctime
-Server.oper_count = 5
+Server.oper_count = 0
 Server.link_count = 0
-Server.visible_count = 5
+Server.visible_count = 0
 Server.invisible_count = 0
 # FixMe: Calculate global_users and max count later
 Server.global_users = 0
