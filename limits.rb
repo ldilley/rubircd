@@ -22,7 +22,7 @@ class Limits
   KICKLEN = 256
   MAXBANS = 50
   MAXCHANNELS = 10
-  MAXMSG = 510              # max message length per RFC is 512, but we need 2 bytes to append carriage return and newline
+  MAXMSG = 510              # maximum message length per RFC is 512, but we need 2 bytes to append carriage return and newline
   MAXPART = 255
   MAXQUIT = 255
   MAXTARGETS = 6
@@ -32,5 +32,7 @@ class Limits
   IDENTLEN = 10
   GECOSLEN = 150
   MOTDLINELEN = 80
-  REGISTRATION_TIMEOUT = 20 # allow enough time for hostname lookup timeout
+  PING_STRIKES = 3          # number of times a connection can fail to respond to a ping request before it should be dropped
+  PING_INTERVAL = 90        # interval to ping all connections in seconds (do not set this value too low!)
+  REGISTRATION_TIMEOUT = 20 # seconds a new connection has to register -- be sure to allow enough time for hostname lookups to fail
 end

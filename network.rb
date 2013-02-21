@@ -80,30 +80,21 @@ class Network
     #else
     # ToDo: select() stuff here
     #end
-  end # method
+  end
 
   # Periodic PING check
   def self.connection_checker()
     loop do
       Server.users.each do |u|
-        unless u.is_registered
-          next unless u == nil
-        end
-        if Time.now.to_i - u.last_ping > 60
-          begin
-            u.socket.close()
-          rescue
-            if Server.remove_user(u)
-              Server.decrement_clients()
-            end
-            if u.thread != nil
-              Thread.kill(u.thread)
-            end
+        if u != nil && u.is_registered
+          Network.send(u, "PING :#{Options.server_name}")
+          ping_diff = Time.now.to_i - u.last_ping
+          if ping_diff >= Limits::PING_STRIKES * Limits::PING_INTERVAL
+            Network.close(u, "Ping timeout: #{ping_diff} seconds")
           end
         end
-        sleep 10
-        Network.send(u, "PING :#{Options.server_name}")
       end
+      sleep Limits::PING_INTERVAL
     end
   end
 
@@ -118,8 +109,7 @@ class Network
     end
     rescue SocketError => e
       puts "Open file descriptor limit reached!"
-      # We likely cannot write to the log file in this state, but try anyway...
-      Log.write("Open file descriptor limit reached!")
+      Log.write("Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
   end
 
   def self.ssl_connections(ssl_server)
@@ -133,8 +123,7 @@ class Network
         end 
       rescue SocketError => e
         puts "Open file descriptor limit reached!"
-        # We likely cannot write to the log file in this state, but try anyway...
-        Log.write("Open file descriptor limit reached!")
+        Log.write("Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
       rescue
         # Do nothing here since a plain-text connection likely came in... just continue on with the next connection
       end
@@ -154,14 +143,7 @@ class Network
     return data
     # Handle exception in case socket goes away...
     rescue
-      # Testing close() method instead of original code below for a bit...
-      Network.close(user)
-      #if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-      #  Server.decrement_clients()
-      #end
-      #if user.thread != nil
-      #  Thread.kill(user.thread)
-      #end
+      Network.close(user, "Connection closed")
   end
 
   def self.send(user, data)
@@ -175,27 +157,21 @@ class Network
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
     rescue
-      Network.close(user)
-    #  if Server.remove_user(user) # this will affect WHOWAS -- work around this later
-    #    Server.decrement_clients()
-    #  end
-    #  if user.thread != nil
-    #    Thread.kill(user.thread)
-    #  end
+      Network.close(user, "Connection closed")
   end
 
-  def self.close(user)
+  def self.close(user, reason)
     begin
       user.socket.close()
     rescue
-      #
+      # No need for anything here
     ensure
       if user.channels.length > 0
         user.channels.each do |c|
           chan = Server.channel_map[c.to_s.upcase]
           chan.users.each do |u|
             unless user.nick == u.nick
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :Connection closed")
+              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
             end
           end
           chan.remove_user(user)
@@ -219,7 +195,7 @@ class Network
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     if Server.client_count >= Options.max_connections
       Network.send(user, "ERROR :Closing link: [Server too busy]")
-      Network.close(user)
+      Network.close(user, "Server too busy")
     end
     Server.add_user(user)
     Log.write("Received connection from #{user.ip_address}.")
@@ -258,7 +234,7 @@ class Network
       end
     end # until
 
-    # Ensure we get a valid ping response
+    # Ensure we get a valid ping response during registration
     ping_time = Time.now.to_i
     Network.send(user, "PING :#{ping_time}")
     Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** If you are having problems connecting due to ping timeouts, please type /quote PONG #{ping_time} or /raw PONG #{ping_time} now.")
@@ -271,6 +247,7 @@ class Network
         if ping_response[1] == ":#{ping_time}" || ping_response[1] == "#{ping_time}"
           Thread.kill(timer_thread)
           user.set_registered
+          user.last_ping = Time.now.to_i
           return user
         else
           redo # ping response incorrect
@@ -278,13 +255,13 @@ class Network
       else
         redo # wrong number of args or not a pong
       end
-    end # loop
-  end # method
+    end
+  end
 
   def self.registration_timer(user)
     Kernel.sleep Limits::REGISTRATION_TIMEOUT
     Network.send(user, "ERROR :Closing link: [Registration timeout]")
-    Network.close(user)
+    Network.close(user, "Registration timeout")
   end
 
   def self.welcome(user)
@@ -312,16 +289,13 @@ class Network
       if input.empty?
         redo
       end
-      # output raw commands to foreground for now for debugging purposes
-      puts input
+      puts input                   # output raw commands to foreground for now for debugging purposes
       if input.include?(':')
-        total_input = input.split(':')
-        input = total_input[0].split
-        input << total_input[1]
+        input = input.sub(/:/, '') # remove leading ':'
+        input = input.split
       else
         input = input.split
       end
-puts input
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i
       else

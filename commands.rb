@@ -420,14 +420,10 @@ class Command
         return
       end
       # ToDo: Send server/operwall message
-      kill_target.channels.each do |c|
-        chan = Server.channel_map[c.to_s.upcase]
-        unless chan == nil
-          chan.users.each { |u| Network.send(u, ":#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} QUIT :Killed by #{user.nick} (#{kill_message}\)") }
-        end
-      end
+      Network.send(kill_target, ":#{user.nick}!#{user.ident}@#{user.hostname} KILL #{kill_target.nick} :#{Options.server_name}!#{user.hostname}!#{user.nick} (#{kill_message})")
+      Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{kill_message}))]")
       Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{kill_message}")
-      Network.close(kill_target)
+      Network.close(kill_target, "Killed (#{user.nick} (#{kill_message}))")
     else
       Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
@@ -1240,7 +1236,7 @@ class Command
       return
     end
     message = args[1..-1].join(" ")
-    message = message[1..-1] # remove leading ':'
+    #message = message[1..-1] # remove leading ':'
     if args[0] =~ /[#&+][A-Za-z0-9_!-]/
       channel = Server.channel_map[args[0].to_s.upcase]
       unless channel == nil
@@ -1268,8 +1264,8 @@ class Command
   # QUIT
   # args[0..-1] = optional quit message
   def self.handle_quit(user, args)
-    quit_message = ""
-    unless args.length < 1
+    quit_message = "Client quit"
+    if args.length > 0
       quit_message = args[0..-1].join(" ") # 0 may contain ':' and we already supply it
       if quit_message[0] == ':'
         quit_message = quit_message[1..-1]
@@ -1278,35 +1274,14 @@ class Command
         quit_message = quit_message[0..Limits::MAXQUIT]
       end
     end
-    if user.channels.length > 0
-      user.channels.each do |c|
-        chan = Server.channel_map[c.to_s.upcase]
-        chan.users.each do |u|
-          if args.length < 1 && user.nick != u.nick
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{user.nick}")
-          elsif user.nick != u.nick
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{quit_message}")
-          end
-        end
-      end
-    end
     if user.nick == '*'
-      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: Client exited)")
+      Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: Client exited)")
     elsif args.length < 1
-      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: #{user.nick})")
+      Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{user.nick})")
     else
-      Network.send(user, "ERROR :Closing Link: #{user.hostname} (Quit: #{quit_message})")
+      Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{quit_message})")
     end
-    begin
-      user.socket.close()
-    rescue
-      if Server.remove_user(user)
-        Server.decrement_clients()
-      end
-      if user.thread != nil
-        Thread.kill(user.thread)
-      end
-    end
+    Network.close(user, quit_message)
   end
 
   # RESTART
