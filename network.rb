@@ -292,10 +292,11 @@ class Network
       if input.empty?
         redo
       end
-      puts input                   # output raw commands to foreground for now for debugging purposes
+      puts input               # output raw commands to foreground for now for debugging purposes
       if input.include?(':')
-        input = input.sub(/:/, '') # remove leading ':'
-        input = input.split
+        input_tokens = input.split(':', 2)
+        input = input_tokens[0].split
+        input << input_tokens[1]
       else
         input = input.split
       end
