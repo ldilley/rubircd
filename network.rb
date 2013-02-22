@@ -198,7 +198,7 @@ class Network
       Network.close(user, "Server too busy")
     end
     Server.add_user(user)
-    Log.write("Received connection from #{user.ip_address}.")
+    Log.write("Received connection from #{user.ip_address}")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
     begin
       hostname = Resolv.getname(client_ip)
@@ -277,7 +277,10 @@ class Network
     Network.send(user, Numeric.RPL_LUSERME(user.nick))
     Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
     Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
-    Command.handle_motd(user, "")
+    motd_cmd = Command.command_map["MOTD"]
+    unless motd_cmd == nil
+      motd_cmd.call(user, "")
+    end
   end
 
   def self.main_loop(user)

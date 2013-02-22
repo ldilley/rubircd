@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Version
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "version"
+      @command_proc = Proc.new() { |user, args| on_version(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,17 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = optional server
+    def on_version(user, args)
+      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+        Network.send(user, Numeric.RPL_VERSION(user.nick, Options.server_name))
+        Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
+        Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
+      #elsif to handle arbitrary servers when others are linked
+      else
+        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+      end
     end
   end
 end
-Optional::Fnick.new
+Standard::Version.new

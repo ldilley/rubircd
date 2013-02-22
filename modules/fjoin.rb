@@ -17,26 +17,28 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-class Module_FJoin
-  def initialize()
-    @command_name = "fjoin"
-    @command_proc = Proc.new() { |user, args| on_fjoin(user, args) }
-  end
+module Optional
+  class Fjoin
+    def initialize()
+      @command_name = "fjoin"
+      @command_proc = Proc.new() { |user, args| on_fjoin(user, args) }
+    end
 
-  def plugin_init(caller)
-    caller.register_command(@command_name, @command_proc)
-  end
+    def plugin_init(caller)
+      caller.register_command(@command_name, @command_proc)
+    end
 
-  def plugin_finish(caller)
-    caller.unregister_command(@command_name)
-  end
+    def plugin_finish(caller)
+      caller.unregister_command(@command_name)
+    end
 
-  def command_name
-    @command_name
-  end
+    def command_name
+      @command_name
+    end
 
-  def on_fjoin(user, args)
-    # ToDo: Add command
+    def on_fjoin(user, args)
+      # ToDo: Add command
+    end
   end
 end
-Module_FJoin.new
+Optional::Fjoin.new

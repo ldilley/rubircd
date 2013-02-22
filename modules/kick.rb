@@ -1,0 +1,105 @@
+# $Id$
+# RubIRCd - An IRC server written in Ruby
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# http://www.rubircd.org/
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+module Standard
+  class Kick
+    def initialize()
+      @command_name = "kick"
+      @command_proc = Proc.new() { |user, args| on_kick(user, args) }
+    end
+
+    def plugin_init(caller)
+      caller.register_command(@command_name, @command_proc)
+    end
+
+    def plugin_finish(caller)
+      caller.unregister_command(@command_name)
+    end
+
+    def command_name
+      @command_name
+    end
+
+    # args[0] = channel
+    # args[1? ...] = comma-separated users
+    # args[2?...-1] = optional reason
+    def on_kick(user, args)
+      if args.length < 2
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KICK"))
+        return
+      end
+      chan = Server.channel_map[args[0].to_s.upcase]
+      if chan == nil
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        return
+      end
+      user.channels.each do |c|
+        unless c.casecmp(chan.name) == 0
+          Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+          return
+        end
+      end
+      nicks = args[1].split(',')
+      reason = ""
+      if args.length >= 3
+        reason = args[2..-1].join(" ")
+        if reason[0] == ':'
+          reason = reason[1..-1] # remove leading ':'
+        end
+        if reason.length > Limits::KICKLEN
+          reason = reason[0..Limits::KICKLEN-1]
+        end
+      end
+      good_nicks = []
+      nicks.each do |n|
+        if Server.users.any? { |u| u.nick.casecmp(n) == 0 }
+          good_nicks << n
+        else
+          Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, n))
+        end
+      end
+      good_nicks.each do |n|
+        Server.users.each do |u|
+          if u.nick.casecmp(n) == 0
+            if !u.channels.any? { |c| c.casecmp(chan.name) == 0 }
+              Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
+            elsif (u.is_admin && !user.is_admin) || u.is_service
+              Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
+              if u.is_admin
+                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
+              end
+            else
+              if reason.length > 0
+                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{reason}") }
+              else
+                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
+              end
+              chan.remove_user(u)
+              u.remove_channel(chan.name)
+              unless chan.users.length > 0 || chan.is_registered
+                Server.remove_channel(chan)
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+Standard::Kick.new

@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Quit
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "quit"
+      @command_proc = Proc.new() { |user, args| on_quit(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,27 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0..-1] = optional quit message
+    def on_quit(user, args)
+      quit_message = "Client quit"
+      if args.length > 0
+        quit_message = args[0..-1].join(" ") # 0 may contain ':' and we already supply it
+        if quit_message[0] == ':'
+          quit_message = quit_message[1..-1]
+        end
+        if quit_message.length > Limits::MAXQUIT
+          quit_message = quit_message[0..Limits::MAXQUIT]
+        end
+      end
+      if user.nick == '*'
+        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: Client exited)")
+      elsif args.length < 1
+        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{user.nick})")
+      else
+        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{quit_message})")
+      end
+      Network.close(user, quit_message)
     end
   end
 end
-Optional::Fnick.new
+Standard::Quit.new

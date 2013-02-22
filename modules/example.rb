@@ -18,10 +18,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
-  class Fnick
+  class Example
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "example"
+      @command_proc = Proc.new() { |user, args| on_example(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,9 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    def on_example(user, args)
+      Network.send(user, "This is a test.")
     end
   end
 end
-Optional::Fnick.new
+Optional::Example.new

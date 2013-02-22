@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Summon
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "summon"
+      @command_proc = Proc.new() { |user| on_summon(user) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,10 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # This command is part of the RFC, but will not be implemented since there is little practical use for it.
+    def on_summon(user)
+      Network.send(user, Numeric.ERR_SUMMONDISABLED(user.nick))
     end
   end
 end
-Optional::Fnick.new
+Standard::Summon.new

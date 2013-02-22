@@ -1,7 +1,47 @@
-# Add the modules you wish to load at start below
+# Add the modules you wish to load at startup below.
 # Omit the ".rb" extension (module name is base name of script)
-# You can comment out unwanted modules with '#'
+# You can comment out unwanted modules with '#' or simply remove the line to stop loading a module.
+# You should keep the core modules if you want a useful server. ;)
+
 modules:
-  - fjoin # force join
-  - fnick # force nick
-# - test  # sample module
+# The modules below represent core IRC commands
+  - admin    # displays administrative info about the server
+  - away     # sets the user away (AFK)
+  - capab    # server capabilities (needed for linking servers)
+  - cap      # client capabilities extension for things like NAMESX, TLS, and UHNAMES
+  - die      # kills the server
+  - info     # displays information about the server software
+  - invite   # allows channel invitations to be sent to users
+  - ison     # checks if user(s) are on the network
+  - join     # enables channel joins
+  - kick     # allows kicking of users from channels
+  - kill     # allows removal of users from the network by admins/opers
+  - list     # shows channels on the network and their properties
+  - lusers   # displays local client, global client, channel, oper, and server counts
+  - mode     # enables mode changes for channels and users
+  - motd     # displays the message of the day
+  - names    # shows nicknames on specified channel
+  - nick     # allows nickname changes
+  - notice   # allows clients to send notices to users and channels
+  - oper     # permits users access to become administrators and operators
+  - part     # allows users to leave channels
+  - ping     # check to see if a connection is alive
+  - pong     # response to ping request
+  - privmsg  # enables chat in channels and in private
+  - quit     # allows users to quit the server
+  - restart  # restarts the server
+  - stats    # shows various server statistics (limited to admins/opers)
+  - summon   # disabled (used to summon an administrator from the host operating system)
+  - time     # displays the server time
+  - topic    # allows topics on channels to be set
+  - user     # allows incoming clients to register with their information
+  - userhost # gets host information for user
+  - users    # shows local and global user counts
+  - version  # displays version information about the server software
+  - who      # shows who is on the network
+  - whois    # shows information about a user
+
+# The modules below are optional
+  - fjoin    # forces channel joins
+  - fnick    # forces nick changes (needed if using integrated services for enforcement of nicknames)
+# - example  # example module

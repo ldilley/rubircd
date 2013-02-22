@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Ping
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "ping"
+      @command_proc = Proc.new() { |user, args| on_ping(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,14 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = message
+    def on_ping(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
+        return
+      end
+      Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")
     end
   end
 end
-Optional::Fnick.new
+Standard::Ping.new

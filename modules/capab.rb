@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Capab
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "capab"
+      @command_proc = Proc.new() { |user, args| on_capab(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,11 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0 ... ?] = stuff from Limits class
+    def on_capab(user, args)
+      # ToDo: Handshaking stuff for server linking
+      #Network.send(server, "CAPAB ...")
     end
   end
 end
-Optional::Fnick.new
+Standard::Capab.new

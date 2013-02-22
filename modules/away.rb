@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Away
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "away"
+      @command_proc = Proc.new() { |user, args| on_away(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,23 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = message
+    def on_away(user, args)
+      if args.length < 1
+        user.set_away("")
+        Network.send(user, Numeric.RPL_UNAWAY(user.nick))
+      else
+        message = args[0..-1].join(" ")
+        if message[0] == ':'
+          message = message[1..-1]
+        end
+        if message.length > Limits::AWAYLEN
+          message = message[0..Limits::AWAYLEN-1]
+        end
+        user.set_away(message)
+        Network.send(user, Numeric.RPL_NOWAWAY(user.nick))
+      end
     end
   end
 end
-Optional::Fnick.new
+Standard::Away.new

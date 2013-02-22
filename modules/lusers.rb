@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Lusers
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "lusers"
+      @command_proc = Proc.new() { |user| on_lusers(user) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,15 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # This command takes no args and is not RFC compliant as a result (behaves the same way on InspIRCd)
+    def on_lusers(user)
+      Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
+      Network.send(user, Numeric.RPL_LUSEROP(user.nick))
+      Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
+      Network.send(user, Numeric.RPL_LUSERME(user.nick))
+      Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
+      Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
     end
   end
 end
-Optional::Fnick.new
+Standard::Lusers.new

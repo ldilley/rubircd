@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Cap
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "cap"
+      @command_proc = Proc.new() { |user, args| on_cap(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,27 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = subcommand
+    def on_cap(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "CAP"))
+        return
+      end
+      case args[0].to_s.upcase
+        when "ACK"
+        when "CLEAR"
+          Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
+        when "END"
+        when "LIST"
+          Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
+        when "LS"
+          # Add "multi-prefix userhost-in-names tls" once NAMESX, UHNAMES, and STARTTLS are supported
+          Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
+        when "REQ"
+        else
+          Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
+      end
     end
   end
 end
-Optional::Fnick.new
+Standard::Cap.new

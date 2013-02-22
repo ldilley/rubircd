@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Names
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "names"
+      @command_proc = Proc.new() { |user, args| on_names(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,22 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = channel
+    def on_names(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
+        return
+      end
+      userlist = []
+      channel = Server.channel_map[args[0].to_s.upcase]
+      unless channel == nil
+        # ToDo: Add flag prefixes to nicks later
+        channel.users.each { |u| userlist << u.nick }
+      end
+      userlist = userlist[0..-1].join(" ")
+      Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))
+      Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args[0]))
     end
   end
 end
-Optional::Fnick.new
+Standard::Names.new

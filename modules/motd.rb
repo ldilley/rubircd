@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Motd
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "motd"
+      @command_proc = Proc.new() { |user, args| on_motd(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,28 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = optional server name
+    def on_motd(user, args)
+      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+        if Server.motd.length == 0
+          Network.send(user, Numeric.ERR_NOMOTD(user.nick))
+        else
+          Network.send(user, Numeric.RPL_MOTDSTART(user.nick))
+          Server.motd.each do |line|
+            if line.length > Limits::MOTDLINELEN
+              line = line[0..Limits::MOTDLINELEN-1]
+            end
+            line = line.to_s.delete("\n")
+            line = line.delete("\r")
+            Network.send(user, Numeric.RPL_MOTD(user.nick, line))
+          end
+          Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
+        end
+      #elsif to handle arbitrary servers when others are linked
+      else
+        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+      end
     end
   end
 end
-Optional::Fnick.new
+Standard::Motd.new

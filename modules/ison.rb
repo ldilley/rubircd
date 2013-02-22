@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Ison
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "ison"
+      @command_proc = Proc.new() { |user, args| on_ison(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,28 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0..-1] = nick or space-separated nicks
+    def on_ison(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "ISON"))
+        return
+      end
+      nicklist = args[0..-1].join(" ")
+      # Check for and remove leading ':' if exists
+      if nicklist[0] == ':'
+        nicklist = nicklist[1..-1]
+      end
+      args = nicklist.split
+      good_nicks = []
+      Server.users.each do |u|
+        args.each do |n|
+          if u.nick.casecmp(n) == 0
+            good_nicks << u.nick
+          end
+        end
+      end
+      Network.send(user, Numeric.RPL_ISON(user.nick, good_nicks))
     end
   end
 end
-Optional::Fnick.new
+Standard::Ison.new

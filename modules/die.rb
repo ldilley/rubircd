@@ -17,11 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
-  class Fnick
+module Standard
+  class Die
     def initialize()
-      @command_name = "fnick"
-      @command_proc = Proc.new() { |user, args| on_fnick(user, args) }
+      @command_name = "die"
+      @command_proc = Proc.new() { |user, args| on_die(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,9 +36,25 @@ module Optional
       @command_name
     end
 
-    def on_fnick(user, args)
-      # ToDo: Add command
+    # args[0] = password
+    def on_die(user, args)
+      unless user.is_admin
+        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        return
+      end
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "DIE"))
+        return
+      end
+      hash = Digest::SHA2.new(256) << args[0]
+      if Options.control_hash == hash.to_s
+        # ToDo: Cleanly exit (write any klines, etc.)
+        Log.write("DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
+        exit!
+      else
+        Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
+      end
     end
   end
 end
-Optional::Fnick.new
+Standard::Die.new

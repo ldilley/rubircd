@@ -17,26 +17,35 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-class Module_Test
-  def initialize()
-    @command_name = "test"
-    @command_proc = Proc.new() { |user, args| on_test(user, args) }
-  end
+module Standard
+  class Pong
+    def initialize()
+      @command_name = "pong"
+      @command_proc = Proc.new() { |user, args| on_pong(user, args) }
+    end
 
-  def plugin_init(caller)
-    caller.register_command(@command_name, @command_proc)
-  end
+    def plugin_init(caller)
+      caller.register_command(@command_name, @command_proc)
+    end
 
-  def plugin_finish(caller)
-    caller.unregister_command(@command_name)
-  end
+    def plugin_finish(caller)
+      caller.unregister_command(@command_name)
+    end
 
-  def command_name
-    @command_name
-  end
+    def command_name
+      @command_name
+    end
 
-  def on_test(user, args)
-    Network.send(user, "This is a test.")
+    # args[0] = server
+    def on_pong(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
+        return
+      end
+      if Options.server_name.casecmp(args[0]) == 0 || args[0].to_s.casecmp(":#{Options.server_name}") == 0
+        user.last_ping = ::Time.now.to_i
+      end
+    end
   end
 end
-Module_Test.new
+Standard::Pong.new
