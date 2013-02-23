@@ -39,6 +39,7 @@ module Standard
     # args[0] = nick
     # args[1] = password
     def on_oper(user, args)
+      args = args.join.split(' ', 2)
       if args.length < 2
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "OPER"))
         return
@@ -59,7 +60,7 @@ module Standard
         Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
         return
       end
-      hash = Digest::SHA2.new(256) << args[1]
+      hash = Digest::SHA2.new(256) << args[1].strip
       unless admin_nick == nil
         Server.admins.each do |admin|
           if admin.nick == admin_nick && admin.hash == hash.to_s

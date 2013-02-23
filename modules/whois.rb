@@ -43,6 +43,7 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHOIS"))
         return
       end
+      args[0] = args[0].strip
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0
           Network.send(user, Numeric.RPL_WHOISUSER(user.nick, u))

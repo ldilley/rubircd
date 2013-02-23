@@ -42,12 +42,10 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "ISON"))
         return
       end
-      nicklist = args[0..-1].join(" ")
-      # Check for and remove leading ':' if exists
-      if nicklist[0] == ':'
-        nicklist = nicklist[1..-1]
+      args = args.join.split
+      if args[0][0] == ':'
+        args[0] = args[0][1..-1] # remove leading ':'
       end
-      args = nicklist.split
       good_nicks = []
       Server.users.each do |u|
         args.each do |n|

@@ -37,8 +37,9 @@ module Standard
     end
 
     # args[0] = target nick
-    # args[1..-1] = message
+    # args[1] = message
     def on_kill(user, args)
+      args = args.join.split(' ', 2)
       unless user.is_operator || user.is_admin || user.is_service
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
@@ -47,13 +48,12 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KILL"))
         return
       end
-      if args.length >= 2
-        kill_message = args[1..-1].join(" ")
-        if kill_message[0] == ':'
-          kill_message = kill_message[1..-1]
+      if args.length == 2
+        if args[1][0] == ':'
+          args[1] = args[1][1..-1] # remove leading ':'
         end
       else
-        kill_message = "No reason given"
+        args[1] = "No reason given"
       end
       kill_target = nil
       Server.users.each do |u|
@@ -70,10 +70,10 @@ module Standard
           return
         end
         # ToDo: Send server/operwall message
-        Network.send(kill_target, ":#{user.nick}!#{user.ident}@#{user.hostname} KILL #{kill_target.nick} :#{Options.server_name}!#{user.hostname}!#{user.nick} (#{kill_message})")
-        Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{kill_message}))]")
-        Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{kill_message}")
-        Network.close(kill_target, "Killed (#{user.nick} (#{kill_message}))")
+        Network.send(kill_target, ":#{user.nick}!#{user.ident}@#{user.hostname} KILL #{kill_target.nick} :#{Options.server_name}!#{user.hostname}!#{user.nick} (#{args[1]})")
+        Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{args[1]}))]")
+        Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{args[1]}")
+        Network.close(kill_target, "Killed (#{user.nick} (#{args[1]}))")
       else
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
       end

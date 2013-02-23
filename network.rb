@@ -217,7 +217,7 @@ class Network
       if input.empty?
         redo
       end
-      input = input.split
+      input = input.chomp.split(' ', 2) # input[0] should contain command and input[1] contains the rest
       # Do not allow access to any other commands until the client is registered
       unless allowed_commands.any? { |c| c.casecmp(input[0].to_s.upcase) == 0 }
         unless Command.command_map[input[0].to_s.upcase] == nil
@@ -292,14 +292,8 @@ class Network
       if input.empty?
         redo
       end
-      puts input               # output raw commands to foreground for now for debugging purposes
-      if input.include?(':')
-        input_tokens = input.split(':', 2)
-        input = input_tokens[0].split
-        input << input_tokens[1]
-      else
-        input = input.split
-      end
+      puts input                        # output raw commands to foreground for now for debugging purposes
+      input = input.chomp.split(' ', 2) # input[0] should contain command and input[1] contains the rest
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i
       else

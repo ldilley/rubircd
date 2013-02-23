@@ -42,7 +42,10 @@ module Standard
         Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
         return
       end
-      if Options.server_name.casecmp(args[0]) == 0 || args[0].to_s.casecmp(":#{Options.server_name}") == 0
+      if args[0][0] == ':'
+        args[0] = args[0][1..-1] # remove leading ':'
+      end
+      if args[0].strip.casecmp(Options.server_name) == 0
         user.last_ping = ::Time.now.to_i
       end
     end

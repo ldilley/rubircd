@@ -38,7 +38,12 @@ module Standard
 
     # args[0] = optional server
     def on_time(user, args)
-      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      if args[0] != nil
+        if args[0][0] == ':'
+          args[0] = args[0][1..-1] # remove leading ':'
+        end
+      end
+      if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         Network.send(user, Numeric.RPL_TIME(user.nick, Options.server_name))
       #elsif to handle arbitrary servers when others are linked
       else

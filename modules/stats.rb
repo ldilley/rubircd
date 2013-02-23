@@ -39,6 +39,7 @@ module Standard
     # args[0] = symbol
     # args[1] = optional server
     def on_stats(user, args)
+      args = args.join.split(' ', 2)
       unless user.is_operator || user.is_admin || user.is_service
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
@@ -48,13 +49,12 @@ module Standard
         return
       end
       # ToDo: Handle optional server argument after linking is in a working state
-      symbol = args[0].to_s
-      if symbol.length > 1 && symbol[0] == ':'
-        symbol = symbol[1]
+      if args[0].length > 1 && args[0][0] == ':'
+        args[0] = args[0][1]
       else
-        symbol = symbol[0]
+        args[0] = args[0][0]
       end
-      case symbol
+      case args[0]
         when 'c' # command statistics
           Command.command_counter_map.each { |key, value| Network.send(user, Numeric.RPL_STATSCOMMANDS(user.nick, key, value.command_count, value.command_recv_bytes)) }
         when 'd' # data transferred
@@ -71,7 +71,7 @@ module Standard
         when 'u' # uptime
         when 'z' # zlines
       end
-      Network.send(user, Numeric.RPL_ENDOFSTATS(user.nick, symbol))
+      Network.send(user, Numeric.RPL_ENDOFSTATS(user.nick, args[0]))
     end
   end
 end

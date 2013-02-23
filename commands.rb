@@ -34,7 +34,7 @@ class Command
     end
     unless input == nil
       if input.length > 1
-        Command.update_counter(input[0].to_s.upcase, input[0].length + 1 + input[1..-1].join(" ").length) # +1 for space between command and args
+        Command.update_counter(input[0].to_s.upcase, input[0].length + 1 + input[1..-1].join.length) # +1 for space between command and args
       else
         Command.update_counter(input[0].to_s.upcase, input[0].length)
       end
@@ -130,37 +130,27 @@ class Command
     begin
       new_module = eval(File.read("modules/#{mod_name}.rb"))
       new_module.plugin_init(Command)
-    rescue Errno::ENOENT => e
-      unless user == nil # called during startup for module autoload, so don't send message down the socket
+    rescue Errno::ENOENT, LoadError, NameError, SyntaxError => e
+      if user == nil # called during startup for module autoload, so don't send message down the socket
+        puts("Failed to load module: #{mod_name} #{e}")
+      else
         Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
         Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
       end
-      Log.write("Failed to load module: #{mod_name}")
-      Log.write(e)
-    rescue LoadError => e
-      unless user == nil # called during startup for module autoload, so don't send message down the socket
-        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
+      Log.write("Failed to load module: #{mod_name}: #{e}")
+      if user == nil
+        exit!        # only exit on startup as to not bring the server down if loading a faulty module
       end
-      Log.write("Failed to load module: #{mod_name}")
-      Log.write(e)
-    rescue NameError => e
-      unless user == nil # called during startup for module autoload, so don't send message down the socket
-        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
-      end
-      Log.write("Failed to load module: #{mod_name}")
-      Log.write(e)
     else
       mod_exists = Mod.modules[mod_name.to_s.upcase]
       unless mod_exists == nil
-        unless user == nil # called during startup for module autoload, so don't send message down the socket
+        unless user == nil
           Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, "Module already loaded @ #{mod_exists}"))
           return
         end
       end
       Mod.add(new_module)
-      unless user == nil # called during startup for module autoload, so don't send message down the socket
+      unless user == nil
         Network.send(user, Numeric.RPL_LOADEDMODULE(user.nick, mod_name, new_module))
         Log.write("#{user.nick}!#{user.ident}@#{user.hostname} called MODLOAD for module: #{mod_name}")
       end
@@ -225,13 +215,11 @@ class Command
   # kline
   # links    - 0.3a
   # map      - 0.3a (requires oper/admin privileges)
-  # operwall (alias to wallops)
   # pass
   # rehash
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a
-  # wallops
   # whowas
   # zline
 

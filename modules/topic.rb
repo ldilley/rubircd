@@ -37,23 +37,20 @@ module Standard
     end
 
     # args[0] = channel
-    # args[1..-1] = topic
+    # args[1] = topic
     def on_topic(user, args)
-      topic = ""
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "TOPIC"))
         return
       end
+      args = args.join.split(' ', 2)
       # ToDo: Check if this user is a chanop to avoid extra processing every time TOPIC is issued by regular nicks
       if args.length > 1
-        topic = args[1..-1].join(" ")
-        if topic[0] == ':' && topic.length > 1
-          topic = topic[1..-1]
-        elsif topic[0] == ':' && topic.length == 1
-          topic = ""
+        if args[1][0] == ':'
+          args[1] = args[1][1..-1] # remove leading ':'
         end
-        if topic.length >= Limits::TOPICLEN
-          topic = topic[0..Limits::TOPICLEN]
+        if args[1].length >= Limits::TOPICLEN
+          args[1] = args[1][0..Limits::TOPICLEN]
         end
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length == 1
@@ -80,12 +77,12 @@ module Standard
           chan = Server.channel_map[args[0].to_s.upcase]
           unless chan == nil
             # ToDo: Verify chanop status
-            if topic.length == 0
+            if args[1] == nil || args[1].length == 0
               chan.clear_topic()
             else
-              chan.set_topic(user, topic)
+              chan.set_topic(user, args[1])
             end
-            chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{topic}") }
+            chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
           end
         else
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))

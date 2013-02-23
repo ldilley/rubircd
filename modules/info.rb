@@ -38,7 +38,7 @@ module Standard
 
     # args[0] = optional server name
     def on_info(user, args)
-      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         Network.send(user, Numeric.RPL_INFO(user.nick, "#{Server::VERSION}-#{Server::RELEASE}"))
         Network.send(user, Numeric.RPL_INFO(user.nick, Server::URL))
         Network.send(user, Numeric.RPL_ENDOFINFO(user.nick))

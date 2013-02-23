@@ -18,35 +18,39 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
-  class Version
+  class Wallops
     def initialize()
-      @command_name = "version"
-      @command_proc = Proc.new() { |user, args| on_version(user, args) }
+      @command_name = "wallops"
+      @command_alias = "operwall"
+      @command_proc = Proc.new() { |user, args| on_wallops(user, args) }
     end
 
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
+      caller.register_command(@command_alias, @command_proc)
     end
 
     def plugin_finish(caller)
       caller.unregister_command(@command_name)
+      caller.unregister_command(@command_alias)
     end
 
     def command_name
       @command_name
     end
 
-    # args[0] = optional server
-    def on_version(user, args)
-      if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
-        Network.send(user, Numeric.RPL_VERSION(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
-      #elsif to handle arbitrary servers when others are linked
-      else
-        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+    # args[0] = message
+    def on_wallops(user, args)
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WALLOPS"))
+        return
+      end
+      Server.users.each do |u|
+        if u.umodes.include?('w')
+          Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} WALLOPS :#{args[0]}")
+        end
       end
     end
   end
 end
-Standard::Version.new
+Standard::Wallops.new

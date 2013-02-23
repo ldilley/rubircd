@@ -39,11 +39,12 @@ module Standard
     # args[0] = nick
     # args[1] = channel
     def on_invite(user, args)
+      args = args.join.split(' ', 2)
       if args.length < 2
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "INVITE"))
         return
       end
-      # ToDo: Check for chanop status once a place for users' channel modes is figured out
+      # ToDo: Check for chanop status once a place for users' channel modes is figured out and a place to write invites
       target_user = nil
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0

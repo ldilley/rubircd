@@ -38,7 +38,7 @@ module Standard
 
     # args[0] = optional server name
     def on_admin(user, args)
-      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         Network.send(user, Numeric.RPL_ADMINME(user.nick, Options.server_name))
         Network.send(user, Numeric.RPL_ADMINLOC1(user.nick, Options.server_name))
         Network.send(user, Numeric.RPL_ADMINLOC2(user.nick, Options.server_name))

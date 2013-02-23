@@ -38,6 +38,7 @@ module Standard
 
     # args[0] = new nick
     def on_nick(user, args)
+      args = args.join.split
       if args.length < 1
         Network.send(user, Numeric.ERR_NONICKNAMEGIVEN(user.nick))
         return
@@ -46,49 +47,48 @@ module Standard
         Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" "), "Nicknames cannot contain spaces."))
         return
       end
-      nickname = args[0..-1].join(" ")
-      if nickname[0] == ':'
-        nickname = nickname[1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
+      if args[0][0] == ':'
+        args[0] = args[0][1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
       end
       # We must have exactly 2 tokens so ensure the nick is valid
-      if nickname =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && nickname.length >=1 && nickname.length <= Limits::NICKLEN
+      if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
         Server.users.each do |u|
-          if u.nick.casecmp(nickname) == 0 && user != u
+          if u.nick.casecmp(args[0]) == 0 && user != u
             unless user.is_registered
-              Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", nickname))
+              Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
             else
-              Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, nickname))
+              Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[0]))
             end
             return
           end
         end
         Server.reserved_nicks.each do |n|
-          if n.casecmp(nickname) == 0 && user.nick != n
+          if n.casecmp(args[0]) == 0 && user.nick != n
             unless user.is_registered
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", nickname, "Reserved nickname"))
+              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", args[0], "Reserved nickname"))
             else
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname, "Reserved nickname"))
+              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Reserved nickname"))
             end
             return
           end
         end
-        if user.is_registered && user.nick != nickname
+        if user.is_registered && user.nick != args[0]
           if user.channels.length > 0
             user.channels.each do |c|
               chan = Server.channel_map[c.to_s.upcase]
               chan.users.each do |u|
                 if user.nick != u.nick
-                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{nickname}")
+                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
                 end
               end
             end
           end
-          Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{nickname}")
+          Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
         end
-        user.change_nick(nickname)
+        user.change_nick(args[0])
         return
       else
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, nickname, "Nickname contains invalid characters."))
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Nickname contains invalid characters."))
         return
       end
     end

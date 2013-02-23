@@ -44,6 +44,7 @@ module Standard
       #       Also allow more than one 'b' and/or 'o' mode at once up to Limits::MODES (6) and limit the rest
       #       Add flag prefixes somewhere upon setting the appropriate modes or channel modes for each user
       #       Handle ban additional and removal
+      args = args.join.split
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODE"))
         return

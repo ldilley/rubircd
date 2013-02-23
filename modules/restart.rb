@@ -47,7 +47,7 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "RESTART"))
         return
       end
-      hash = Digest::SHA2.new(256) << args[0]
+      hash = Digest::SHA2.new(256) << args[0].strip
       if Options.control_hash == hash.to_s
         # ToDo: Write any klines, etc.)
         Log.write("RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")

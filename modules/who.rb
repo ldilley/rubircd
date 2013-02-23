@@ -43,32 +43,32 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHO"))
         return
       end
-      target = args[0]
-      if target[0] == '#' || target[0] == '&'
-        channel = Server.channel_map[target.to_s.upcase]
+      args = args.join.split(' ', 2)
+      if args[0][0] == '#' || args[0][0] == '&'
+        channel = Server.channel_map[args[0].to_s.upcase]
         if channel != nil
           # ToDo: Once MODE is implemented, weed out users who are +i unless they are in the same channel
           # ToDo: Also calculate hops once server linking support is added
           if args[1] == 'o'
             channel.users.each do |u|
               if u.is_admin || u.is_operator
-                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0))
+                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
               end
             end
           else
-            channel.users.each { |u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, target, u, 0)) } # target here is the channel
+            channel.users.each { |u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0)) } # target here is the channel
           end
-          Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
+          Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, args[0]))
           return
         else
-          Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
+          Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
           return
         end
       else
         # Target is not a channel, so check nick, gecos, hostname, and server of all users below...
         # ToDo: Again, need to wait for MODE support to weed out +i users not in the same channel
         userlist = Array.new
-        pattern = Regexp.escape(target).gsub('\?', '.')
+        pattern = Regexp.escape(args[0]).gsub('\?', '.')
         pattern = pattern.gsub('\*', '.*?')
         regx = Regexp.new("^#{pattern}$", Regexp::IGNORECASE)
         Server.users.each do |u|
@@ -115,7 +115,7 @@ module Standard
             end
           end
         end
-        Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, target))
+        Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, args[0]))
       end
     end
   end

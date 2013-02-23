@@ -38,6 +38,7 @@ modules:
   - userhost # gets host information for user
   - users    # shows local and global user counts
   - version  # displays version information about the server software
+  - wallops  # allows admins/opers to send informational messages to other users with umode +w
   - who      # shows who is on the network
   - whois    # shows information about a user
 

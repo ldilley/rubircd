@@ -42,6 +42,7 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USERHOST"))
         return
       end
+      args = args.join.split
       userhost_list = []
       args.each do |a|
         if userhost_list.length >= Limits::MAXTARGETS

@@ -38,7 +38,7 @@ module Standard
 
     # args[0] = optional server name
     def on_motd(user, args)
-      if args.length < 1 || args[0] =~ /^#{Options.server_name}$/i
+      if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         if Server.motd.length == 0
           Network.send(user, Numeric.ERR_NOMOTD(user.nick))
         else

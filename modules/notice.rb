@@ -37,8 +37,9 @@ module Standard
     end
 
     # args[0] = target channel or nick
-    # args[1..-1] = message
+    # args[1] = message
     def on_notice(user, args)
+      args = args.join.split(' ', 2)
       if args.length < 1
         Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "NOTICE"))
         return
@@ -47,14 +48,15 @@ module Standard
         Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
         return
       end
-      message = args[1..-1].join(" ")
-      #message = message[1..-1] # remove leading ':'
+      if args[1][0] == ':'
+        args[1] = args[1][1..-1] # remove leading ':'
+      end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/
         channel = Server.channel_map[args[0].to_s.upcase]
         unless channel == nil
           channel.users.each do |u|
             if u.nick != user.nick
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{args[0]} :#{message}")
+              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{args[0]} :#{args[1]}")
             end
           end
         end
@@ -62,7 +64,7 @@ module Standard
       end
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0
-          Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{u.nick} :#{message}")
+          Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{u.nick} :#{args[1]}")
           return
         end
       end

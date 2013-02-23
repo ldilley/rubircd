@@ -37,20 +37,19 @@ module Standard
     end
 
     # args[0] = channel
-    # args[1..-1] = optional part message
+    # args[1] = optional part message
     def on_part(user, args)
+      args = args.join.split(' ', 2)
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PART"))
         return
       end
-      part_message = ""
       if args.length > 1
-        part_message = args[1..-1].join(" ") # 0 may contain ':' and we already supply it
-        if part_message[0] == ':'
-          part_message = part_message[1..-1]
+        if args[1][0] == ':'
+          args[1] = args[1][1..-1] # remove leading ':'
         end
-        if part_message.length > Limits::MAXPART
-          part_message = part_message[0..Limits::MAXPART]
+        if args[1].length > Limits::MAXPART
+          args[1] = args[1][0..Limits::MAXPART-1]
         end
       end
       channels = args[0].split(',')
@@ -59,10 +58,10 @@ module Standard
           if user.channels.any? { |c| c.casecmp(channel) == 0 }
             chan = Server.channel_map[channel.to_s.upcase]
             unless chan == nil
-              if part_message.length < 1
+              if args[1] == nil
                 chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}") }
               else
-                chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{part_message}") }
+                chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}") }
               end
               chan.remove_user(user)
               if chan.users.length < 1

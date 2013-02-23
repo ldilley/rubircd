@@ -38,6 +38,7 @@ module Standard
 
     # args[0..-1] = optional space-separated channels
     def on_list(user, args)
+      args = args.join.split
       Network.send(user, Numeric.RPL_LISTSTART(user.nick))
       if args.length >= 1
         chan = nil

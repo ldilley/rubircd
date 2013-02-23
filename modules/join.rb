@@ -36,9 +36,10 @@ module Standard
       @command_name
     end
 
-    # args[0 ...] = channel or channels that are comma separated
-    # args[1? ...] = optional key or keys that are comma separated
+    # args[0] = channel or channels that are comma separated
+    # args[1] = optional key or keys that are comma separated
     def on_join(user, args)
+      args = args.join.split(' ', 2)
       # ToDo: Handle conditions such as invite only and keys later once channels support those modes
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
@@ -73,6 +74,7 @@ module Standard
             chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}") }
           end
           unless channel_exists
+            # ToDo: Also give chanop status to first user on channel unless it is +r
             Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
           end
           names_cmd = Command.command_map["NAMES"]

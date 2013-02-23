@@ -39,8 +39,9 @@ module Standard
     # args[0] = ident/username
     # args[1] = sometimes ident or hostname (can be spoofed... so we ignore this arg)
     # args[2] = server name (can also be spoofed... so we ignore this arg too)
-    # args[3..-1] = gecos/real name
+    # args[3] = gecos/real name
     def on_user(user, args)
+      args = args.join.split(' ', 4)
       if args.length < 4
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
         return
@@ -49,24 +50,22 @@ module Standard
         Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
         return
       end
-      ident = args[0]
       # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
       # The 2nd field also matches the 1st (ident string) for certain clients (FYI)
-      if ident.length > Limits::IDENTLEN
-        ident = ident[0..Limits::IDENTLEN-1] # truncate ident if it is too long
+      if args[0].length > Limits::IDENTLEN
+        args[0] = args[0][0..Limits::IDENTLEN-1] # truncate ident if it is too long
       end
-      if ident =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
-        user.change_ident(ident)
-        gecos = args[3..-1].join(" ")
-        if gecos[0] == ':'
-          gecos = gecos[1..-1] # remove leading ':'
+      if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
+        user.change_ident(args[0])
+        if args[3][0] == ':'
+          args[3] = args[3][1..-1] # remove leading ':'
         end
-        if gecos.length > Limits::GECOSLEN
-          gecos = gecos[0..Limits::GECOSLEN-1] # truncate gecos if it is too long
+        if args[3].length > Limits::GECOSLEN
+          args[3] = args[3][0..Limits::GECOSLEN-1] # truncate gecos if it is too long
         end
-        user.change_gecos(gecos)
+        user.change_gecos(args[3])
       else
-        Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, ident)) # invalid ident
+        Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident
       end
     end
   end

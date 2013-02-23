@@ -36,26 +36,24 @@ module Standard
       @command_name
     end
 
-    # args[0..-1] = optional quit message
+    # args[0] = optional quit message
     def on_quit(user, args)
-      quit_message = "Client quit"
       if args.length > 0
-        quit_message = args[0..-1].join(" ") # 0 may contain ':' and we already supply it
-        if quit_message[0] == ':'
-          quit_message = quit_message[1..-1]
+        if args[0][0] == ':'
+          args[0] = args[0][1..-1] # remove leading ':'
         end
-        if quit_message.length > Limits::MAXQUIT
-          quit_message = quit_message[0..Limits::MAXQUIT]
+        if args[0].length > Limits::MAXQUIT
+          args[0] = args[0][0..Limits::MAXQUIT-1]
         end
+      else
+        args[0] = "Client quit"
       end
       if user.nick == '*'
         Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: Client exited)")
-      elsif args.length < 1
-        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{user.nick})")
       else
-        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{quit_message})")
+        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{args[0]})")
       end
-      Network.close(user, quit_message)
+      Network.close(user, args[0])
     end
   end
 end

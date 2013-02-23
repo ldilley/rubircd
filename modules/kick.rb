@@ -37,9 +37,10 @@ module Standard
     end
 
     # args[0] = channel
-    # args[1? ...] = comma-separated users
-    # args[2?...-1] = optional reason
+    # args[1] = user or comma-separated users
+    # args[2] = optional reason
     def on_kick(user, args)
+      args = args.join.split(' ', 3)
       if args.length < 2
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KICK"))
         return
@@ -56,14 +57,12 @@ module Standard
         end
       end
       nicks = args[1].split(',')
-      reason = ""
-      if args.length >= 3
-        reason = args[2..-1].join(" ")
-        if reason[0] == ':'
-          reason = reason[1..-1] # remove leading ':'
+      if args.length == 3
+        if args[2][0] == ':'
+          args[2] = args[2][1..-1] # remove leading ':'
         end
-        if reason.length > Limits::KICKLEN
-          reason = reason[0..Limits::KICKLEN-1]
+        if args[2].length > Limits::KICKLEN
+          args[2] = args[2][0..Limits::KICKLEN-1]
         end
       end
       good_nicks = []
@@ -85,8 +84,8 @@ module Standard
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
               end
             else
-              if reason.length > 0
-                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{reason}") }
+              if args[2] != nil
+                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{args[2]}") }
               else
                 chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
               end
