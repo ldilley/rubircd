@@ -7,8 +7,8 @@ modules:
 # The modules below represent core IRC commands
   - admin    # displays administrative info about the server
   - away     # sets the user away (AFK)
-  - capab    # server capabilities (needed for linking servers)
   - cap      # client capabilities extension for things like NAMESX, TLS, and UHNAMES
+  - capab    # server capabilities (needed for linking servers)
   - die      # kills the server
   - info     # displays information about the server software
   - invite   # allows channel invitations to be sent to users
@@ -25,6 +25,7 @@ modules:
   - notice   # allows clients to send notices to users and channels
   - oper     # permits users access to become administrators and operators
   - part     # allows users to leave channels
+  - pass     # sets the connection password
   - ping     # check to see if a connection is alive
   - pong     # response to ping request
   - privmsg  # enables chat in channels and in private
@@ -37,7 +38,7 @@ modules:
   - user     # allows incoming clients to register with their information
   - userhost # gets host information for user
   - users    # shows local and global user counts
-  - version  # displays version information about the server software
+  - version  # displays version information for the server software
   - wallops  # allows admins/opers to send informational messages to other users with umode +w
   - who      # shows who is on the network
   - whois    # shows information about a user

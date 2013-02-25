@@ -215,7 +215,6 @@ class Command
   # kline
   # links    - 0.3a
   # map      - 0.3a (requires oper/admin privileges)
-  # pass
   # rehash
   # server   - 0.3a
   # squit    - 0.3a
@@ -229,10 +228,10 @@ class Command
   # broadcast <message> (administrative command to alert users of anything significant such as an upcoming server outage)
   # fjoin <channel> <nick> (administrative force join)
   # fpart <channel> <nick> (administrative force part)
-  # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection)
-  # identify
+  # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection) - 0.4a
+  # identify - 0.4a
   # ijoin <channel> (administrative command to join a channel while being invisible to its members)
-  # jupe
+  # jupe - 0.4a
   # knock
   # rules
   # shun

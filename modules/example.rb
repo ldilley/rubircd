@@ -17,7 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Optional
+module Contributed
   class Example
     def initialize()
       @command_name = "example"
@@ -41,4 +41,4 @@ module Optional
     end
   end
 end
-Optional::Example.new
+Contributed::Example.new

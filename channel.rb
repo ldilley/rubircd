@@ -48,7 +48,7 @@ class Channel
   MODE_SECRET = 's'     # will not show up in LIST or WHOIS output
   MODE_TOPIC = 't'      # only channel operators can change topic
   CHANNEL_MODES = "abfiklmnoprstv"
-  ISUPPORT_CHANNEL_MODES = "b,k,l,imnprst" # comma separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
+  ISUPPORT_CHANNEL_MODES = "b,k,l,imnprst" # comma-separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
   ISUPPORT_PREFIX = "(afov)&~@+"
   @bans
   @name

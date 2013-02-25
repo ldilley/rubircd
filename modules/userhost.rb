@@ -36,7 +36,7 @@ module Standard
       @command_name
     end
 
-    # args[0..-1] = space-separated nicks
+    # args[0..-1] = nick or space-separated nicks
     def on_userhost(user, args)
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USERHOST"))

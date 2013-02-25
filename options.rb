@@ -51,6 +51,7 @@ class Options
     @@io_type = options_file["io_type"]
     @@debug_mode = options_file["debug_mode"]
     @@control_hash = options_file["control_hash"]
+    @@server_hash = options_file["server_hash"]
 
     if @@admin_name == nil
       puts("\nUnable to read admin_name option from options.yml file!")
@@ -196,6 +197,10 @@ class Options
 
   def self.control_hash
     return @@control_hash
+  end
+
+  def self.server_hash
+    return @@server_hash
   end
 end
 

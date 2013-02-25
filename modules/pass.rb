@@ -18,43 +18,41 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
-  class Wallops
+  class Pass
     def initialize()
-      @command_name = "wallops"
-      @command_alias = "operwall"
-      @command_proc = Proc.new() { |user, args| on_wallops(user, args) }
+      @command_name = "pass"
+      @command_proc = Proc.new() { |user, args| on_pass(user, args) }
     end
 
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
-      caller.register_command(@command_alias, @command_proc)
     end
 
     def plugin_finish(caller)
       caller.unregister_command(@command_name)
-      caller.unregister_command(@command_alias)
     end
 
     def command_name
       @command_name
     end
 
-    # args[0] = message
-    def on_wallops(user, args)
-      unless user.is_operator || user.is_admin || user.is_service
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+    # args[0] = password
+    def on_pass(user, args)
+      if user.is_registered
+        Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WALLOPS"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PASS"))
         return
       end
-      Server.users.each do |u|
-        if u.umodes.include?('w')
-          Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} WALLOPS :#{args[0]}")
-        end
+      hash = Digest::SHA2.new(256) << args[0].strip
+      if Options.server_hash == hash.to_s
+        return true
+      else
+        return false
       end
     end
   end
 end
-Standard::Wallops.new
+Standard::Pass.new

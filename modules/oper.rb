@@ -65,15 +65,15 @@ module Standard
         Server.admins.each do |admin|
           if admin.nick == admin_nick && admin.hash == hash.to_s
             if admin.host == nil || admin.host == "" || admin.host == '*'
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               user.set_admin()
+              Network.send(user, Numeric.RPL_YOUAREOPER(user))
               return
             end
             hostmask = admin.host.to_s.gsub('\*', '.*?')
             regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
             if user.hostname =~ regx
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               user.set_admin()
+              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               return
             else
               Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
@@ -89,15 +89,15 @@ module Standard
         Server.opers.each do |oper|
           if oper.nick == oper_nick && oper.hash == hash.to_s
             if oper.host == nil || oper.host == "" || oper.host == '*'
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               user.set_operator()
+              Network.send(user, Numeric.RPL_YOUAREOPER(user))
               return
             end
             hostmask = oper.host.to_s.gsub('\*', '.*?')
             regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
             if user.hostname =~ regx
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               user.set_operator()
+              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               return
             else
               Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))

@@ -54,10 +54,14 @@ module Standard
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/
         channel = Server.channel_map[args[0].to_s.upcase]
         unless channel == nil
-          channel.users.each do |u|
-            if u.nick != user.nick
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{args[1]}")
+          if user.channels.any? { |uc| uc.casecmp(args[0]) == 0 } || !channel.modes.include?('n')
+            channel.users.each do |u|
+              if u.nick != user.nick
+                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{args[0]} :#{args[1]}")
+              end
             end
+          else
+            Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, channel.name, "no external messages"))
           end
         end
         return

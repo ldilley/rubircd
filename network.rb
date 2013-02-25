@@ -197,6 +197,7 @@ class Network
       Network.send(user, "ERROR :Closing link: [Server too busy]")
       Network.close(user, "Server too busy")
     end
+    # ToDo: Check for g/k/zlines here
     Server.add_user(user)
     Log.write("Received connection from #{user.ip_address}")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
@@ -211,7 +212,8 @@ class Network
       user.change_hostname(hostname)
     end
     registered = false
-    timer_thread = Thread.new() {Network.registration_timer(user)}
+    timer_thread = Thread.new() { Network.registration_timer(user) }
+    good_pass = false
     until(registered) do
       input = Network.recv(user)
       if input.empty?
@@ -226,10 +228,28 @@ class Network
         end
         redo
       end
-      Command.parse(user, input)
-      if user.nick != "*" && user.ident != nil && user.gecos != nil
+      if input[0].to_s.casecmp("PASS") == 0
+        pass_cmd = Command.command_map["PASS"]
+        unless pass_cmd == nil
+          if input.length > 1
+            good_pass = pass_cmd.call(user, input[1..-1])
+          else
+            good_pass = pass_cmd.call(user, "")
+          end
+        end
+      else
+        Command.parse(user, input)
+      end
+      if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.is_negotiating_cap
+        if Options.server_hash != nil && !good_pass
+          Network.send(user, "ERROR :Closing link: [Access denied]")
+          Network.close(user, "Access denied")
+        end
         registered = true
       else
+        if user.nick != "*" && user.ident != nil && user.gecos != nil && user.is_negotiating_cap
+          Network.send(user, Numeric.ERR_NOTREGISTERED("CAP")) # user has not closed CAP with END
+        end
         redo
       end
     end # until

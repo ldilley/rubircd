@@ -36,8 +36,8 @@ module Standard
       @command_name
     end
 
-    # args[0] = channel or channels that are comma separated
-    # args[1] = optional key or keys that are comma separated
+    # args[0] = channel or comma-separated channels
+    # args[1] = optional key or comma-separated keys
     def on_join(user, args)
       args = args.join.split(' ', 2)
       # ToDo: Handle conditions such as invite only and keys later once channels support those modes

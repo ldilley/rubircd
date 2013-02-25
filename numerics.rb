@@ -336,8 +336,12 @@ class Numeric
   end
 
   # 381
-  def self.RPL_YOUAREOPER(nick)
-    return sprintf(":%s 381 %s :You are now an IRC Operator", Options.server_name, nick)
+  def self.RPL_YOUAREOPER(user)
+    if user.is_admin
+      return sprintf(":%s 381 %s :You are now an IRC Server Administrator", Options.server_name, user.nick)
+    else
+      return sprintf(":%s 381 %s :You are now an IRC Operator", Options.server_name, user.nick)
+    end
   end
 
   # 382
@@ -366,8 +370,8 @@ class Numeric
   end
 
   # 404
-  def self.ERR_CANNOTSENDTOCHAN(nick, channel)
-    return sprintf(":%s 404 %s %s :Cannot send to channel", Options.server_name, nick, channel)
+  def self.ERR_CANNOTSENDTOCHAN(nick, channel, reason)
+    return sprintf(":%s 404 %s %s :Cannot send to channel (%s)", Options.server_name, nick, channel, reason)
   end
 
   # 405

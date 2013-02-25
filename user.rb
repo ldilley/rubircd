@@ -31,12 +31,14 @@ class User
     @is_operator = false
     @is_service = false
     @is_nick_registered = false
+    @is_negotiating_cap = false
     @away_message = ""
     @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
     @thread = thread
     @umodes = Array.new
     @channels = Array.new
+    @session_capabilities = Array.new
     @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
     @last_ping = Time.now.to_i
@@ -83,11 +85,13 @@ class User
 
   def set_admin()
     @is_admin = true
+    add_umode('a')
     Server.oper_count += 1
   end
 
   def set_operator()
     @is_operator = true
+    add_umode('o')
     Server.oper_count += 1
   end
 
@@ -137,6 +141,12 @@ class User
     else
       @umodes.delete(umode)
     end
+    if umode == 'a'
+      @is_admin = false
+    end
+    if umode == 'o'
+      @is_operator = false
+    end
   end
 
   def add_channel(channel)
@@ -172,7 +182,7 @@ class User
   end
 
   attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :is_service, :is_nick_registered, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping, :data_recv, :data_sent
+  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities
 end
 
 class Oper
