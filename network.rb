@@ -166,6 +166,11 @@ class Network
     rescue
       # No need for anything here
     ensure
+      Server.users.each do |u|
+        if u.is_admin                 
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
+        end
+      end
       if user.channels.length > 0
         user.channels.each do |c|
           chan = Server.channel_map[c.to_s.upcase]
@@ -285,6 +290,11 @@ class Network
   end
 
   def self.welcome(user)
+    Server.users.each do |u|
+      if u.is_admin
+        Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** CONNECT: #{user.nick}!#{user.ident}@#{user.hostname} has connected.")
+      end
+    end
     Network.send(user, Numeric.RPL_WELCOME(user.nick))
     Network.send(user, Numeric.RPL_YOURHOST(user.nick))
     Network.send(user, Numeric.RPL_CREATED(user.nick))

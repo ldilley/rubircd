@@ -62,6 +62,11 @@ module Standard
         end
       end
       unless kill_target == nil
+        Server.users.each do |u|
+          if u.umodes.include?('s')
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued a KILL for #{kill_target.nick}: #{args[1]}")
+          end
+        end
         if (kill_target.is_admin && !user.is_admin) || kill_target.is_service
           Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, kill_target.nick))
           if kill_target.is_admin
@@ -69,7 +74,6 @@ module Standard
           end
           return
         end
-        # ToDo: Send server/operwall message
         Network.send(kill_target, ":#{user.nick}!#{user.ident}@#{user.hostname} KILL #{kill_target.nick} :#{Options.server_name}!#{user.hostname}!#{user.nick} (#{args[1]})")
         Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{args[1]}))]")
         Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{args[1]}")

@@ -18,10 +18,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
-  class Die
+  class Rehash
     def initialize()
-      @command_name = "die"
-      @command_proc = Proc.new() { |user, args| on_die(user, args) }
+      @command_name = "rehash"
+      @command_proc = Proc.new() { |user, args| on_rehash(user, args) }
     end
 
     def plugin_init(caller)
@@ -36,30 +36,30 @@ module Standard
       @command_name
     end
 
-    # args[0] = password
-    def on_die(user, args)
-      unless user.is_admin
+    # args[0] = config
+    # args[1] = server
+    def on_rehash(user, args)
+      unless user.is_operator || user.is_admin
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
+      args = args.join.split(' ', 2)
+      # ToDo: Add a broadcast message for each rehash type
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "DIE"))
-        return
+        # re-read options.yml
       end
-      hash = Digest::SHA2.new(256) << args[0].strip
-      if Options.control_hash == hash.to_s
-        Server.users.each do |u|
-          if u.umodes.include?('s')
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued DIE.")
-          end
+      if args.length == 1
+        if args[0].to_s.casecmp("modules") == 0
+          # re-read modules.yml
+        elsif args[0].to_s.casecmp("motd") == 0
+          # re-read motd
+        elsif args[0].to_s.casecmp("opers") == 0
+          # re-read opers.yml
+        elsif args[0].to_s.casecmp("options") == 0
+          # re-read options.yml
         end
-        # ToDo: Cleanly exit (write any klines, etc.)
-        Log.write("DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
-        exit!
-      else
-        Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
       end
     end
   end
 end
-Standard::Die.new
+Standard::Rehash.new

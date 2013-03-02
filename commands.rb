@@ -215,7 +215,6 @@ class Command
   # kline
   # links    - 0.3a
   # map      - 0.3a (requires oper/admin privileges)
-  # rehash
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a

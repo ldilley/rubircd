@@ -49,6 +49,11 @@ module Standard
       end
       hash = Digest::SHA2.new(256) << args[0].strip
       if Options.control_hash == hash.to_s
+        Server.users.each do |u|
+          if u.umodes.include?('s')
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued a server restart.")
+          end
+        end
         # ToDo: Write any klines, etc.)
         Log.write("RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         if RbConfig::CONFIG['host_os'] =~ /mswin|win|mingw/

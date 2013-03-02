@@ -25,11 +25,11 @@ class Server
   MODE_BOT = 'b'          # is a bot
   MODE_INVISIBLE = 'i'    # invisible in WHO and NAMES output
   MODE_OPERATOR = 'o'     # is an IRC operator
-  MODE_PROTECTED = 'p'    # cannot be banned, kicked, or killed
   MODE_REGISTERED = 'r'   # indicates that the nickname is registered
   MODE_SERVER = 's'       # can see server messages such as kills
+  MODE_VERBOSE = 'v'      # can see client connect/quit messages
   MODE_WALLOPS = 'w'      # can receive oper wall messages
-  USER_MODES = "abioprsw"
+  USER_MODES = "abiorsvw"
   STATUS_PREFIXES = "~&@+"
   @@client_count = 0
   @@visible_count = 0

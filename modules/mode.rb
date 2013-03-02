@@ -338,6 +338,10 @@ module Standard
               modelist = modelist.delete('o')
               Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
             end
+            if modelist.include?('v') && !user.umodes.include?('a')
+              modelist = modelist.delete('v')
+              Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+            end
             final_add_modes = modelist
             final_add_modes.each_char do |mode|
               user.add_umode(mode)
