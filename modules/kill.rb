@@ -77,7 +77,7 @@ module Standard
         Network.send(kill_target, ":#{user.nick}!#{user.ident}@#{user.hostname} KILL #{kill_target.nick} :#{Options.server_name}!#{user.hostname}!#{user.nick} (#{args[1]})")
         Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{args[1]}))]")
         Log.write("#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{args[1]}")
-        Network.close(kill_target, "Killed (#{user.nick} (#{args[1]}))")
+        Network.close(kill_target, "Killed (#{user.nick} (#{args[1]}))", false)
       else
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
       end

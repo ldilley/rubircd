@@ -37,6 +37,7 @@ class User
     @socket = socket
     @thread = thread
     @umodes = Array.new
+    @invites = Array.new
     @channels = Array.new
     @session_capabilities = Array.new
     @signon_time = Time.now.to_i
@@ -50,6 +51,7 @@ class User
       @hostname_lock = Mutex.new # for vhost support
       @away_lock = Mutex.new
       @umodes_lock = Mutex.new
+      @invites_lock = Mutex.new
       @channels_lock = Mutex.new
       @activity_lock = Mutex.new
     end
@@ -149,6 +151,30 @@ class User
     end
   end
 
+  def add_invite(channel)
+    if Options.io_type.to_s == "thread"
+      @invites_lock.synchronize do
+        if invites.length >= Limits::MAXINVITES
+          @invites.delete_at(0)
+        end
+        @invites.push(channel)
+      end
+    else
+      if invites.length >= Limits::MAXINVITES
+        @invites.delete_at(0)
+      end
+      @invites.push(channel)
+    end
+  end
+
+  def remove_invite(channel)
+    if Options.io_type.to_s == "thread"
+      @invites_lock.synchronize { @invites.delete(channel) }
+    else
+      @invites.delete(channel)
+    end
+  end
+
   def add_channel(channel)
     if Options.io_type.to_s == "thread"
       @channels_lock.synchronize { @channels.push(channel) }
@@ -175,6 +201,10 @@ class User
 
   def umodes
     @umodes
+  end
+
+  def invites
+    @invites
   end
 
   def last_activity

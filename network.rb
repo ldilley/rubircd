@@ -90,7 +90,7 @@ class Network
           Network.send(u, "PING :#{Options.server_name}")
           ping_diff = Time.now.to_i - u.last_ping
           if ping_diff >= Limits::PING_STRIKES * Limits::PING_INTERVAL
-            Network.close(u, "Ping timeout: #{ping_diff} seconds")
+            Network.close(u, "Ping timeout: #{ping_diff} seconds", false)
           end
         end
       end
@@ -143,7 +143,7 @@ class Network
     return data
     # Handle exception in case socket goes away...
     rescue
-      Network.close(user, "Connection closed")
+      Network.close(user, "Connection closed", true)
   end
 
   def self.send(user, data)
@@ -157,17 +157,17 @@ class Network
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
     rescue
-      Network.close(user, "Connection closed")
+      Network.close(user, "Connection closed", true)
   end
 
-  def self.close(user, reason)
+  def self.close(user, reason, lost_socket)
     begin
       user.socket.close()
     rescue
       # No need for anything here
     ensure
       Server.users.each do |u|
-        if u.is_admin                 
+        if u.is_admin && u.umodes.include?('v') && !lost_socket
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
@@ -181,7 +181,7 @@ class Network
           end
           chan.remove_user(user)
           unless chan.modes.include?('r') || chan.users.length > 0
-            Server.remove_channel(chan)
+            Server.remove_channel(chan.name.upcase)
           end
         end
       end
@@ -200,7 +200,7 @@ class Network
     user = User.new("*", nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     if Server.client_count >= Options.max_connections
       Network.send(user, "ERROR :Closing link: [Server too busy]")
-      Network.close(user, "Server too busy")
+      Network.close(user, "Server too busy", false)
     end
     # ToDo: Check for g/k/zlines here
     Server.add_user(user)
@@ -248,7 +248,7 @@ class Network
       if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.is_negotiating_cap
         if Options.server_hash != nil && !good_pass
           Network.send(user, "ERROR :Closing link: [Access denied]")
-          Network.close(user, "Access denied")
+          Network.close(user, "Access denied", false)
         end
         registered = true
       else
@@ -286,12 +286,12 @@ class Network
   def self.registration_timer(user)
     Kernel.sleep Limits::REGISTRATION_TIMEOUT
     Network.send(user, "ERROR :Closing link: [Registration timeout]")
-    Network.close(user, "Registration timeout")
+    Network.close(user, "Registration timeout", false)
   end
 
   def self.welcome(user)
     Server.users.each do |u|
-      if u.is_admin
+      if u.is_admin && u.umodes.include?('v')
         Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** CONNECT: #{user.nick}!#{user.ident}@#{user.hostname} has connected.")
       end
     end

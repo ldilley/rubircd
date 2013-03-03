@@ -40,7 +40,6 @@ module Standard
     # args[1] = optional key or comma-separated keys
     def on_join(user, args)
       args = args.join.split(' ', 2)
-      # ToDo: Handle conditions such as invite only and keys later once channels support those modes
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
         return
@@ -49,40 +48,99 @@ module Standard
       if args.length == 2
         keys = args[1].split(',')
       end
+      key_index = 0
       channels.each do |channel|
         if user.channels.any? { |uc| uc.casecmp(channel) == 0 }
-          return # user is already on channel
+          Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, user.nick, channel))
+          unless keys.nil?
+            if keys.length > key_index
+              key_index += 1
+            end
+          end
+          next unless channel == nil
         end
         if user.channels.length >= Limits::MAXCHANNELS
           Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
-          return
+          unless keys.nil?
+            if keys.length > key_index
+              key_index += 1
+            end
+          end
+          next unless channel == nil
         end
-        channel_exists = false
-        if channel =~ /[#&][A-Za-z0-9_!-]/
-          channel_object = Channel.new(channel, user.nick)
-          if Server.channel_map[channel.to_s.upcase] != nil
-            channel_exists = true
-          end
-          unless channel_exists
-            Server.add_channel(channel_object)
-            Server.channel_count += 1
-          end
-          user.add_channel(channel)
-          chan = Server.channel_map[channel.to_s.upcase]
-          unless chan == nil
-            chan.add_user(user)
-            chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}") }
-          end
-          unless channel_exists
-            # ToDo: Also give chanop status to first user on channel unless it is +r
-            Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
-          end
-          names_cmd = Command.command_map["NAMES"]
-          unless names_cmd == nil
-            names_cmd.call(user, channel.split)
-          end
-        else
+        unless channel =~ /[#&][A-Za-z0-9_!-]/
           Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+          unless keys.nil?
+            if keys.length > key_index
+              key_index += 1
+            end
+          end
+          next unless channel == nil
+        end
+        chan = Server.channel_map[channel.to_s.upcase]
+        channel_existed = true
+        if chan == nil
+          channel_existed = false
+        end
+        unless chan == nil
+          # ToDo: Check for bans against user here
+          if chan.modes.include?('l') && chan.users.length >= chan.limit.to_i && !user.is_admin
+            Network.send(user, Numeric.ERR_CHANNELISFULL(user.nick, channel))
+            unless keys.nil?
+              if keys.length > key_index
+                key_index += 1
+              end
+            end
+            next unless channel == nil
+          end
+          if chan.modes.include?('k') && !user.is_admin
+            if keys.nil? || keys[key_index] != chan.key
+              Network.send(user, Numeric.ERR_BADCHANNELKEY(user.nick, channel))
+              unless keys.nil?
+                if keys.length > key_index
+                  key_index += 1
+                end
+              end
+              next unless channel == nil
+            end
+          end
+          if chan.modes.include?('i') && !user.invites.any? { |channel_invite| channel_invite.casecmp(channel) == 0 } && !user.is_admin
+            Network.send(user, Numeric.ERR_INVITEONLYCHAN(user.nick, channel))
+            unless keys.nil?
+              if keys.length > key_index
+                key_index += 1
+              end
+            end
+            next unless channel == nil
+          end
+        end
+        if chan == nil
+          channel_object = Channel.new(channel, user.nick)
+          Server.add_channel(channel_object)
+          chan = Server.channel_map[channel.to_s.upcase]
+        end
+        user.add_channel(channel)
+        chan.add_user(user)
+        if user.invites.length > 0
+          user.invites.each do |channel_invite|
+            if channel_invite.casecmp(channel) == 0
+              user.remove_invite(channel_invite)
+            end
+          end
+        end
+        chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}") }
+        unless channel_existed
+          # ToDo: Make user chanop if they are the first user on the channel and channel is not +r
+          Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
+        end
+        names_cmd = Command.command_map["NAMES"]
+        unless names_cmd == nil
+          names_cmd.call(user, channel.split)
+        end
+        unless keys.nil?
+          if keys.length > key_index
+            key_index += 1
+          end
         end
       end
     end

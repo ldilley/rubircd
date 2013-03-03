@@ -379,6 +379,11 @@ class Numeric
     return sprintf(":%s 405 %s %s :You have joined too many channels", Options.server_name, nick, channel)
   end
 
+  # 407
+  def self.ERR_TOOMANYTARGETS(nick, target)
+    return sprintf(":%s 407 %s %s :Too many targets", Options.server_name, nick, target)
+  end
+
   # 409
   def self.ERR_NOORIGIN(nick)
     return sprintf(":%s 409 %s :No origin specified", Options.server_name, nick)

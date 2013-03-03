@@ -67,6 +67,7 @@ module Standard
       if target_user.away_message.length > 0
         Network.send(user, Numeric.RPL_AWAY(user.nick, target_user))
       end
+      target_user.add_invite(args[1])
       Network.send(target_user, ":#{user.nick}!#{user.ident}@#{user.hostname} INVITE #{args[0]} :#{args[1]}")
       chan = Server.channel_map[args[1].to_s.upcase]
       unless chan == nil

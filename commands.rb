@@ -152,6 +152,11 @@ class Command
       Mod.add(new_module)
       unless user == nil
         Network.send(user, Numeric.RPL_LOADEDMODULE(user.nick, mod_name, new_module))
+        Server.users.each do |u|
+          if u.umodes.include?('s')
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has loaded module: #{mod_name} (#{new_module})")
+          end
+        end
         Log.write("#{user.nick}!#{user.ident}@#{user.hostname} called MODLOAD for module: #{mod_name}")
       end
       Log.write("Successfully loaded module: #{mod_name} (#{new_module})")
@@ -201,6 +206,11 @@ class Command
       else
         Mod.modules.delete(args[0].to_s.upcase)
         Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, args[0], "#{mod}"))
+        Server.users.each do |u|
+          if u.umodes.include?('s')
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has unloaded module: #{args[0]} (#{mod})")
+          end
+        end
         Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
       end
     else

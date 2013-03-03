@@ -133,16 +133,20 @@ class Server
   def self.add_channel(channel)
     if Options.io_type.to_s == "thread"
       @@channels_lock.synchronize { @@channel_map[channel.name.upcase] = channel }
+      @@channel_count_lock.synchronize { @@channel_count += 1 }
     else
       @@channel_map[channel.name.upcase] = channel
+      @@channel_count += 1
     end
   end
 
   def self.remove_channel(channel)
     if Options.io_type.to_s == "thread"
       @@channels_lock.synchronize { @@channel_map.delete(channel) }
+      @@channel_count_lock.synchronize { @@channel_count -= 1 }
     else
       @@channel_map.delete(channel)
+      @@channel_count -= 1
     end
   end
 
@@ -235,5 +239,5 @@ class Server
     @@data_sent
   end
 
-  class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :start_timestamp, :channel_count, :link_count end
+  class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :channel_count, :start_timestamp, :link_count end
 end

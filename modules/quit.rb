@@ -53,7 +53,7 @@ module Standard
       else
         Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{args[0]})")
       end
-      Network.close(user, args[0])
+      Network.close(user, args[0], false)
     end
   end
 end

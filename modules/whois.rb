@@ -83,6 +83,9 @@ module Standard
           Network.send(user, Numeric.RPL_WHOISACTUALLY(user.nick, u))
           Network.send(user, Numeric.RPL_WHOISIDLE(user.nick, u))
           Network.send(user, Numeric.RPL_ENDOFWHOIS(user.nick, u))
+          if u.is_admin && u.nick != user.nick
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** NOTICE: #{user.nick} has performed a WHOIS on you.")
+          end
           return
         end
       end
