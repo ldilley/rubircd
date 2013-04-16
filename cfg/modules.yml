@@ -30,6 +30,7 @@ modules:
   - pong     # response to ping request
   - privmsg  # enables chat in channels and in private
   - quit     # allows users to quit the server
+  - rehash   # reloads server configuration files
   - restart  # restarts the server
   - stats    # shows various server statistics (limited to admins/opers)
   - summon   # disabled (used to summon an administrator from the host operating system)

@@ -35,10 +35,10 @@ Log.write("Initializing logging...")
 puts("done.")
 Log.write("Logging initialized.")
 print("Parsing options file... ")
-Options.parse()
+Options.parse(false)
 puts("done.")
 Log.write("Options loaded.")
-Opers.parse()
+Opers.parse(false)
 if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
 end
@@ -53,7 +53,7 @@ else
 end
 # ToDo: Add if check to determine if SSL is enabled and print port # if so
 print("Reading MotD... ")
-Server.read_motd()
+Server.read_motd(false)
 puts("done.")
 print("Registering commands... ")
 Command.register_commands()
@@ -78,7 +78,7 @@ Server.invisible_count = 0
 # FixMe: Calculate global_users and max count later
 Server.global_users = 0
 Server.global_users_max = 0
-Modules.parse()
+Modules.parse(false)
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")

@@ -44,19 +44,97 @@ module Standard
         return
       end
       args = args.join.split(' ', 2)
-      # ToDo: Add a broadcast message for each rehash type
-      if args.length < 1
-        # re-read options.yml
+      if args.length < 1 # reload of options.yml is the default behavior
+        Server.users.each do |u|
+          if u.is_admin || u.is_operator
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing options.yml.")
+          end
+        end
+        reason = Options.parse(true)
+        unless reason.is_a?(Exception)
+          Network.send(user, Numeric.RPL_REHASHING(user.nick, "options.yml"))
+        else
+          Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
+          Log.write("Failed to read options.yml: #{reason}")
+        end
       end
       if args.length == 1
         if args[0].to_s.casecmp("modules") == 0
-          # re-read modules.yml
+          unless user.is_admin
+            Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+            return
+          end
+          if Mod.modules == nil || Mod.modules.length < 1
+            Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, "", "No modules are currently loaded."))
+            return
+          end
+          Server.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing modules.yml.")
+            end
+          end
+          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing modules.yml.")
+          Mod.modules.each_value do |mod|
+            begin
+              mod.plugin_finish(Command)
+            rescue NameError => e
+              Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, "#{mod.command_name}", "Invalid class name."))
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{mod}.")
+              Log.write(e)
+              return
+            else
+              Mod.modules.delete(mod.command_name.upcase)
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{mod.command_name} (#{mod})")
+            end
+          end
+          reason = Modules.parse(true)
+          unless reason.is_a?(Exception)
+            Network.send(user, Numeric.RPL_REHASHING(user.nick, "modules.yml"))
+          else
+            Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
+            Log.write("Failed to read modules.yml: #{reason}")
+          end
         elsif args[0].to_s.casecmp("motd") == 0
-          # re-read motd
+          Server.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing the MotD.")
+            end
+          end
+          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing the MotD.")
+          reason = Server.read_motd(true)
+          unless reason.is_a?(Exception)
+            Network.send(user, Numeric.RPL_REHASHING(user.nick, "motd.txt"))
+          else
+            Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
+            Log.write("Failed to read motd.txt: #{reason}")
+          end
         elsif args[0].to_s.casecmp("opers") == 0
-          # re-read opers.yml
+          Server.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing opers.yml.")
+            end
+          end
+          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing opers.yml.")
+          reason = Opers.parse(true)
+          unless reason.is_a?(Exception)
+            Network.send(user, Numeric.RPL_REHASHING(user.nick, "opers.yml"))
+          else
+            Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
+            Log.write("Failed to read opers.yml: #{reason}")
+          end
         elsif args[0].to_s.casecmp("options") == 0
-          # re-read options.yml
+          Server.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing options.yml.")
+            end
+          end
+          reason = Options.parse(true)
+          unless reason.is_a?(Exception)
+            Network.send(user, Numeric.RPL_REHASHING(user.nick, "options.yml"))
+          else
+            Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
+            Log.write("Failed to read options.yml: #{reason}")
+          end
         end
       end
     end

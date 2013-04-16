@@ -414,6 +414,11 @@ class Numeric
     return sprintf(":%s 422 %s :MOTD File is missing", Options.server_name, nick)
   end
 
+  # 424
+  def self.ERR_FILEERROR(nick, reason)
+    return sprintf(":%s 424 %s :%s", Options.server_name, nick, reason)
+  end
+
   # 431
   def self.ERR_NONICKNAMEGIVEN(nick)
     return sprintf(":%s 431 %s :No nickname given", Options.server_name, nick)
@@ -509,12 +514,15 @@ class Numeric
     return sprintf(":%s 481 %s :You do not have the required privileges", Options.server_name, nick)
   end
 
+  # 482
+  def self.ERR_CHANOPRIVSNEEDED(nick, channel)
+    return sprintf(":%s 482 %s %s :You're not channel operator", Options.server_name, nick, channel)
+  end
+
   # 485
   def self.ERR_ATTACKDENY(nick, given_nick)
     return sprintf(":%s 485 %s :Cannot ban, kick, kill, or deop %s. %s is an IRC Administrator or Service.", Options.server_name, nick, given_nick, given_nick)
   end
-
-  ERR_CHANOPRIVSNEEDED = "You're not channel operator"                                # 482
 
   # 491
   def self.ERR_NOOPERHOST(nick)

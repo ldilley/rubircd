@@ -91,11 +91,13 @@ module Standard
           same_channel == false
           if args[1] == 'o'
             if u.is_admin || u.is_operator
-              user.channels.each do |my_channel|
-                if u.channels.any? { |c| c.casecmp(my_channel) == 0 }
-                  Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
-                  same_channel = true
-                  break
+              user.channels.each_key do |my_channel|
+                u.channels.each_key do |c|
+                  if c.casecmp(my_channel) == 0
+                    Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+                    same_channel = true
+                    break
+                  end
                 end
               end
               unless same_channel
@@ -103,11 +105,13 @@ module Standard
               end
             end
           else
-            user.channels.each do |my_channel|
-              if u.channels.any? { |c| c.casecmp(my_channel) == 0 }
-                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
-                same_channel = true
-                break
+            user.channels.each_key do |my_channel|
+              u.channels.each_key do |c|
+                if c.casecmp(my_channel) == 0
+                  Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+                  same_channel = true
+                  break
+                end
               end
             end
             unless same_channel

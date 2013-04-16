@@ -75,6 +75,7 @@ module Standard
       if args.length >= 3
         mode_args = args[2..-1] # this should be the starting ban mask/key/limit/nick
         arg_index = 0
+        mode_targets = 0
       else
         mode_args = []
       end
@@ -105,13 +106,17 @@ module Standard
             return
           end
           user_on_channel = false
-          user.channels.each do |c|
+          user.channels.each_key do |c|
             if channel.name.casecmp(c) == 0
               user_on_channel = true
             end
           end
           unless user_on_channel
             Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target))
+            return
+          end
+          unless user.is_chanop(channel.name)
+            Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, channel.name))
             return
           end
           unless modes_to_add == nil
@@ -145,16 +150,20 @@ module Standard
             # Remove modes that are given when no arguments to them are provided
             modelist = ""
             final_add_modes.each_char do |mode|
-              unless modelist.include?(mode)
-                if args[2] == nil && mode =~ /[abflkov]/
-                  final_add_modes.delete(mode)
-                else
-                  modelist << mode
-                end
+              if args[2] == nil && mode =~ /[abflkov]/
+                final_add_modes.delete(mode)
+                next unless mode == nil
               end
+              if modelist.include?(mode) && mode =~ /[filkmnprst]/
+                final_add_modes.delete(mode)
+                next unless mode == nil
+              end
+              modelist << mode
             end
             # Match up modes that take arguments with their corresponding argument
             if args.length >= 3
+              was_deleted = false
+              mode_index = 0
               modelist.each_char do |mode|
                 #if mode == 'b'
                   # ToDo: Handle ban mask in regex
@@ -168,6 +177,7 @@ module Standard
                     # Invalid key provided
                     modelist = modelist.delete(mode)
                     mode_args.delete_at(arg_index)
+                    was_deleted = true
                     unless channel.key == nil
                       channel.set_key(nil)
                     end
@@ -185,6 +195,7 @@ module Standard
                     # Invalid limit provided (not an integer)
                     modelist = modelist.delete(mode)
                     mode_args.delete_at(arg_index)
+                    was_deleted = true
                     unless channel.limit == nil
                       channel.set_limit(nil)
                     end
@@ -192,26 +203,53 @@ module Standard
                   unless arg_index >= mode_args.length
                     arg_index += 1
                   end
+                elsif mode == 'a' || mode == 'f' || mode == 'r' # ToDo: Allow servers and services to set these later
+                  Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+                  modelist = modelist.delete(mode)
                 elsif mode == 'o'
                   nick_exists = false
                   channel.users.each do |u|
                     if u.nick == mode_args[arg_index]
                       nick_exists = true
+                      if u.is_chanop(channel.name)
+                        modelist = modelist.split
+                        modelist = modelist.delete_at(mode_index)
+                        mode_args.delete_at(arg_index)
+                        was_deleted = true
+                      elsif mode_targets >= Limits::MODES
+                        Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+                        modelist = modelist.delete(mode)
+                        mode_args.delete_at(arg_index)
+                        was_deleted = true
+                      else
+                        u.add_channel_mode(channel.name, 'o')
+                        mode_targets += 1 # only ban/unban, kick, and op/deop have limits
+                      end
                     end
                   end
                   unless nick_exists
                     modelist = modelist.delete(mode)
                     Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                     mode_args.delete_at(arg_index)
+                    was_deleted = true
                   end
-                  unless arg_index >= mode_args.length
+                  if arg_index < mode_args.length && was_deleted == false
                     arg_index += 1
                   end
                 elsif mode == 'v'
                   nick_exists = false
                   channel.users.each do |u|
-                    if u.nick == args[arg_index]
-                      nick_exists = true
+                    nick_exists = true
+                    if u.nick == mode_args[arg_index]
+                      if u.is_voiced(channel.name)
+                        mode_args.delete_at(arg_index)
+                        was_deleted = true
+                        unless arg_index >= mode_args.length
+                          arg_index += 1
+                        end
+                        next unless u == nil
+                      end
+                      u.add_channel_mode(channel.name, 'v')
                     end
                   end
                   unless nick_exists
@@ -226,40 +264,70 @@ module Standard
               end
             end
             final_add_modes = modelist
-            final_add_modes.each_char do |mode|
-              unless mode =~ /[abfov]/
-                channel.add_mode(mode)
+            unless final_add_modes == nil
+              final_add_modes.each_char do |mode|
+                unless mode =~ /[abfov]/
+                  channel.add_mode(mode)
+                end
               end
             end
           end
           unless final_remove_modes.length == 0
             modelist = ""
             final_remove_modes.each_char do |mode|
-              unless modelist.include?(mode)
-                modelist << mode
-              end
-              if modelist =~ /[filkmnprst]/
+              if args[2] == nil && mode =~ /[abflkov]/
                 final_remove_modes.delete(mode)
+                next unless mode == nil
               end
-              if args[2] == nil
-                if modelist =~ /[abflkov]/
-                  final_remove_modes.delete(mode)
-                end
+              if modelist.include?(mode) && mode =~ /[filkmnprst]/
+                final_remove_modes.delete(mode)
+                next unless mode == nil
               end
-              if mode == 'o'
-                nick_exists = false
-                channel.users.each do |u|
-                  if u.nick == mode_args[arg_index]
-                    nick_exists = true
+              modelist << mode
+            end
+            if args.length >= 3
+              modelist.each_char do |mode|
+                if mode == 'o'
+                  nick_exists = false
+                  channel.users.each do |u|
+                    if u.nick == mode_args[arg_index]
+                      nick_exists = true
+                      if mode_targets >= Limits::MODES
+                        Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+                        mode_args.delete_at(arg_index)
+                        unless arg_index >= mode_args.length
+                          arg_index += 1
+                        end
+                        next unless u == nil
+                      end
+                      u.remove_channel_mode(channel.name, 'o')
+                      mode_targets += 1 # only ban/unban, kick, and op/deop have limits
+                    end
                   end
-                end
-                unless nick_exists
-                  modelist = modelist.delete(mode)
-                  Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
-                  mode_args.delete_at(arg_index)
-                end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
+                  unless nick_exists
+                    modelist = modelist.delete(mode)
+                    Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                    mode_args.delete_at(arg_index)
+                  end
+                  unless arg_index >= mode_args.length
+                    arg_index += 1
+                  end
+                elsif mode == 'v'
+                  nick_exists = false
+                  channel.users.each do |u|
+                    if u.nick == mode_args[arg_index]
+                      u.remove_channel_mode(channel.name, 'v')
+                      nick_exists = true
+                    end
+                  end
+                  unless nick_exists
+                    modelist = modelist.delete(mode)
+                    Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                    mode_args.delete_at(arg_index)
+                  end
+                  unless arg_index >= mode_args.length
+                    arg_index += 1
+                  end
                 end
               end
             end

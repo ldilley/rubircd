@@ -54,22 +54,27 @@ module Standard
       end
       channels = args[0].split(',')
       channels.each do |channel|
+        user_on_channel = false
         if channel =~ /[#&+][A-Za-z0-9_!-]/
-          if user.channels.any? { |c| c.casecmp(channel) == 0 }
-            chan = Server.channel_map[channel.to_s.upcase]
-            unless chan == nil
-              if args[1] == nil
-                chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}") }
-              else
-                chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}") }
+          user.channels.each_key do |c|
+            if c.casecmp(channel) == 0
+              user_on_channel = true
+              chan = Server.channel_map[channel.to_s.upcase]
+              unless chan == nil
+                if args[1] == nil
+                  chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}") }
+                else
+                  chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}") }
+                end
+                chan.remove_user(user)
+                if chan.users.length < 1
+                  Server.remove_channel(channel.upcase)
+                end
+                user.remove_channel(channel)
               end
-              chan.remove_user(user)
-              if chan.users.length < 1
-                Server.remove_channel(channel.upcase)
-              end
-              user.remove_channel(channel)
             end
-          else
+          end
+          unless user_on_channel
             Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, channel))
           end
         else

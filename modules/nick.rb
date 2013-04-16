@@ -74,7 +74,7 @@ module Standard
         end
         if user.is_registered && user.nick != args[0]
           if user.channels.length > 0
-            user.channels.each do |c|
+            user.channels.key_each do |c|
               chan = Server.channel_map[c.to_s.upcase]
               chan.users.each do |u|
                 if user.nick != u.nick

@@ -172,7 +172,7 @@ class Network
         end
       end
       if user.channels.length > 0
-        user.channels.each do |c|
+        user.channels.each_key do |c|
           chan = Server.channel_map[c.to_s.upcase]
           chan.users.each do |u|
             unless user.nick == u.nick

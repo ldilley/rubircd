@@ -49,8 +49,14 @@ module Standard
         keys = args[1].split(',')
       end
       key_index = 0
+      user_on_channel = false
       channels.each do |channel|
-        if user.channels.any? { |uc| uc.casecmp(channel) == 0 }
+        user.channels.each_key do |uc|
+          if uc.casecmp(channel) == 0
+            user_on_channel = true
+          end
+        end
+        if user_on_channel
           Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, user.nick, channel))
           unless keys.nil?
             if keys.length > key_index
@@ -118,8 +124,11 @@ module Standard
           channel_object = Channel.new(channel, user.nick)
           Server.add_channel(channel_object)
           chan = Server.channel_map[channel.to_s.upcase]
+          user.add_channel(channel)
+          user.add_channel_mode(channel, 'o')
+        else
+          user.add_channel(channel)
         end
-        user.add_channel(channel)
         chan.add_user(user)
         if user.invites.length > 0
           user.invites.each do |channel_invite|

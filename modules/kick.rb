@@ -50,7 +50,7 @@ module Standard
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
-      user.channels.each do |c|
+      user.channels.each_key do |c|
         unless c.casecmp(chan.name) == 0
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
           return
@@ -66,6 +66,7 @@ module Standard
         end
       end
       good_nicks = []
+      kick_count = 0
       nicks.each do |n|
         if Server.users.any? { |u| u.nick.casecmp(n) == 0 }
           good_nicks << n
@@ -73,22 +74,32 @@ module Standard
           Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, n))
         end
       end
+      user_on_channel = false
       good_nicks.each do |n|
         Server.users.each do |u|
           if u.nick.casecmp(n) == 0
-            if !u.channels.any? { |c| c.casecmp(chan.name) == 0 }
+            u.channels.each_key do |c|
+              if c.casecmp(chan.name) == 0
+                user_on_channel = true
+              end
+            end
+            if !user_on_channel
               Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
             elsif (u.is_admin && !user.is_admin) || u.is_service
               Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
               if u.is_admin
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
               end
+            elsif kick_count >= Limits::MODES
+              Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+              next unless u == nil
             else
               if args[2] != nil
                 chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{args[2]}") }
               else
                 chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
               end
+              kick_count += 1
               chan.remove_user(u)
               u.remove_channel(chan.name)
               unless chan.users.length > 0 || chan.is_registered

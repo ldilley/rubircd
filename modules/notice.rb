@@ -62,7 +62,13 @@ module Standard
           channel = Server.channel_map[target.to_s.upcase]
           unless channel == nil
             good_targets += 1
-            if user.channels.any? { |uc| uc.casecmp(target) == 0 } || !channel.modes.include?('n')
+            user_on_channel = false
+            user.channels.each_key do |uc|
+              if uc.casecmp(target) == 0
+                user_on_channel = true
+              end
+            end
+            if user_on_channel || !channel.modes.include?('n')
               channel.users.each do |u|
                 if u.nick != user.nick
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{target} :#{args[1]}")
@@ -92,36 +98,3 @@ module Standard
   end
 end
 Standard::Notice.new
-
-
-
-#      if args[0] =~ /[#&+][A-Za-z0-9_!-]/
-#        channel = Server.channel_map[args[0].to_s.upcase]
-#        unless channel == nil
-#          if user.channels.any? { |uc| uc.casecmp(args[0]) == 0 } || !channel.modes.include?('n')
-#            channel.users.each do |u|
-#              if u.nick != user.nick
-#                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{args[0]} :#{args[1]}")
-#              end
-#            end
-#          else
-#            Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, channel.name, "no external messages"))
-#          end
-#        end
-#        return
-#      end
-#      Server.users.each do |u|
-#        if u.nick.casecmp(args[0]) == 0
-#          Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{u.nick} :#{args[1]}")
-#          return
-#        end
-#      end
-#      if args[0] == '#'
-#        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
-#      else
-#        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
-#      end
-#    end
-#  end
-#end
-#Standard::Notice.new

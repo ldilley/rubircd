@@ -45,8 +45,7 @@ module Standard
       userlist = []
       channel = Server.channel_map[args[0].to_s.upcase]
       unless channel == nil
-        # ToDo: Add flag prefixes to nicks later
-        channel.users.each { |u| userlist << u.nick }
+        channel.users.each { |u| userlist << u.get_prefixes(channel.name) + u.nick }
       end
       userlist = userlist[0..-1].join(" ")
       Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))

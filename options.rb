@@ -31,10 +31,12 @@ class Options
   @@ssl_port = nil
   @@debug_mode = nil
 
-  def self.parse()
+  # If called_from_rehash is true, we make this method more resilient so it will not bring down the server while it is up
+  def self.parse(called_from_rehash)
     begin
       options_file=YAML.load_file("cfg/options.yml")
-    rescue
+    rescue => e
+      return e if called_from_rehash
       puts("failed. Unable to open options.yml file!")
       exit!
     end
@@ -44,105 +46,149 @@ class Options
     @@network_name = options_file["network_name"]
     @@server_name = options_file["server_name"]
     @@server_description = options_file["server_description"]
-    @@listen_host = options_file["listen_host"]
-    @@listen_port = options_file["listen_port"]
-    @@ssl_port = options_file["ssl_port"]
+    unless called_from_rehash # changing these options while the server is already up is currently not supported
+      @@listen_host = options_file["listen_host"]
+      @@listen_port = options_file["listen_port"]
+      @@ssl_port = options_file["ssl_port"]
+      @@io_type = options_file["io_type"]
+      @@debug_mode = options_file["debug_mode"]
+    end
     @@max_connections = options_file["max_connections"]
-    @@io_type = options_file["io_type"]
-    @@debug_mode = options_file["debug_mode"]
     @@control_hash = options_file["control_hash"]
     @@server_hash = options_file["server_hash"]
 
     if @@admin_name == nil
-      puts("\nUnable to read admin_name option from options.yml file!")
+      error_text = "\nUnable to read admin_name option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
     end
 
     if @@admin_nick == nil
-      puts("\nUnable to read admin_nick option from options.yml file!")
+      error_text = "\nUnable to read admin_nick option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
     end
 
     if @@admin_email == nil
-      puts("\nUnable to read admin_email option from options.yml file!")
+      error_text = "\nUnable to read admin_email option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
     end
 
     if @@network_name == nil
-      puts("\nUnable to read network_name option from options.yml file!")
+      error_text = "\nUnable to read network_name option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
     end
 
     if @@server_name == nil
-      puts("\nUnable to read server_name option from options.yml file!")
+      error_text = "\nUnable to read server_name option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@server_description == nil
-      puts("\nUnable to read server_description option from options.yml file!")
+      error_text = "\nUnable to read server_description option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@listen_port == nil
-      puts("\nUnable to read listen_port option from options.yml file!")
+      error_text = "\nUnable to read listen_port option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@max_connections == nil
-      puts("\nUnable to read max_connections option from options.yml file!")
+      error_text = "\nUnable to read max_connections option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@io_type == nil
-      puts("\nUnable to read io_type option from options.yml file!")
+      error_text = "\nUnable to read io_type option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@debug_mode == nil
-      puts("\nUnable to read debug_mode option from options.yml file!")
+      error_text = "\nUnable to read debug_mode option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@control_hash == nil
-      puts("\nUnable to read control_hash option from options.yml file!")
+      error_text = "\nUnable to read control_hash option from options.yml file!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@listen_port <= 0 || @@listen_port >= 65536
-      puts("\nlisten_port value is out of range!")
+      error_text = "\nlisten_port value is out of range!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     unless @@ssl_port == nil
       begin
         if @@ssl_port <= 0 || @@ssl_port >= 65536
-          puts("\nssl_port value is out of range!")
+          error_text = "\nssl_port value is out of range!"
+          return Exception.new(error_text.lstrip) if called_from_rehash
+          puts(error_text)
           exit!
         end
       rescue
-        puts("\nInvalid ssl_port value!")
+        error_text = "\nInvalid ssl_port value!"
+        return Exception.new(error_text.lstrip) if called_from_rehash
+        puts(error_text)
         exit!
       end
     end
 
     if @@listen_port == @@ssl_port
-      puts("\nlisten_port and ssl_port values cannot match!")
+      error_text = "\nlisten_port and ssl_port values cannot match!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@max_connections < 10
-      puts("\nmax_connections value is set too low!")
+      error_text = "\nmax_connections value is set too low!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@io_type.to_s == "event"
-      puts("\nI/O type \"event\" is not implemented yet!")
+      error_text = "\nI/O type \"event\" is not implemented yet!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@io_type.to_s != "event" && @@io_type.to_s != "thread"
-      puts("\nio_type value should be set to either event or thread.")
+      error_text = "\nio_type value should be set to either event or thread."
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
 
     if @@debug_mode.to_s != "true" && @@debug_mode.to_s != "false"
-      puts("\ndebug_mode value should be set to either true or false.")
+      error_text = "\ndebug_mode value should be set to either true or false."
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
       exit!
     end
   end
@@ -205,10 +251,12 @@ class Options
 end
 
 class Modules
-  def self.parse()
+  # If called_from_rehash is true, we do not want to exit the server process while it is up during a rescue
+  def self.parse(called_from_rehash)
     begin
       modules_file=YAML.load_file("cfg/modules.yml")
-    rescue
+    rescue => e
+      return e if called_from_rehash
       Log.write("Unable to open modules.yml file!")
       return
     end
@@ -219,10 +267,12 @@ class Modules
 end
 
 class Opers
-  def self.parse()
+  # If called_from_rehash is true, we do not want to exit the server process while it is up during a rescue
+  def self.parse(called_from_rehash)
     begin
       opers_file=YAML.load_file("cfg/opers.yml")
-    rescue
+    rescue => e
+      return e if called_from_rehash
       Log.write("Unable to open opers.yml file!")
       return
     end

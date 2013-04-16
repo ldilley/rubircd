@@ -50,13 +50,15 @@ module Standard
           if u.channels.length > 0
             channel_list = []
             chan = nil
-            u.channels.each do |c|
+            u.channels.each_key do |c|
               chan = Server.channel_map[c.upcase]
               unless chan == nil
                 # Hide private/secret channel from output unless user is a member of the target's channel
                 if chan.modes.include?('p') || chan.modes.include?('s')
-                  if user.channels.any? { |uc| uc.casecmp(c) == 0 }
-                    channel_list << c
+                  user.channels.each_key do |uc|
+                    if uc.casecmp(c) == 0
+                      channel_list << c
+                    end
                   end
                 else
                   channel_list << c

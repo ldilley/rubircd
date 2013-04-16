@@ -73,18 +73,23 @@ module Standard
         return
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
-        if user.channels.any? { |c| c.casecmp(args[0]) == 0 }
-          chan = Server.channel_map[args[0].to_s.upcase]
-          unless chan == nil
-            # ToDo: Verify chanop status
-            if args[1] == nil || args[1].length == 0
-              chan.clear_topic()
-            else
-              chan.set_topic(user, args[1])
+        user_on_channel = false
+        user.channels.each_key do |c|
+          if c.casecmp(args[0]) == 0
+            user_on_channel = true
+            chan = Server.channel_map[args[0].to_s.upcase]
+            unless chan == nil
+              # ToDo: Verify chanop status
+              if args[1] == nil || args[1].length == 0
+                chan.clear_topic()
+              else
+                chan.set_topic(user, args[1])
+              end
+              chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
             end
-            chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
           end
-        else
+        end
+        unless user_on_channel
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
         end
       else

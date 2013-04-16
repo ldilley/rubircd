@@ -42,10 +42,16 @@ module Standard
       Network.send(user, Numeric.RPL_LISTSTART(user.nick))
       if args.length >= 1
         chan = nil
+        user_on_channel = false
         args.each do |a|
           chan = Server.channel_map[a.to_s.upcase]
           unless chan == nil
-            if chan.modes.include?('s') && !user.channels.any? { |uc| uc.casecmp(chan.name) == 0 } # do not list secret channels unless user is a member
+            user.channels.each_key do |uc|
+              if uc.casecmp(chan.name) == 0
+                user_on_channel = true
+              end
+            end
+            if chan.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member
               next unless chan == nil
             else
               Network.send(user, Numeric.RPL_LIST(user.nick, chan))
@@ -53,8 +59,14 @@ module Standard
           end
         end
       else
+        user_on_channel = false
         Server.channel_map.values.each do |c|
-          if c.modes.include?('s') && !user.channels.any? { |uc| uc.casecmp(c.name) == 0 } # do not list secret channels unless user is a member
+          user.channels.each_key do |uc|
+            if uc.casecmp(c.name) == 0
+              user_on_channel = true
+            end
+          end
+          if c.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member
             next unless c == nil
           else
             Network.send(user, Numeric.RPL_LIST(user.nick, c))

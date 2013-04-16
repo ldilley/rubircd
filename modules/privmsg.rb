@@ -62,7 +62,13 @@ module Standard
           channel = Server.channel_map[target.to_s.upcase]
           unless channel == nil
             good_targets += 1
-            if user.channels.any? { |uc| uc.casecmp(target) == 0 } || !channel.modes.include?('n')
+            user_on_channel = false
+            user.channels.each_key do |uc|
+              if uc.casecmp(target) == 0
+                user_on_channel = true
+              end
+            end
+            if user_on_channel || !channel.modes.include?('n')
               channel.users.each do |u|
                 if u.nick != user.nick
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{target} :#{args[1]}")

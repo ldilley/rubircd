@@ -55,11 +55,23 @@ module Standard
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
         return
       end
-      unless user.channels.any? { |c| c.casecmp(args[1]) == 0 }
+      user_on_channel = false
+      user.channels.each_key do |c|
+        if c.casecmp(args[1]) == 0
+          user_on_channel = true
+        end
+      end
+      unless user_on_channel
         Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[1]))
         return
       end
-      if target_user.channels.any? { |c| c.casecmp(args[1]) == 0 }
+      target_on_channel = false
+      target_user.channels.each_key do |c|
+        if c.casecmp(args[1]) == 0
+          target_on_channel = true
+        end
+      end
+      if target_on_channel
         Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, args[0], args[1]))
         return
       end

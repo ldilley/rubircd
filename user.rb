@@ -38,7 +38,7 @@ class User
     @thread = thread
     @umodes = Array.new
     @invites = Array.new
-    @channels = Array.new
+    @channels = Hash.new
     @session_capabilities = Array.new
     @signon_time = Time.now.to_i
     @last_activity = Time.now.to_i # used to determine whether the client should be pinged
@@ -177,7 +177,7 @@ class User
 
   def add_channel(channel)
     if Options.io_type.to_s == "thread"
-      @channels_lock.synchronize { @channels.push(channel) }
+      @channels_lock.synchronize { @channels[channel] = "" }
     else
       @channels.push(channel)
     end
@@ -185,10 +185,115 @@ class User
 
   def remove_channel(channel)
     if Options.io_type.to_s == "thread"
-      @channels_lock.synchronize { @channels.delete(channel) }
+      @channels_lock.synchronize do
+        @channels.each_key do |c|
+          if c.casecmp(channel)
+            @channels.delete(c)
+          end
+        end
+      end
     else
-      @channels.delete(channel)
+      @channels.each_key do |c|
+        if c.casecmp(channel)
+          @channels.delete(c)
+        end
+      end
     end
+  end
+
+  def add_channel_mode(channel, mode)
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize do
+        @channels.each_key do |c|
+          if c.casecmp(channel)
+            modes = @channels[c]
+            if modes.include?(mode)
+              return
+            else
+              @channels[c] = modes + mode
+            end
+          end
+        end
+      end
+    else
+      @channels.each_key do |c|
+        if c.casecmp(channel)
+          modes = @channels[c]
+          if modes.include?(mode)
+            return
+          else
+            @channels[c] = modes + mode
+          end
+        end
+      end
+    end
+  end
+
+  def remove_channel_mode(channel, mode)
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize do
+        @channels.each_key do |c|
+          if c.casecmp(channel)
+            modes = @channels[c]
+            @channels[c] = modes.delete(mode)
+          end
+        end
+      end
+    else
+      @channels.each_key do |c|
+        if c.casecmp(channel)
+          modes = @channels[c]
+          @channels[c] = modes.delete(mode)
+        end
+      end
+    end
+  end
+
+  def is_chanop(channel)
+    @channels.each_key do |c|
+      if c.casecmp(channel)
+        if @channels[c].include?('o')
+          return true
+        else
+          return false
+        end
+      end
+    end
+    return false
+  end
+
+  def is_voiced(channel)
+    @channels.each_key do |c|
+      if c.casecmp(channel)
+        if @channels[c].include?('v')
+          return true
+        else
+          return false
+        end
+      end
+    end
+    return false
+  end
+
+  def get_prefixes(channel)
+    prefix_list = []
+    @channels.each_key do |c|
+      if c.casecmp(channel)
+        if @channels[c].include?('a')
+          prefix_list << '~'
+        end
+        if @channels[c].include?('f')
+          prefix_list << '&'
+        end
+        if @channels[c].include?('o')
+          prefix_list << '@'
+        end
+        if @channels[c].include?('v')
+          prefix_list << '+'
+        end
+      end
+    end
+    return prefix_list.join
   end
 
   def set_last_activity()

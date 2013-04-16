@@ -182,10 +182,12 @@ class Server
     end
   end
 
-  def self.read_motd()
+  # If called_from_rehash is true, we do not want to exit the server process while it is up during a rescue
+  def self.read_motd(called_from_rehash)
     begin
       @@motd = IO.readlines("cfg/motd.txt")
-    rescue
+    rescue => e
+      return e if called_from_rehash
       puts("failed. Unable to open motd.txt file!")
       exit!
     end
