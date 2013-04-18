@@ -186,8 +186,17 @@ class Numeric
   end
 
   # 312
-  def self.RPL_WHOISSERVER(nick, user)
-    return sprintf(":%s 312 %s %s %s :%s", Options.server_name, nick, user.nick, Options.server_name, Options.server_description)
+  def self.RPL_WHOISSERVER(nick, user, called_from_whois)
+    if called_from_whois
+      return sprintf(":%s 312 %s %s %s :%s", Options.server_name, nick, user.nick, Options.server_name, Options.server_description)
+    else
+      return sprintf(":%s 312 %s %s %s :%s", Options.server_name, nick, user.nick, Options.server_name, user.signoff_time)
+    end
+  end
+
+  # 314
+  def self.RPL_WHOWASUSER(nick, user)
+    return sprintf(":%s 314 %s %s %s %s * :%s", Options.server_name, nick, user.nick, user.ident, user.hostname, user.gecos)
   end
 
   # 315
@@ -310,6 +319,11 @@ class Numeric
     return sprintf(":%s 368 %s %s :End of channel ban list", Options.server_name, nick, channel)
   end
 
+  # 369
+  def self.RPL_ENDOFWHOWAS(nick)
+    return sprintf(":%s 369 %s :End of WHOWAS", Options.server_name, nick)
+  end
+
   # 371
   def self.RPL_INFO(nick, text)
     return sprintf(":%s 371 %s :%s", Options.server_name, nick, text)
@@ -377,6 +391,11 @@ class Numeric
   # 405
   def self.ERR_TOOMANYCHANNELS(nick, channel)
     return sprintf(":%s 405 %s %s :You have joined too many channels", Options.server_name, nick, channel)
+  end
+
+  # 406
+  def self.ERR_WASNOSUCHNICK(nick, given_nick)
+    return sprintf(":%s 406 %s %s :There was no such nickname", Options.server_name, nick, given_nick)
   end
 
   # 407

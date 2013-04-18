@@ -42,7 +42,8 @@ modules:
   - version  # displays version information for the server software
   - wallops  # allows admins/opers to send informational messages to other users with umode +w
   - who      # shows who is on the network
-  - whois    # shows information about a user
+  - whois    # shows information about a current nickname
+  - whowas   # shows information about a previous nickname
 
 # The modules below are optional
   - fjoin    # forces channel joins

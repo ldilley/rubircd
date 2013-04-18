@@ -32,6 +32,7 @@ class Limits
   TOPICLEN = 308
   IDENTLEN = 10
   GECOSLEN = 150
+  WHOWASMAX = 5             # maximum number of whowas entries for a nick
   MOTDLINELEN = 80
   PING_STRIKES = 3          # number of times a connection can fail to respond to a ping request before it should be dropped
   PING_INTERVAL = 90        # interval to ping all connections in seconds (do not set this value too low!)

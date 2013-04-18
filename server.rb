@@ -61,8 +61,12 @@ class Server
     @@data_sent_lock = Mutex.new
   end
 
-  def self.init_chanmap
+  def self.init_chanmap()
     @@channel_map = {}
+  end
+
+  def self.init_whowas()
+    @@whowas_mod = Command::Standard::Whowas.new
   end
 
   # ToDo: Pass user as an argument and determine if they are invisible, an operator, unknown, etc.
@@ -203,6 +207,10 @@ class Server
 
   def self.channel_map
     @@channel_map
+  end
+
+  def self.whowas_mod
+    @@whowas_mod
   end
 
   def self.client_count

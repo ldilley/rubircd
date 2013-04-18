@@ -228,7 +228,6 @@ class Command
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a
-  # whowas
   # zline
 
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation

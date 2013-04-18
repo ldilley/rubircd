@@ -85,6 +85,12 @@ module Standard
           end
           Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
         end
+        whowas_loaded = Command.command_map["WHOWAS"]
+        unless whowas_loaded == nil
+          unless user.nick == nil || user.nick == "*"
+            Server.whowas_mod.add_entry(user, ::Time.now.asctime)
+          end
+        end
         user.change_nick(args[0])
         return
       else

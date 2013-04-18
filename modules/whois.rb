@@ -38,12 +38,11 @@ module Standard
 
     # args[0] = nick
     def on_whois(user, args)
-      # ToDo: Support wildcards per RFC 1459
+      args = args.join.split
       if args.length < 1
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHOIS"))
         return
       end
-      args[0] = args[0].strip
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0
           Network.send(user, Numeric.RPL_WHOISUSER(user.nick, u))
@@ -67,7 +66,7 @@ module Standard
             end
             Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u, channel_list))
           end
-          Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u))
+          Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u, true))
           if u.is_operator && !u.is_admin
             Network.send(user, Numeric.RPL_WHOISOPERATOR(user.nick, u))
           end

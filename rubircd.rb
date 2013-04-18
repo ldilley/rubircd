@@ -79,6 +79,10 @@ Server.invisible_count = 0
 Server.global_users = 0
 Server.global_users_max = 0
 Modules.parse(false)
+whowas_loaded = Command.command_map["WHOWAS"]
+unless whowas_loaded == nil
+  Server.init_whowas()
+end
 puts("Starting network and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")

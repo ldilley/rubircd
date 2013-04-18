@@ -185,6 +185,12 @@ class Network
           end
         end
       end
+      whowas_loaded = Command.command_map["WHOWAS"]
+      unless whowas_loaded == nil
+        unless user.nick == nil || user.nick == "*"
+          Server.whowas_mod.add_entry(user, Time.now.asctime)
+        end
+      end
       if Server.remove_user(user)
         Server.decrement_clients()
       end
