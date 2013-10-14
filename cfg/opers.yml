@@ -1,3 +1,4 @@
+# $Id$
 # nick cannot be empty!
 # hash cannot be empty!
 # host is optional. Set to "", blank, or * for any host.

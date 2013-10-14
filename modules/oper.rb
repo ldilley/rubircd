@@ -72,6 +72,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Server Administrator.")
               return
             end
             hostmask = admin.host.to_s.gsub('\*', '.*?')
@@ -84,6 +85,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Server Administrator.")
               return
             else
               Server.users.each do |u|
@@ -91,6 +93,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
               Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
               return
             end
@@ -100,6 +103,7 @@ module Standard
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
               end
             end
+            Log.write("#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
             Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
             return
           end
@@ -116,6 +120,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
               return
             end
             hostmask = oper.host.to_s.gsub('\*', '.*?')
@@ -128,6 +133,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
               return
             else
               Server.users.each do |u|
@@ -135,6 +141,7 @@ module Standard
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
                 end
               end
+              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
               Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
               return
             end
@@ -144,6 +151,7 @@ module Standard
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
               end
             end
+            Log.write("#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
             Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
           end
         end

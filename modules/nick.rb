@@ -50,7 +50,6 @@ module Standard
       if args[0][0] == ':'
         args[0] = args[0][1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
       end
-      # We must have exactly 2 tokens so ensure the nick is valid
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
         Server.users.each do |u|
           if u.nick.casecmp(args[0]) == 0 && user != u
@@ -62,14 +61,16 @@ module Standard
             return
           end
         end
-        Server.reserved_nicks.each do |n|
-          if n.casecmp(args[0]) == 0 && user.nick != n
-            unless user.is_registered
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", args[0], "Reserved nickname"))
-            else
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Reserved nickname"))
+        unless Server.qline_mod == nil
+          Server.qline_mod.list_qlines().each do |reserved_nick|
+            if reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
+              unless user.is_registered
+                Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", args[0], reserved_nick.reason))
+              else
+                Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], reserved_nick.reason))
+              end
+              return
             end
-            return
           end
         end
         if user.is_registered && user.nick != args[0]

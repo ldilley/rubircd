@@ -1,0 +1,12 @@
+---
+address: root@*
+create_time: 1381646153
+duration: '0'
+creator: '*'
+reason: Do not use IRC as root!
+---
+address: Administrator@*
+create_time: 1381646177
+duration: '0'
+creator: '*'
+reason: Do not use IRC as Administrator!

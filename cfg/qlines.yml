@@ -1,0 +1,48 @@
+---
+nick: ChanServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services
+---
+nick: BotServ
+create_time: 1381650244
+duration: '0'
+creator: '*'   
+reason: Reserved for services
+---
+nick: Global
+create_time: 1381650244
+duration: '0'
+creator: '*'   
+reason: Reserved for services
+---
+nick: HostServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services
+---
+nick: MemoServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services
+---
+nick: NickServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services
+---
+nick: OperServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services
+---
+nick: StatServ
+create_time: 1381650244
+duration: '0'
+creator: '*'
+reason: Reserved for services

@@ -1,3 +1,4 @@
+# $Id$
 # Add the modules you wish to load at startup below.
 # Omit the ".rb" extension (module name is base name of script)
 # You can comment out unwanted modules with '#' or simply remove the line to stop loading a module.
@@ -16,6 +17,7 @@ modules:
   - join     # enables channel joins
   - kick     # allows kicking of users from channels
   - kill     # allows removal of users from the network by admins/opers
+  - kline    # enables local bans based on user@host
   - list     # shows channels on the network and their properties
   - lusers   # displays local client, global client, channel, oper, and server counts
   - mode     # enables mode changes for channels and users
@@ -29,6 +31,7 @@ modules:
   - ping     # check to see if a connection is alive
   - pong     # response to ping request
   - privmsg  # enables chat in channels and in private
+  - qline    # enables local nickname reservations (quarantines)
   - quit     # allows users to quit the server
   - rehash   # reloads server configuration files
   - restart  # restarts the server
@@ -44,6 +47,7 @@ modules:
   - who      # shows who is on the network
   - whois    # shows information about a current nickname
   - whowas   # shows information about a previous nickname
+  - zline    # enables local bans based on IP address
 
 # The modules below are optional
   - fjoin    # forces channel joins

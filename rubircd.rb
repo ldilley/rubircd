@@ -29,6 +29,8 @@ require_relative 'options'
 require_relative 'server'
 require_relative 'user'
 
+$LOAD_PATH << Dir.pwd() # needed so certain modules can get at classes in this top-level directory
+
 puts(Server::VERSION)
 print("Initializing logging... ")
 Log.write("Initializing logging...")
@@ -55,19 +57,20 @@ end
 print("Reading MotD... ")
 Server.read_motd(false)
 puts("done.")
+Log.write("MotD loaded.")
 print("Registering commands... ")
 Command.register_commands()
 Command.init_counters()
 puts("done.")
+Log.write("Commands registered.")
 if Options.io_type.to_s == "thread"
+  print("Initializing mutexes... ")
   Mod.init_locks()
   Server.init_locks()
+  puts("done.")
+  Log.write("Mutexes initialized.")
 end
-print("Populating reserved nicknames... ")
-reserved_nicks = ["ChanServ", "Global", "MemoServ", "NickServ", "OperServ", "X"]
-reserved_nicks.each { |nick| Server.add_reserved_nick(nick) }
-puts("done.")
-Log.write("Reserved nicknames populated.")
+print("Initializing server statistics... ")
 Server.init_chanmap()
 Server.channel_count = 0
 Server.start_timestamp = Time.now.asctime
@@ -78,12 +81,32 @@ Server.invisible_count = 0
 # FixMe: Calculate global_users and max count later
 Server.global_users = 0
 Server.global_users_max = 0
+puts("done.")
+Log.write("Server statistics initialized.")
+print("Loading modules... ")
 Modules.parse(false)
+# The modules below need to be initialized in the server class before the network starts
 whowas_loaded = Command.command_map["WHOWAS"]
 unless whowas_loaded == nil
   Server.init_whowas()
 end
-puts("Starting network and waiting for incoming connections... ")
+# ToDo: Add G-line mod check here
+kline_loaded = Command.command_map["KLINE"]
+unless kline_loaded == nil
+  Server.init_kline()
+end
+qline_loaded = Command.command_map["QLINE"]
+unless qline_loaded == nil
+  Server.init_qline()
+end
+zline_loaded = Command.command_map["ZLINE"]
+unless zline_loaded == nil
+  Server.init_zline()
+end
+puts("done.")
+Log.write("Modules loaded.")
+puts("Going into daemon mode and waiting for incoming connections... ")
+Log.write("Going into daemon mode and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")
 elsif ARGV[0] != "-f"

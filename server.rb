@@ -49,7 +49,6 @@ class Server
   @@users = Array.new
   @@admins = Array.new
   @@opers = Array.new
-  @@reserved_nicks = Array.new
 
   def self.init_locks()
     @@client_count_lock = Mutex.new
@@ -67,6 +66,18 @@ class Server
 
   def self.init_whowas()
     @@whowas_mod = Command::Standard::Whowas.new
+  end
+
+  def self.init_kline()
+    @@kline_mod = Command::Standard::Kline.new
+  end
+
+  def self.init_qline()
+    @@qline_mod = Command::Standard::Qline.new
+  end
+
+  def self.init_zline()
+    @@zline_mod = Command::Standard::Zline.new
   end
 
   # ToDo: Pass user as an argument and determine if they are invisible, an operator, unknown, etc.
@@ -162,10 +173,6 @@ class Server
     @@opers.push(oper)
   end
 
-  def self.add_reserved_nick(nick)
-    @@reserved_nicks.push(nick)
-  end
-
   def self.add_data_recv(amount)
     if Options.io_type.to_s == "thread"
       @@data_recv_lock.synchronize do
@@ -213,6 +220,18 @@ class Server
     @@whowas_mod
   end
 
+  def self.kline_mod
+    @@kline_mod
+  end
+
+  def self.qline_mod
+    @@qline_mod
+  end
+
+  def self.zline_mod
+    @@zline_mod
+  end
+
   def self.client_count
     if Options.io_type.to_s == "thread"
       @@client_count
@@ -235,10 +254,6 @@ class Server
 
   def self.opers
     @@opers
-  end
-
-  def self.reserved_nicks
-    @@reserved_nicks
   end
 
   def self.data_recv

@@ -62,14 +62,30 @@ module Standard
         when 'g' # glines
         when 'i' # online admins and operators with idle times
         when 'k' # klines
+          unless Server.kline_mod == nil
+            Server.kline_mod.list_klines().each do |entry|
+              Network.send(user, Numeric.RPL_STATSKLINE(user.nick, entry.target, entry.create_time, entry.duration, entry.creator, entry.reason))
+            end
+          end
         when 'l' # current client links
         when 'm' # memory usage for certain data structures
         when 'o' # configured opers and admins
         when 'p' # configured server ports
         when 'q' # reserved nicks (qlines)
+          unless Server.qline_mod == nil
+            Server.qline_mod.list_qlines().each do |entry|
+              Network.send(user, Numeric.RPL_STATSQLINE(user.nick, entry.target, entry.create_time, entry.duration, entry.creator, entry.reason))
+              end
+          end
         when 's' # configured server links
         when 'u' # uptime
+          Network.send(user, Numeric.RPL_STATSUPTIME(user.nick))
         when 'z' # zlines
+          unless Server.zline_mod == nil
+            Server.zline_mod.list_zlines().each do |entry|
+              Network.send(user, Numeric.RPL_STATSZLINE(user.nick, entry.target, entry.create_time, entry.duration, entry.creator, entry.reason))
+            end
+        end
       end
       Network.send(user, Numeric.RPL_ENDOFSTATS(user.nick, args[0]))
     end

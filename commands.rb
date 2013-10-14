@@ -222,13 +222,11 @@ class Command
   # connect  - 0.3a
   # error    - 0.3a
   # gline    - 0.3a
-  # kline
   # links    - 0.3a
   # map      - 0.3a (requires oper/admin privileges)
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a
-  # zline
 
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
@@ -237,6 +235,7 @@ class Command
   # fjoin <channel> <nick> (administrative force join)
   # fpart <channel> <nick> (administrative force part)
   # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection) - 0.4a
+  # fquit <nick> <quit_message>
   # identify - 0.4a
   # ijoin <channel> (administrative command to join a channel while being invisible to its members)
   # jupe - 0.4a

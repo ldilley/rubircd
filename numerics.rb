@@ -68,14 +68,39 @@ class Numeric
     return sprintf(":%s 212 %s %s %i %i", Options.server_name, nick, command, count, recv_bytes)
   end
 
+  # 216
+  def self.RPL_STATSKLINE(nick, address, create_time, duration, creator, reason)
+    return sprintf(":%s 216 %s %s %i %i %s :%s", Options.server_name, nick, address, create_time, duration, creator, reason)
+  end
+
+  # 217
+  def self.RPL_STATSQLINE(nick, quarantined_nick, create_time, duration, creator, reason)
+    return sprintf(":%s 217 %s %s %i %i %s :%s", Options.server_name, nick, quarantined_nick, create_time, duration, creator, reason)
+  end
+
   # 219
   def self.RPL_ENDOFSTATS(nick, symbol)
-    return sprintf(":%s 221 %s %c :End of /STATS report", Options.server_name, nick, symbol)
+    return sprintf(":%s 219 %s %c :End of /STATS report", Options.server_name, nick, symbol)
   end
 
   # 221
   def self.RPL_UMODEIS(nick, mode)
     return sprintf(":%s 221 %s +%s", Options.server_name, nick, mode)
+  end
+
+  # 225
+  def self.RPL_STATSZLINE(nick, address, create_time, duration, creator, reason)
+    return sprintf(":%s 225 %s %s %i %i %s :%s", Options.server_name, nick, address, create_time, duration, creator, reason)
+  end
+
+  # 242
+  def self.RPL_STATSUPTIME(nick)
+    # FixMe: Calculate uptime from server start time.
+    up_days = 0
+    up_hours = 0
+    up_minutes = 0
+    up_seconds = 0
+    return sprintf(":%s 242 %s Server up %i days %i:%i:%i", Options.server_name, nick, up_days, up_hours, up_minutes, up_seconds)
   end
 
   # 251
