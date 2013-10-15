@@ -103,6 +103,9 @@ class Network
       Thread.start(plain_server.accept()) do |plain_socket|
         Server.increment_clients()
         user = Network.register_connection(plain_socket, Thread.current)
+        unless Server.kline_mod == nil
+          Network.check_for_kline(user)
+        end
         Network.welcome(user)
         Network.main_loop(user)
       end
@@ -118,6 +121,9 @@ class Network
         Thread.start(ssl_server.accept()) do |ssl_socket|
           Server.increment_clients()
           user = Network.register_connection(ssl_socket, Thread.current)
+          unless Server.kline_mod == nil
+            Network.check_for_kline(user)
+          end
           Network.welcome(user)
           Network.main_loop(user)
         end 
@@ -208,7 +214,20 @@ class Network
       Network.send(user, "ERROR :Closing link: [Server too busy]")
       Network.close(user, "Server too busy", false)
     end
-    # ToDo: Check for g/k/zlines here
+    unless Server.zline_mod == nil
+      Server.zline_mod.list_zlines().each do |zline|
+        if zline.target.casecmp(client_ip) == 0
+          Network.send(user, "ERROR :Closing link: #{client_ip} [Z-lined (#{zline.reason})]")
+          Server.users.each do |u|
+            if u.is_admin || u.is_operator
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{client_ip} was z-lined: #{zline.reason}")
+            end
+          end
+          Log.write("#{client_ip} was z-lined: #{zline.reason}")
+          Network.close(user, "Z-lined #{client_ip} (#{zline.reason})", false)
+        end
+      end
+    end
     Server.add_user(user)
     Log.write("Received connection from #{user.ip_address}")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
@@ -293,6 +312,22 @@ class Network
     Kernel.sleep Limits::REGISTRATION_TIMEOUT
     Network.send(user, "ERROR :Closing link: [Registration timeout]")
     Network.close(user, "Registration timeout", false)
+  end
+
+  def self.check_for_kline(user)
+    Server.kline_mod.list_klines().each do |kline|
+      tokens = kline.target.split('@', 2) # 0 = ident and 1 = host
+      if (tokens[0].casecmp(user.ident) == 0 && tokens[1] == '*') || (tokens[0].casecmp(user.ident) == 0 && tokens[1].casecmp(user.hostname) == 0)
+        Network.send(user, "ERROR :Closing link: #{kline.target} [K-lined (#{kline.reason})]")
+        Server.users.each do |u|
+          if u.is_admin || u.is_operator
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{kline.target} was k-lined: #{kline.reason}")
+          end
+          Log.write("#{kline.target} was k-lined: #{kline.reason}")
+          Network.close(user, "K-lined #{kline.target} (#{kline.reason})", false)
+        end
+      end
+    end
   end
 
   def self.welcome(user)
