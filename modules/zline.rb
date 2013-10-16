@@ -124,7 +124,6 @@ module Standard
         # Validate IP address and duration
         unless args[0] =~ /^\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b$/
           if args[0] == nil || args[0] == ""
-            # ToDo: Create custom ERR numerics for the notices below.
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid IP address in z-line. It was empty!")
           else
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid IP address in z-line: #{args[0]}")

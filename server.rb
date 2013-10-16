@@ -42,9 +42,10 @@ class Server
   @@global_users_max = 0
   @@channel_count = 0
   @@link_count = 0
-  @@start_timestamp = 0   # holds server startup date and time
-  @@data_recv = 0         # amount of data server has received in bytes since it started
-  @@data_sent = 0         # amount of data server has sent in bytes since it started
+  @@friendly_start_date = 0 # holds server start date and time in friendly format
+  @@start_timestamp = 0     # holds server start timestamp in integer format
+  @@data_recv = 0           # amount of data server has received in bytes since it started
+  @@data_sent = 0           # amount of data server has sent in bytes since it started
   @@links = Array.new
   @@users = Array.new
   @@admins = Array.new
@@ -264,5 +265,5 @@ class Server
     @@data_sent
   end
 
-  class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :channel_count, :start_timestamp, :link_count end
+  class << self; attr_accessor :visible_count, :invisible_count, :unknown_count, :oper_count, :global_users, :global_users_max, :channel_count, :friendly_start_date, :start_timestamp, :link_count end
 end

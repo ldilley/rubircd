@@ -125,7 +125,6 @@ module Standard
         tokens = args[0].split('@', 2) # 0 = ident and 1 = host
         unless tokens[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
           if tokens[0] == nil || tokens[0] == ""
-            # ToDo: Create custom ERR numerics for the notices below.
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line. It was empty!")
           else
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line: #{tokens[0]}")

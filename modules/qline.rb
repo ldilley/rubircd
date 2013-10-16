@@ -124,7 +124,6 @@ module Standard
         # Validate nick and duration
         unless args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length <= Limits::NICKLEN
           if args[0] == nil || args[0] == ""
-            # ToDo: Create custom ERR numerics for the notices below.
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid nick in q-line. It was empty!")
           else
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid nick in q-line: #{args[0]}")

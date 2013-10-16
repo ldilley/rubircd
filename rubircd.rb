@@ -73,7 +73,8 @@ end
 print("Initializing server statistics... ")
 Server.init_chanmap()
 Server.channel_count = 0
-Server.start_timestamp = Time.now.asctime
+Server.friendly_start_date = Time.now.asctime
+Server.start_timestamp = Time.now.to_i
 Server.oper_count = 0
 Server.link_count = 0
 Server.visible_count = 0

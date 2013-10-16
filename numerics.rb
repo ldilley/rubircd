@@ -37,7 +37,7 @@ class Numeric
 
   # 003
   def self.RPL_CREATED(nick)
-    return sprintf(":%s 003 %s :This server was created on %s", Options.server_name, nick, Server.start_timestamp)
+    return sprintf(":%s 003 %s :This server was created on %s", Options.server_name, nick, Server.friendly_start_date)
   end
 
   # 004
@@ -94,13 +94,18 @@ class Numeric
   end
 
   # 242
-  def self.RPL_STATSUPTIME(nick)
-    # FixMe: Calculate uptime from server start time.
-    up_days = 0
-    up_hours = 0
-    up_minutes = 0
-    up_seconds = 0
-    return sprintf(":%s 242 %s Server up %i days %i:%i:%i", Options.server_name, nick, up_days, up_hours, up_minutes, up_seconds)
+  def self.RPL_STATSUPTIME(nick, days, hours, minutes, seconds)
+    return sprintf(":%s 242 %s :Server up %i days %.2i:%.2i:%.2i", Options.server_name, nick, days, hours, minutes, seconds)
+  end
+
+  # 243
+  def self.RPL_STATSOLINE(nick, oper_host, oper_nick, oper_type)
+    return sprintf(":%s 243 %s O %s * %s %s", Options.server_name, nick, oper_host, oper_nick, oper_type)
+  end
+
+  # 249
+  def self.RPL_STATSDEBUG(nick, message)
+    return sprintf(":%s 249 %s :%s", Options.server_name, nick, message)
   end
 
   # 251
