@@ -17,31 +17,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-require 'socket'
-
-# Configurables
-server = "localhost"
-port = 1997
-base_nick = "tester"
-counter = 0
-
-loop do
-  t = Thread.new {
-    connection = TCPSocket.open(server, port)
-    puts(connection.gets("\r\n").chomp("\r\n"))
-    puts(connection.gets("\r\n").chomp("\r\n"))
-    connection.write("NICK #{base_nick}#{counter}\r\n")
-    connection.write("USER test test heap.devux.org :Tester\r\n")
-    output = connection.gets("\r\n").chomp("\r\n").split
-    pong_string = output[1]
-    connection.write("PONG #{pong_string}\r\n")
-    25.times { puts(connection.gets("\r\n").chomp("\r\n")) }
-    10.times do |n|
-      connection.write("JOIN #test#{n}\r\n")
-      connection.write("PRIVMSG #test#{n} :Hello world!\n\n")
-    end
-    counter += 1
-    sleep 1
-  }
-  t.join
+class Utility
+  def self.calculate_elapsed_time(start_time)
+    current_time = ::Time.now.to_i
+    delta = current_time - start_time
+    days = delta / (60 * 60 * 24) # 60 seconds in a minute, 60 minutes in an hour, 24 hours in a day
+    delta = delta - days * 60 * 60 * 24
+    hours = delta / (60 * 60)
+    delta = delta - hours * 60 * 60
+    minutes = delta / 60
+    delta = delta - minutes * 60
+    seconds = delta
+    return days, hours, minutes, seconds # check for negative values later if it's a problem...
+  end
 end
