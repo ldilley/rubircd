@@ -26,12 +26,24 @@ require_relative 'options'
 require_relative 'server'
 
 class Network
+  @@ipv6_enabled = false
+
+  def self.ipv6_enabled
+    return @@ipv6_enabled
+  end
+
   def self.start()
     begin
       if Options.listen_host != nil
         plain_server = TCPServer.open(Options.listen_host, Options.listen_port)
       else
         plain_server = TCPServer.open(Options.listen_port)
+        local_ip_addresses = Socket.ip_address_list
+        local_ip_addresses.each do |address|
+          if address.ipv6?
+            @@ipv6_enabled = true
+          end
+        end
       end
     rescue Errno::EADDRNOTAVAIL => e
       puts("Invalid listen_host: #{Options.listen_host}")
@@ -144,7 +156,7 @@ class Network
     end
     unless data == nil
       Server.add_data_recv(data.length)
-      user.data_recv += data.length
+      user.data_sent += data.length
     end
     return data
     # Handle exception in case socket goes away...
@@ -158,7 +170,7 @@ class Network
     end
     unless data == nil
       Server.add_data_sent(data.length)
-      user.data_sent += data.length
+      user.data_recv += data.length
     end
     user.socket.write(data + "\x0D\x0A")
     # Handle exception in case socket goes away...
@@ -169,14 +181,15 @@ class Network
   def self.close(user, reason, lost_socket)
     begin
       user.socket.close()
-    rescue
-      # No need for anything here
+    rescue => e
+     puts(e) # closed stream messages... there's a ticket open to correct a bug occurring below due to this exception being caught
     ensure
       Server.users.each do |u|
         if u.is_admin && u.umodes.include?('v') && !lost_socket
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
+      # Move the stuff below into the begin block so the server does not crash due to "closed stream" exceptions
       if user.channels.length > 0
         user.channels.each_key do |c|
           chan = Server.channel_map[c.to_s.upcase]

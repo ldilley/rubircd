@@ -63,6 +63,11 @@ class Numeric
     end
   end
 
+  # 211
+  def self.RPL_STATSLINKINFO(nick, user)
+    return sprintf(":%s 211 %s %s[%s@%s] %i bytes received/%i bytes sent", Options.server_name, nick, user.nick, user.ident, user.hostname, user.data_recv, user.data_sent)
+  end
+
   # 212
   def self.RPL_STATSCOMMANDS(nick, command, count, recv_bytes)
     return sprintf(":%s 212 %s %s %i %i", Options.server_name, nick, command, count, recv_bytes)
