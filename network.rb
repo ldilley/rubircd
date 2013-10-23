@@ -17,6 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+require 'monitor'
 require 'openssl'
 require 'resolv'
 require 'socket'
@@ -182,31 +183,38 @@ class Network
     begin
       user.socket.close()
     rescue => e
-     puts(e) # closed stream messages... there's a ticket open to correct a bug occurring below due to this exception being caught
+     # The exception below usually produces "closed stream" messages which occur during high load.
+     # Connection throttling and z-lining if client floods are detected should prevent any server hangs.
+     #puts(e)
     ensure
       Server.users.each do |u|
-        if u.is_admin && u.umodes.include?('v') && !lost_socket
+        if u != nil && u.is_admin && u.umodes.include?('v') && u.socket.closed? == false && !lost_socket
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
-      # Move the stuff below into the begin block so the server does not crash due to "closed stream" exceptions
-      if user.channels.length > 0
+      if user != nil && user.channels.length > 0
         user.channels.each_key do |c|
           chan = Server.channel_map[c.to_s.upcase]
-          chan.users.each do |u|
-            unless user.nick == u.nick
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
+          if chan != nil
+            chan.users.each do |u|
+              # Checking if user and 'u' are nil below prevent a "SystemStackError: stack level too deep" exception.
+              # However, this may need to be fixed since stale nicks may hang around in channels when no client is actually connected.
+              # So, FixMe: Figure out why user and/or 'u' objects become nil in the first place and prevent this from happening.
+              if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false
+                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
+              end
             end
-          end
-          chan.remove_user(user)
-          unless chan.modes.include?('r') || chan.users.length > 0
-            Server.remove_channel(chan.name.upcase)
+            chan.remove_user(user)
+            unless chan.modes.include?('r') || chan.users.length > 0
+              Server.remove_channel(chan.name.upcase)
+            end
           end
         end
       end
       whowas_loaded = Command.command_map["WHOWAS"]
       unless whowas_loaded == nil
-        unless user.nick == nil || user.nick == "*"
+        # Checking if user object is nil below prevents a "NoMethodError: undefined method `nick' for nil:NilClass" when using JRuby.
+        if user != nil && user.nick != nil && user.nick != "*"
           Server.whowas_mod.add_entry(user, Time.now.asctime)
         end
       end
