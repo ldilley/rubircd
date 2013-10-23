@@ -176,10 +176,17 @@ class User
   end
 
   def add_channel(channel)
-    if Options.io_type.to_s == "thread"
-      @channels_lock.synchronize { @channels[channel] = "" }
-    else
-      @channels.push(channel)
+    begin
+      if Options.io_type.to_s == "thread"
+        @channels_lock.synchronize do
+          @channels[channel] = ""
+        end
+      else
+        @channels[channel] = ""
+      end
+    rescue => e
+      # FixMe: Do not modify hash while iterating.
+      #puts(e)
     end
   end
 

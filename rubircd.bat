@@ -4,5 +4,5 @@ REM $Id$
 REM Use the line below for a safe experience (letting the JVM decide what's best)
 jruby --server -J-Djruby.thread.pool.enabled=true rubircd.rb
 
-REM Use the line below for a highly-optimized experience
+REM Use the line below for a highly-optimized experience (the memory limits are tuned for a small server)
 REM jruby --fast --server -J-Xss256K -J-Xmn8M -J-Xms16M -J-Xmx64M -J-XX:PermSize=16M -J-XX:MaxPermSize=64M -J-Xincgc -J-Djruby.compile.invokedynamic=true -J-Djruby.thread.pool.enabled=true rubircd.rb

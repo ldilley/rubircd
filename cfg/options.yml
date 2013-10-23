@@ -33,7 +33,7 @@ ssl_port: 1998
 
 # Maximum number of simultaneous connections this server
 # will support
-max_connections: 256
+max_connections: 128
 
 # Network I/O type
 # Possible values are:
