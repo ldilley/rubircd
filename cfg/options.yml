@@ -6,14 +6,14 @@ admin_name: Lloyd Dilley
 admin_nick: lloyd
 
 # E-mail address of the person who administers this server
-admin_email: irc@chatcube.net
+admin_email: irc@rubircd.rocks
 
 # Name of the network
 # This should be set to the same on all linked servers
-network_name: ChatCube
+network_name: RubIRCd
 
 # Name of server
-server_name: irc.chatcube.net
+server_name: irc.rubircd.rocks
 
 # Comment for the server that is displayed in LINKS output
 # and WHOIS output for all clients connected to this server
@@ -25,11 +25,11 @@ server_description: Powered by RubIRCd!
 listen_host:
 
 # TCP port for incoming plain-text connections
-listen_port: 1997
+listen_port: 6667
 
 # TCP port for incoming SSL connections
 # Leave blank or comment out to disable SSL support
-ssl_port: 1998
+ssl_port: 6697
 
 # Maximum number of simultaneous connections this server
 # will support

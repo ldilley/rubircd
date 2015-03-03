@@ -21,7 +21,7 @@ require 'socket'
 
 # Configurables
 server = "localhost"
-port = 1997
+port = 6667
 base_nick = "tester"
 counter = 0
 
@@ -31,7 +31,7 @@ loop do
     puts(connection.gets("\r\n").chomp("\r\n"))
     puts(connection.gets("\r\n").chomp("\r\n"))
     connection.write("NICK #{base_nick}#{counter}\r\n")
-    connection.write("USER test test heap.devux.org :Tester\r\n")
+    connection.write("USER test test localhost :Tester\r\n")
     output = connection.gets("\r\n").chomp("\r\n").split
     pong_string = output[1]
     connection.write("PONG #{pong_string}\r\n")
