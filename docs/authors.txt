@@ -1,6 +1,6 @@
 Core developers:
 
-Lloyd Dilley  (lloyd) <ldilley@devux.org>
+Lloyd Dilley  (lloyd)
 
 
 Contributors:

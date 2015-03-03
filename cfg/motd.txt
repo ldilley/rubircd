@@ -2,7 +2,7 @@
 Welcome to IRC.
 
 This server is powered by RubIRCd!
-Visit http://www.rubircd.org/ for more information.
+Visit http://www.rubircd.rocks/ for more information.
 
  Rules:
    * No flooding

@@ -20,9 +20,9 @@
 require 'socket'
 
 # Configurables
-server_name = "irc.chatcube.net"
-network_name = "ChatCube"
-port = 1997
+server_name = "localhost"
+network_name = "RubIRCd"
+port = 6667
 
 server = TCPServer.open(port)
 client_count = 0

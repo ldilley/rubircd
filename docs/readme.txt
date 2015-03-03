@@ -27,7 +27,7 @@ RubIRCd is an IRC server written in Ruby. To get started with your new server, f
 
     You should also NOT run RubIRCd as the root or Administrator for security reasons.
 
-7.) If you have any issues, please drop by #rubircd on irc.chatcube.net for support. You can also submit bug reports and support
-    requests at http://www.rubircd.org/.
+7.) If you have any issues, please drop by #rubircd on irc.rubircd.rocks for support. You can also submit bug reports and support
+    requests at http://www.rubircd.rocks/.
 
 8.) Enjoy!
