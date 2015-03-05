@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,13 +32,13 @@ $LOAD_PATH << Dir.pwd() # needed so certain modules can get at classes in this t
 
 puts(Server::VERSION)
 print("Initializing logging... ")
-Log.write("Initializing logging...")
+Log.write(2, "Initializing logging...")
 puts("done.")
-Log.write("Logging initialized.")
+Log.write(2, "Logging initialized.")
 print("Parsing options file... ")
 Options.parse(false)
 puts("done.")
-Log.write("Options loaded.")
+Log.write(2, "Options loaded.")
 Opers.parse(false)
 if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
@@ -57,18 +56,18 @@ end
 print("Reading MotD... ")
 Server.read_motd(false)
 puts("done.")
-Log.write("MotD loaded.")
+Log.write(2, "MotD loaded.")
 print("Registering commands... ")
 Command.register_commands()
 Command.init_counters()
 puts("done.")
-Log.write("Commands registered.")
+Log.write(2, "Commands registered.")
 if Options.io_type.to_s == "thread"
   print("Initializing mutexes... ")
   Mod.init_locks()
   Server.init_locks()
   puts("done.")
-  Log.write("Mutexes initialized.")
+  Log.write(2, "Mutexes initialized.")
 end
 print("Initializing server statistics... ")
 Server.init_chanmap()
@@ -83,7 +82,7 @@ Server.invisible_count = 0
 Server.global_users = 0
 Server.global_users_max = 0
 puts("done.")
-Log.write("Server statistics initialized.")
+Log.write(2, "Server statistics initialized.")
 print("Loading modules... ")
 Modules.parse(false)
 # The modules below need to be initialized in the server class before the network starts
@@ -105,9 +104,9 @@ unless zline_loaded == nil
   Server.init_zline()
 end
 puts("done.")
-Log.write("Modules loaded.")
+Log.write(2, "Modules loaded.")
 puts("Going into daemon mode and waiting for incoming connections... ")
-Log.write("Going into daemon mode and waiting for incoming connections... ")
+Log.write(2, "Going into daemon mode and waiting for incoming connections... ")
 if RUBY_PLATFORM == "java" && ARGV[0] != "-f"
   puts("You are using JRuby which does not support fork()!")
 elsif ARGV[0] != "-f"
@@ -123,7 +122,7 @@ elsif ARGV[0] != "-f"
     pid_file.puts(Process.pid)
     pid_file.close()
   rescue
-    Log.write("Unable to write rubircd.pid file!")
+    Log.write(3, "Unable to write rubircd.pid file!")
     # FixMe: Should we exit here to make the user fix the PID file problem?
   end
 end

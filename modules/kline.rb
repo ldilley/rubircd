@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,8 +93,8 @@ module Standard
           kf.write(kline_entries)
           kf.close()
         rescue => e
-          Log.write("Unable to modify klines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to modify klines.yml file!")
+          Log.write(3, e)
         end
         if kline_found
           Server.users.each do |u|
@@ -154,8 +153,8 @@ module Standard
           kline_file.write({ "address" => entry.target, "create_time" => entry.create_time, "duration" => entry.duration, "creator" => entry.creator, "reason" => entry.reason }.to_yaml())
           kline_file.close()
         rescue => e
-          Log.write("Unable to write to klines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to write to klines.yml file!")
+          Log.write(3, e)
         end
         Server.users.each do |u|
           if u.is_admin || u.is_operator
@@ -167,9 +166,9 @@ module Standard
           end
         end
         if args[1].casecmp("0") == 0
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
         else
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
         end
       end
     end
@@ -182,8 +181,8 @@ module Standard
       begin
         kline_file = File.open("cfg/klines.yml", 'r')
       rescue => e
-        Log.write("Unable to open klines.yml file!")
-        Log.write(e)
+        Log.write(3, "Unable to open klines.yml file!")
+        Log.write(3, e)
         return
       end
       begin
@@ -192,7 +191,7 @@ module Standard
           unless doc == nil
             doc.each do |key, value|
               if value == nil || value == ""
-                Log.write("Invalid #{key} (null value) in klines.yml file!")
+                Log.write(4, "Invalid #{key} (null value) in klines.yml file!")
                 # ToDo: Make this more resilient.
                 exit! # bail here and make the administrator repair the file since this will cause problems with STATS k
               end
@@ -213,10 +212,10 @@ module Standard
           end
         end
       rescue => e
-        Log.write("klines.yml file seems corrupt: #{e}")
+        Log.write(3, "klines.yml file seems corrupt: #{e}")
         return
       ensure
-        Log.write("#{@@kline_data.length} k-lines loaded.")
+        Log.write(2, "#{@@kline_data.length} k-lines loaded.")
         kline_file.close()
       end      
     end

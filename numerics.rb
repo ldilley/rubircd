@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -614,6 +613,16 @@ class Numeric
   # 703
   def self.RPL_ENDOFMODLIST(nick)
     return sprintf(":%s 703 %s :End of MODLIST command", Options.server_name, nick)
+  end
+
+  # Generic debug messages
+  # 750
+  def self.RPL_DEBUGMSG(nick, message)
+    return sprintf(":%s 750 %s :%s", Options.server_name, nick, message)
+  end
+  # 751
+  def self.RPL_ENDOFDEBUGMSG(nick)
+    return sprintf(":%s 751 %s :End of debug message", Options.server_name, nick)
   end
 
   # 972

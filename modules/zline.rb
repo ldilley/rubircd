@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,8 +93,8 @@ module Standard
           zf.write(zline_entries)
           zf.close()
         rescue => e
-          Log.write("Unable to modify zlines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to modify zlines.yml file!")
+          Log.write(3, e)
         end
         if zline_found
           Server.users.each do |u|
@@ -145,8 +144,8 @@ module Standard
           zline_file.write({ "address" => entry.target, "create_time" => entry.create_time, "duration" => entry.duration, "creator" => entry.creator, "reason" => entry.reason }.to_yaml())
           zline_file.close()
         rescue => e
-          Log.write("Unable to write to zlines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to write to zlines.yml file!")
+          Log.write(3, e)
         end
         Server.users.each do |u|
           if u.is_admin || u.is_operator
@@ -158,9 +157,9 @@ module Standard
           end
         end
         if args[1].casecmp("0") == 0
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a z-line for #{args[0]}: #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a z-line for #{args[0]}: #{args[2]}")
         else
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a z-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a z-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
         end
       end
     end
@@ -173,8 +172,8 @@ module Standard
       begin
         zline_file = File.open("cfg/zlines.yml", 'r')
       rescue => e
-        Log.write("Unable to open zlines.yml file!")
-        Log.write(e)
+        Log.write(3, "Unable to open zlines.yml file!")
+        Log.write(3, e)
         return
       end
       begin
@@ -183,7 +182,7 @@ module Standard
           unless doc == nil
             doc.each do |key, value|
               if value == nil || value == ""
-                Log.write("Invalid #{key} (null value) in zlines.yml file!")
+                Log.write(4, "Invalid #{key} (null value) in zlines.yml file!")
                 # ToDo: Make this more resilient.
                 exit! # bail here and make the administrator repair the file since this will cause problems with STATS z
               end
@@ -204,10 +203,10 @@ module Standard
           end
         end
       rescue => e
-        Log.write("zlines.yml file seems corrupt: #{e}")
+        Log.write(3, "zlines.yml file seems corrupt: #{e}")
         return
       ensure
-        Log.write("#{@@zline_data.length} z-lines loaded.")
+        Log.write(2, "#{@@zline_data.length} z-lines loaded.")
         zline_file.close()
       end      
     end

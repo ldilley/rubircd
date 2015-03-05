@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,18 +46,18 @@ class Network
       end
     rescue Errno::EADDRNOTAVAIL => e
       puts("Invalid listen_host: #{Options.listen_host}")
-      Log.write("Invalid listen_host: #{Options.listen_host}")
-      Log.write(e)
+      Log.write(4, "Invalid listen_host: #{Options.listen_host}")
+      Log.write(4, e)
       exit!
     rescue SocketError => e
       puts("Invalid listen_host: #{Options.listen_host}")
-      Log.write("Invalid listen_host: #{Options.listen_host}")
-      Log.write(e)
+      Log.write(4, "Invalid listen_host: #{Options.listen_host}")
+      Log.write(4, e)
       exit!
     rescue => e
       puts("Unable to listen on TCP port: #{Options.listen_port}")
-      Log.write("Unable to listen on TCP port: #{Options.listen_port}")
-      Log.write(e)
+      Log.write(4, "Unable to listen on TCP port: #{Options.listen_port}")
+      Log.write(4, e)
       exit!
     end
     unless Options.ssl_port == nil
@@ -74,8 +73,8 @@ class Network
         ssl_server = OpenSSL::SSL::SSLServer.new(base_server, ssl_context)
       rescue => e
         puts("Unable to listen on SSL port: #{Options.ssl_port}")
-        Log.write("Unable to listen on SSL port: #{Options.ssl_port}")
-        Log.write(e)
+        Log.write(4, "Unable to listen on SSL port: #{Options.ssl_port}")
+        Log.write(4, e)
         exit!
       end
     end
@@ -124,7 +123,7 @@ class Network
     end
     rescue SocketError => e
       puts "Open file descriptor limit reached!"
-      Log.write("Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
+      Log.write(4, "Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
   end
 
   def self.ssl_connections(ssl_server)
@@ -141,7 +140,7 @@ class Network
         end 
       rescue SocketError => e
         puts "Open file descriptor limit reached!"
-        Log.write("Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
+        Log.write(4, "Open file descriptor limit reached!") # we likely cannot write to the log file in this state, but try anyway...
       rescue
         # Do nothing here since a plain-text connection likely came in... just continue on with the next connection
       end
@@ -243,13 +242,13 @@ class Network
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{client_ip} was z-lined: #{zline.reason}")
             end
           end
-          Log.write("#{client_ip} was z-lined: #{zline.reason}")
+          Log.write(2, "#{client_ip} was z-lined: #{zline.reason}")
           Network.close(user, "Z-lined #{client_ip} (#{zline.reason})", false)
         end
       end
     end
     Server.add_user(user)
-    Log.write("Received connection from #{user.ip_address}")
+    Log.write(1, "Received connection from #{user.ip_address}")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
     begin
       hostname = Resolv.getname(client_ip)
@@ -343,7 +342,7 @@ class Network
           if u.is_admin || u.is_operator
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{kline.target} was k-lined: #{kline.reason}")
           end
-          Log.write("#{kline.target} was k-lined: #{kline.reason}")
+          Log.write(2, "#{kline.target} was k-lined: #{kline.reason}")
           Network.close(user, "K-lined #{kline.target} (#{kline.reason})", false)
         end
       end

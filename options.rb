@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -257,7 +256,7 @@ class Modules
       modules_file=YAML.load_file("cfg/modules.yml")
     rescue => e
       return e if called_from_rehash
-      Log.write("Unable to open modules.yml file!")
+      Log.write(3, "Unable to open modules.yml file!")
       return
     end
     modules_file.each do |key, values|
@@ -273,17 +272,17 @@ class Opers
       opers_file=YAML.load_file("cfg/opers.yml")
     rescue => e
       return e if called_from_rehash
-      Log.write("Unable to open opers.yml file!")
+      Log.write(3, "Unable to open opers.yml file!")
       return
     end
     opers_file.each do |key, value|
       if key.to_s == "admins"
         value.each do |subkey|
           if subkey["nick"] == nil || subkey["nick"] == ""
-            Log.write("Invalid nick in opers.yml file!")
+            Log.write(3, "Invalid nick in opers.yml file!")
           end
           if subkey["hash"] == nil || subkey["hash"] == "" || subkey["hash"].length < 32
-            Log.write("Invalid hash in opers.yml file!")
+            Log.write(3, "Invalid hash in opers.yml file!")
           end
           admin = Oper.new(subkey["nick"], subkey["hash"], subkey["host"])
           Server.add_admin(admin)
@@ -292,16 +291,16 @@ class Opers
       if key.to_s == "opers"
         value.each do |subkey|
           if subkey["nick"] == nil || subkey["nick"] == ""
-            Log.write("Invalid nick in opers.yml file!")
+            Log.write(3, "Invalid nick in opers.yml file!")
           end
           if subkey["hash"] == nil || subkey["hash"] == "" || subkey["hash"].length < 32
-            Log.write("Invalid hash in opers.yml file!")
+            Log.write(3, "Invalid hash in opers.yml file!")
           end
           oper = Oper.new(subkey["nick"], subkey["hash"], subkey["host"])
           Server.add_oper(oper)
         end
       end
     end
-    Log.write("Admin/Oper entries loaded.")
+    Log.write(2, "Admin/Oper entries loaded.")
   end
 end

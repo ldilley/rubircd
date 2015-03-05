@@ -1,5 +1,4 @@
 @echo off
-REM $Id$
 
 REM Use the line below for a safe experience (letting the JVM decide what's best)
 jruby --server -J-Djruby.thread.pool.enabled=true rubircd.rb

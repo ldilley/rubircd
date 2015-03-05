@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,9 +134,9 @@ class Command
         puts("Failed to load module: #{mod_name} #{e}")
       else
         Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
       end
-      Log.write("Failed to load module: #{mod_name}: #{e}")
+      Log.write(4, "Failed to load module: #{mod_name}: #{e}")
       if user == nil
         exit!        # only exit on startup as to not bring the server down if loading a faulty module
       end
@@ -157,9 +156,9 @@ class Command
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has loaded module: #{mod_name} (#{new_module})")
           end
         end
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} called MODLOAD for module: #{mod_name}")
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} called MODLOAD for module: #{mod_name}")
       end
-      Log.write("Successfully loaded module: #{mod_name} (#{new_module})")
+      Log.write(2, "Successfully loaded module: #{mod_name} (#{new_module})")
     end
   end
 
@@ -200,8 +199,8 @@ class Command
         mod.plugin_finish(Command)
       rescue NameError => e
         Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Invalid class name."))
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{args[0]}.")
-        Log.write(e)
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{args[0]}.")
+        Log.write(3, e)
         return
       else
         Mod.modules.delete(args[0].to_s.upcase)
@@ -211,7 +210,7 @@ class Command
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has unloaded module: #{args[0]} (#{mod})")
           end
         end
-        Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
       end
     else
       Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Module does not exist."))
@@ -227,6 +226,16 @@ class Command
   # server   - 0.3a
   # squit    - 0.3a
   # trace    - 0.3a
+
+  # Optional service modules to be implemented:
+  # botserv  - 0.4a
+  # chanserv - 0.4a
+  # global   - 0.4a
+  # hostserv - 0.4a
+  # memoserv - 0.4a
+  # nickserv - 0.4a
+  # operserv - 0.4a
+  # statserv - 0.4a
 
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
