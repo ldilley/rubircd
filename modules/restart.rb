@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,7 +54,7 @@ module Standard
           end
         end
         # ToDo: Write any klines, etc.)
-        Log.write("RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
+        Log.write(2, "RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         if RbConfig::CONFIG['host_os'] =~ /mswin|win|mingw/
           if RUBY_PLATFORM == "java"
             exec("start cmd /C #{File.expand_path(File.dirname(__FILE__))}/rubircd.bat")

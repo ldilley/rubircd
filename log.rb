@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +17,27 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class Log
-  def self.write(text)
+  def self.write(severity, text)
     begin
       if Dir["logs"].empty? # this actually returns an array, so we check for emptiness and not nil/true/false
         Dir.mkdir("logs")
       end
+      case severity
+        when 0
+          level = "DBUG"
+        when 1
+          level = "AUTH"
+        when 2
+          level = "INFO"
+        when 3
+          level = "WARN"
+        when 4
+          level = "CRIT"
+        else
+          level = "DBUG"
+      end
       log_file = File.open("logs/rubircd.log", 'a')
-      log_file.puts("#{Time.now.asctime} -- #{text}")
+      log_file.puts("#{Time.now.asctime} #{level}: #{text}")
       log_file.close()
     rescue
       puts("Unable to write log file!")

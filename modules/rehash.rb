@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,7 +54,7 @@ module Standard
           Network.send(user, Numeric.RPL_REHASHING(user.nick, "options.yml"))
         else
           Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
-          Log.write("Failed to read options.yml: #{reason}")
+          Log.write(3, "Failed to read options.yml: #{reason}")
         end
       end
       if args.length == 1
@@ -73,18 +72,18 @@ module Standard
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing modules.yml.")
             end
           end
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing modules.yml.")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} is rehashing modules.yml.")
           Mod.modules.each_value do |mod|
             begin
               mod.plugin_finish(Command)
             rescue NameError => e
               Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, "#{mod.command_name}", "Invalid class name."))
-              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{mod}.")
-              Log.write(e)
+              Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{mod}.")
+              Log.write(3, e)
               return
             else
               Mod.modules.delete(mod.command_name.upcase)
-              Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{mod.command_name} (#{mod})")
+              Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{mod.command_name} (#{mod})")
             end
           end
           reason = Modules.parse(true)
@@ -92,7 +91,7 @@ module Standard
             Network.send(user, Numeric.RPL_REHASHING(user.nick, "modules.yml"))
           else
             Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
-            Log.write("Failed to read modules.yml: #{reason}")
+            Log.write(3, "Failed to read modules.yml: #{reason}")
           end
         elsif args[0].to_s.casecmp("motd") == 0
           Server.users.each do |u|
@@ -100,13 +99,13 @@ module Standard
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing the MotD.")
             end
           end
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing the MotD.")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} is rehashing the MotD.")
           reason = Server.read_motd(true)
           unless reason.is_a?(Exception)
             Network.send(user, Numeric.RPL_REHASHING(user.nick, "motd.txt"))
           else
             Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
-            Log.write("Failed to read motd.txt: #{reason}")
+            Log.write(3, "Failed to read motd.txt: #{reason}")
           end
         elsif args[0].to_s.casecmp("opers") == 0
           Server.users.each do |u|
@@ -114,13 +113,13 @@ module Standard
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing opers.yml.")
             end
           end
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} is rehashing opers.yml.")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} is rehashing opers.yml.")
           reason = Opers.parse(true)
           unless reason.is_a?(Exception)
             Network.send(user, Numeric.RPL_REHASHING(user.nick, "opers.yml"))
           else
             Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
-            Log.write("Failed to read opers.yml: #{reason}")
+            Log.write(3, "Failed to read opers.yml: #{reason}")
           end
         elsif args[0].to_s.casecmp("options") == 0
           Server.users.each do |u|
@@ -133,7 +132,7 @@ module Standard
             Network.send(user, Numeric.RPL_REHASHING(user.nick, "options.yml"))
           else
             Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
-            Log.write("Failed to read options.yml: #{reason}")
+            Log.write(3, "Failed to read options.yml: #{reason}")
           end
         end
       end

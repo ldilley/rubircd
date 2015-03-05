@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,8 +93,8 @@ module Standard
           qf.write(qline_entries)
           qf.close()
         rescue => e
-          Log.write("Unable to modify qlines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to modify qlines.yml file!")
+          Log.write(3, e)
         end
         if qline_found
           Server.users.each do |u|
@@ -145,8 +144,8 @@ module Standard
           qline_file.write({ "nick" => entry.target, "create_time" => entry.create_time, "duration" => entry.duration, "creator" => entry.creator, "reason" => entry.reason }.to_yaml())
           qline_file.close()
         rescue => e
-          Log.write("Unable to write to qlines.yml file!")
-          Log.write(e)
+          Log.write(3, "Unable to write to qlines.yml file!")
+          Log.write(3, e)
         end
         Server.users.each do |u|
           if u.is_admin || u.is_operator
@@ -158,9 +157,9 @@ module Standard
           end
         end
         if args[1].casecmp("0") == 0
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a q-line for #{args[0]}: #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a q-line for #{args[0]}: #{args[2]}")
         else
-          Log.write("#{user.nick}!#{user.ident}@#{user.hostname} has issued a q-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
+          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a q-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
         end
       end
     end
@@ -173,8 +172,8 @@ module Standard
       begin
         qline_file = File.open("cfg/qlines.yml", 'r')
       rescue => e
-        Log.write("Unable to open qlines.yml file!")
-        Log.write(e)
+        Log.write(3, "Unable to open qlines.yml file!")
+        Log.write(3, e)
         return
       end
       begin
@@ -183,7 +182,7 @@ module Standard
           unless doc == nil
             doc.each do |key, value|
               if value == nil || value == ""
-                Log.write("Invalid #{key} (null value) in qlines.yml file!")
+                Log.write(4, "Invalid #{key} (null value) in qlines.yml file!")
                 # ToDo: Make this more resilient.
                 exit! # bail here and make the administrator repair the file since this will cause problems with STATS q
               end
@@ -204,10 +203,10 @@ module Standard
           end
         end
       rescue => e
-        Log.write("qlines.yml file seems corrupt: #{e}")
+        Log.write(3, "qlines.yml file seems corrupt: #{e}")
         return
       ensure
-        Log.write("#{@@qline_data.length} q-lines loaded.")
+        Log.write(2, "#{@@qline_data.length} q-lines loaded.")
         qline_file.close()
       end      
     end

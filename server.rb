@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +19,7 @@
 class Server
   VERSION = "RubIRCd v0.2a"
   RELEASE = "mildly dangerous"
-  URL = "http://www.rubircd.org/"
+  URL = "http://www.rubircd.rocks/"
   MODE_ADMIN = 'a'        # is an IRC administrator
   MODE_BOT = 'b'          # is a bot
   MODE_INVISIBLE = 'i'    # invisible in WHO and NAMES output

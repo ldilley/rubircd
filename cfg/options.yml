@@ -1,4 +1,3 @@
-# $Id$
 # Name of the person who administers this server
 admin_name: Lloyd Dilley
 
@@ -29,7 +28,7 @@ listen_port: 6667
 
 # TCP port for incoming SSL connections
 # Leave blank or comment out to disable SSL support
-ssl_port: 6697
+#ssl_port: 6697
 
 # Maximum number of simultaneous connections this server
 # will support

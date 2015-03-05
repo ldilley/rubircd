@@ -1,4 +1,3 @@
-# $Id$
 # nick cannot be empty!
 # hash cannot be empty!
 # host is optional. Set to "", blank, or * for any host.
@@ -11,7 +10,7 @@
 admins:
   - nick: lloyd
     hash: 2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b # secret
-    host: "*.chatcube.net"
+    host: "*.rubircd.rocks"
 
   - nick: Jimbo
     hash: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8 # password

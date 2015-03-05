@@ -1,7 +1,6 @@
-# $Id$
 # RubIRCd - An IRC server written in Ruby
 # Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
-# http://www.rubircd.org/
+# http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +53,7 @@ module Standard
           end
         end
         # ToDo: Cleanly exit (write any klines, etc.)
-        Log.write("DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
+        Log.write(2, "DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         exit!
       else
         Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))

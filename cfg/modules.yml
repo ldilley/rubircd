@@ -1,4 +1,3 @@
-# $Id$
 # Add the modules you wish to load at startup below.
 # Omit the ".rb" extension (module name is base name of script)
 # You can comment out unwanted modules with '#' or simply remove the line to stop loading a module.
@@ -52,4 +51,5 @@ modules:
 # The modules below are optional
   - fjoin    # forces channel joins
   - fnick    # forces nick changes (needed if using integrated services for enforcement of nicknames)
+  - memory   # memory statistics/garbage collection
 # - example  # example module
