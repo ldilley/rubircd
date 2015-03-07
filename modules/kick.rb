@@ -49,10 +49,16 @@ module Standard
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
+      if Options.io_type.to_s == "thread"
+        user.channels_lock.synchronize do
+      end
       user.channels.each_key do |c|
         unless c.casecmp(chan.name) == 0
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
           return
+        end
+      end
+      if Options.io_type.to_s == "thread"
         end
       end
       nicks = args[1].split(',')
@@ -77,9 +83,15 @@ module Standard
       good_nicks.each do |n|
         Server.users.each do |u|
           if u.nick.casecmp(n) == 0
+            if Options.io_type.to_s == "thread"
+              u.channels_lock.synchronize do
+            end
             u.channels.each_key do |c|
               if c.casecmp(chan.name) == 0
                 user_on_channel = true
+              end
+            end
+            if Options.io_type.to_s == "thread"
               end
             end
             if !user_on_channel

@@ -323,7 +323,7 @@ class User
   end
 
   attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :is_service, :is_nick_registered, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities
+  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities, :channels_lock
 end
 
 class Oper

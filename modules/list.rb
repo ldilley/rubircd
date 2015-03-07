@@ -45,9 +45,15 @@ module Standard
         args.each do |a|
           chan = Server.channel_map[a.to_s.upcase]
           unless chan == nil
+            if Options.io_type.to_s == "thread"
+              user.channels_lock.synchronize do
+            end
             user.channels.each_key do |uc|
               if uc.casecmp(chan.name) == 0
                 user_on_channel = true
+              end
+            end
+            if Options.io_type.to_s == "thread"
               end
             end
             if chan.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member
@@ -60,9 +66,15 @@ module Standard
       else
         user_on_channel = false
         Server.channel_map.values.each do |c|
+          if Options.io_type.to_s == "thread"
+            user.channels_lock.synchronize do
+          end
           user.channels.each_key do |uc|
             if uc.casecmp(c.name) == 0
               user_on_channel = true
+            end
+          end
+          if Options.io_type.to_s == "thread"
             end
           end
           if c.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member

@@ -55,6 +55,9 @@ module Standard
       channels.each do |channel|
         user_on_channel = false
         if channel =~ /[#&+][A-Za-z0-9_!-]/
+          if Options.io_type.to_s == "thread"
+            user.channels_lock.synchronize do
+          end
           user.channels.each_key do |c|
             if c.casecmp(channel) == 0
               user_on_channel = true
@@ -71,6 +74,9 @@ module Standard
                 end
                 user.remove_channel(channel)
               end
+            end
+          end
+          if Options.io_type.to_s == "thread"
             end
           end
           unless user_on_channel

@@ -117,9 +117,15 @@ module Standard
           return
         end
         user_on_channel = false
+        if Options.io_type.to_s == "thread"
+          user.channels_lock.synchronize do
+        end
         user.channels.each_key do |c|
           if channel.name.casecmp(c) == 0
             user_on_channel = true
+          end
+        end
+        if Options.io_type.to_s == "thread"
           end
         end
         unless user_on_channel

@@ -268,6 +268,8 @@ end
 class Opers
   # If called_from_rehash is true, we do not want to exit the server process while it is up during a rescue
   def self.parse(called_from_rehash)
+    admin_count = 0
+    oper_count = 0
     begin
       opers_file=YAML.load_file("cfg/opers.yml")
     rescue => e
@@ -276,7 +278,8 @@ class Opers
       return
     end
     opers_file.each do |key, value|
-      if key.to_s == "admins"
+      if key.to_s == "admins" && value != nil
+        admin_count = value.length
         value.each do |subkey|
           if subkey["nick"] == nil || subkey["nick"] == ""
             Log.write(3, "Invalid nick in opers.yml file!")
@@ -288,7 +291,8 @@ class Opers
           Server.add_admin(admin)
         end
       end
-      if key.to_s == "opers"
+      if key.to_s == "opers" && value != nil
+        oper_count = value.length
         value.each do |subkey|
           if subkey["nick"] == nil || subkey["nick"] == ""
             Log.write(3, "Invalid nick in opers.yml file!")
@@ -301,6 +305,7 @@ class Opers
         end
       end
     end
-    Log.write(2, "Admin/Oper entries loaded.")
+    Log.write(2, "#{admin_count} admin entries loaded.")
+    Log.write(2, "#{oper_count} oper entries loaded.")
   end
 end

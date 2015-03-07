@@ -190,6 +190,9 @@ class Network
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
+      if Options.io_type.to_s == "thread"
+        user.channels_lock.synchronize do
+      end
       if user != nil && user.channels.length > 0
         user.channels.each_key do |c|
           chan = Server.channel_map[c.to_s.upcase]
@@ -207,6 +210,9 @@ class Network
               Server.remove_channel(chan.name.upcase)
             end
           end
+        end
+      end
+      if Options.io_type.to_s == "thread"
         end
       end
       whowas_loaded = Command.command_map["WHOWAS"]
