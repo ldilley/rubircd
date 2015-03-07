@@ -50,9 +50,15 @@ module Standard
       key_index = 0
       user_on_channel = false
       channels.each do |channel|
+        if Options.io_type.to_s == "thread"
+          user.channels_lock.synchronize do
+        end
         user.channels.each_key do |uc|
           if uc.casecmp(channel) == 0
             user_on_channel = true
+          end
+        end
+        if Options.io_type.to_s == "thread"
           end
         end
         if user_on_channel
@@ -64,6 +70,9 @@ module Standard
           end
           next unless channel == nil
         end
+        if Options.io_type.to_s == "thread"
+          user.channels_lock.synchronize do
+        end
         if user.channels.length >= Limits::MAXCHANNELS
           Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
           unless keys.nil?
@@ -72,6 +81,9 @@ module Standard
             end
           end
           next unless channel == nil
+        end
+        if Options.io_type.to_s == "thread"
+          end
         end
         unless channel =~ /[#&][A-Za-z0-9_!-]/
           Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))

@@ -62,9 +62,15 @@ module Standard
           unless channel == nil
             good_targets += 1
             user_on_channel = false
+            if Options.io_type.to_s == "thread"
+              user.channels_lock.synchronize do
+            end
             user.channels.each_key do |uc|
               if uc.casecmp(target) == 0
                 user_on_channel = true
+              end
+            end
+            if Options.io_type.to_s == "thread"
               end
             end
             if user_on_channel || !channel.modes.include?('n')

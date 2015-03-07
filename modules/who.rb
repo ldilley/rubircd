@@ -90,7 +90,13 @@ module Standard
           same_channel == false
           if args[1] == 'o'
             if u.is_admin || u.is_operator
+              if Options.io_type.to_s == "thread"
+                user.channels_lock.synchronize do
+              end
               user.channels.each_key do |my_channel|
+                if Options.io_type.to_s == "thread"
+                  u.channels_lock.synchronize do
+                end
                 u.channels.each_key do |c|
                   if c.casecmp(my_channel) == 0
                     Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
@@ -98,19 +104,37 @@ module Standard
                     break
                   end
                 end
+                if Options.io_type.to_s == "thread"
+                  end
+                end
+              end
+              if Options.io_type.to_s == "thread"
+                end
               end
               unless same_channel
                 Network.send(user, Numeric.RPL_WHOREPLY(user.nick, '*', u, 0))
               end
             end
           else
+            if Options.io_type.to_s == "thread"
+              user.channels_lock.synchronize do
+            end
             user.channels.each_key do |my_channel|
+              if Options.io_type.to_s == "thread"
+                u.channels_lock.synchronize do
+              end
               u.channels.each_key do |c|
                 if c.casecmp(my_channel) == 0
                   Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                   same_channel = true
                   break
                 end
+              end
+              if Options.io_type.to_s == "thread"
+                end
+              end
+            end
+            if Options.io_type.to_s == "thread"
               end
             end
             unless same_channel
