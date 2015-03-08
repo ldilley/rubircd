@@ -1,4 +1,6 @@
 *.class
-logs/
 *.log
-rubircd.pid
+*.out
+*.pem
+*.pid
+logs/

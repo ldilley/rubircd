@@ -175,17 +175,12 @@ class User
   end
 
   def add_channel(channel)
-    begin
-      if Options.io_type.to_s == "thread"
-        @channels_lock.synchronize do
-          @channels[channel] = ""
-        end
-      else
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize do
         @channels[channel] = ""
       end
-    rescue => e
-      # FixMe: Do not modify hash while iterating.
-      #puts(e)
+    else
+      @channels[channel] = ""
     end
   end
 
@@ -253,6 +248,41 @@ class User
         end
       end
     end
+  end
+
+  def get_channels_length()
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize { return @channels.length }
+    else
+      return @channels.length
+    end
+  end
+
+  def get_channels_array()
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize { return @channels.keys() }
+    else
+      return @channels.keys()
+    end
+  end
+
+  def is_on_channel(channel)
+    if Options.io_type.to_s == "thread"
+      @channels_lock.synchronize do
+        @channels.each_key do |c|
+          if c.casecmp(channel) == 0
+            return true
+          end
+        end
+      end
+    else
+      @channels.each_key do |c|
+        if c.casecmp(channel) == 0
+          return true
+        end
+      end
+    end
+    return false
   end
 
   def is_chanop(channel)
@@ -323,7 +353,7 @@ class User
   end
 
   attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :is_service, :is_nick_registered, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities, :channels_lock
+  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities
 end
 
 class Oper

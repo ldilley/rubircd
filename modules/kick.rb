@@ -49,16 +49,11 @@ module Standard
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
-      if Options.io_type.to_s == "thread"
-        user.channels_lock.synchronize do
-      end
-      user.channels.each_key do |c|
+      user_channels = user.get_channels_array()
+      user_channels.each do |c|
         unless c.casecmp(chan.name) == 0
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
           return
-        end
-      end
-      if Options.io_type.to_s == "thread"
         end
       end
       nicks = args[1].split(',')
@@ -79,22 +74,10 @@ module Standard
           Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, n))
         end
       end
-      user_on_channel = false
       good_nicks.each do |n|
         Server.users.each do |u|
           if u.nick.casecmp(n) == 0
-            if Options.io_type.to_s == "thread"
-              u.channels_lock.synchronize do
-            end
-            u.channels.each_key do |c|
-              if c.casecmp(chan.name) == 0
-                user_on_channel = true
-              end
-            end
-            if Options.io_type.to_s == "thread"
-              end
-            end
-            if !user_on_channel
+            if !u.is_on_channel(chan.name)
               Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
             elsif (u.is_admin && !user.is_admin) || u.is_service
               Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))

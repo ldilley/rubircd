@@ -86,11 +86,100 @@ class Network
       end
       # Wait until threads complete before exiting program
       plain_thread.join()
-      ssl_thread.join()
+      unless Options.ssl_port == nil
+        ssl_thread.join()
+      end
+    else # if io_type == event, use select()
+      handle_select(plain_server, ssl_server)
     end
-    #else
-    # ToDo: select() stuff here
-    #end
+  end
+
+  def self.handle_select(plain_server, ssl_server)
+    timeout = 10
+    if ssl_server == nil
+      fds = [plain_server]
+    else
+      fds = [plain_server, ssl_server]
+    end
+    loop do
+      begin
+        if ios = select(fds, [], [], timeout)
+          ios[0].each do |client|
+            if client == plain_server
+              plain_client = plain_server.accept()
+              fds << plain_client
+              Server.increment_clients()
+              user = Network.register_connection(plain_client, nil)
+              if user == nil
+                fds.delete(plain_client)
+                Network.close(user, "Connection closed", true)
+                break
+              end
+              unless Server.kline_mod == nil
+                Network.check_for_kline(user)
+              end
+              Network.welcome(user)
+            elsif ssl_server != nil && client == ssl_server
+              begin
+                ssl_client = ssl_server.accept()
+              rescue
+                Log.write(2, "Client disconnected before completing SSL handshake.")
+                break
+              end
+              fds << ssl_client
+              Server.increment_clients()
+              user = Network.register_connection(ssl_client, nil)
+              if user == nil
+                fds.delete(ssl_client)
+                Network.close(user, "Connection closed", true)
+                break
+              end
+              unless Server.kline_mod == nil
+                Network.check_for_kline(user)
+              end
+              Network.welcome(user)
+            elsif client.eof?
+              client.close()
+            else # handle clients that are already connected
+              # Find user by socket
+              Server.users.each do |u|
+                if client == u.socket
+                  user = u
+                end
+              end
+              if user == nil
+                fds.delete(client) # user didn't exist, so remove the socket from file descriptor list
+                Network.close(user, "Connection closed", true)
+                break
+              end
+              input = Network.recv(user)
+              if input == nil
+                break
+              end
+              if input.empty?
+                break
+              end
+              if Options.debug_mode
+                puts input                      # output raw commands to foreground for debugging purposes
+              end
+              input = input.chomp.split(' ', 2) # input[0] should contain command and input[1] contains the rest
+              if input[0].to_s.upcase == "PING"
+                user.last_ping = Time.now.to_i
+              else
+                user.set_last_activity()
+              end
+              Command.parse(user, input)
+            end
+          end
+        end
+      rescue # client disconnected, so remove socket from file descriptor list
+        fds.each do |sock|
+          if sock.closed?
+            fds.delete(sock)
+          end
+        end
+      end
+    end
   end
 
   # Periodic PING check
@@ -190,11 +279,9 @@ class Network
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
-      if Options.io_type.to_s == "thread"
-        user.channels_lock.synchronize do
-      end
-      if user != nil && user.channels.length > 0
-        user.channels.each_key do |c|
+      if user != nil && user.get_channels_length() > 0
+        user_channels = user.get_channels_array()
+        user_channels.each do |c|
           chan = Server.channel_map[c.to_s.upcase]
           if chan != nil
             chan.users.each do |u|
@@ -212,9 +299,6 @@ class Network
           end
         end
       end
-      if Options.io_type.to_s == "thread"
-        end
-      end
       whowas_loaded = Command.command_map["WHOWAS"]
       unless whowas_loaded == nil
         # Checking if user object is nil below prevents a "NoMethodError: undefined method `nick' for nil:NilClass" when using JRuby.
@@ -225,7 +309,7 @@ class Network
       if Server.remove_user(user)
         Server.decrement_clients()
       end
-      unless user.thread == nil
+      unless user == nil || user.thread == nil
         Thread.kill(user.thread)
       end
     end
@@ -271,6 +355,10 @@ class Network
     good_pass = false
     until(registered) do
       input = Network.recv(user)
+      if input == nil # client disconnected
+        Network.close(user, "Connection closed", true)
+        return nil
+      end
       if input.empty?
         redo
       end
@@ -388,7 +476,9 @@ class Network
       if input.empty?
         redo
       end
-      puts input                        # output raw commands to foreground for now for debugging purposes
+      if Options.debug_mode
+        puts input                      # output raw commands to foreground for debugging purposes
+      end
       input = input.chomp.split(' ', 2) # input[0] should contain command and input[1] contains the rest
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i

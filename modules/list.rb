@@ -41,22 +41,10 @@ module Standard
       Network.send(user, Numeric.RPL_LISTSTART(user.nick))
       if args.length >= 1
         chan = nil
-        user_on_channel = false
         args.each do |a|
           chan = Server.channel_map[a.to_s.upcase]
           unless chan == nil
-            if Options.io_type.to_s == "thread"
-              user.channels_lock.synchronize do
-            end
-            user.channels.each_key do |uc|
-              if uc.casecmp(chan.name) == 0
-                user_on_channel = true
-              end
-            end
-            if Options.io_type.to_s == "thread"
-              end
-            end
-            if chan.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member
+            if chan.modes.include?('s') && user.is_on_channel(chan.name) == false # do not list secret channels unless user is a member
               next unless chan == nil
             else
               Network.send(user, Numeric.RPL_LIST(user.nick, chan))
@@ -64,20 +52,8 @@ module Standard
           end
         end
       else
-        user_on_channel = false
         Server.channel_map.values.each do |c|
-          if Options.io_type.to_s == "thread"
-            user.channels_lock.synchronize do
-          end
-          user.channels.each_key do |uc|
-            if uc.casecmp(c.name) == 0
-              user_on_channel = true
-            end
-          end
-          if Options.io_type.to_s == "thread"
-            end
-          end
-          if c.modes.include?('s') && user_on_channel == false # do not list secret channels unless user is a member
+          if c.modes.include?('s') && user.is_on_channel(c.name) == false # do not list secret channels unless user is a member
             next unless c == nil
           else
             Network.send(user, Numeric.RPL_LIST(user.nick, c))

@@ -61,19 +61,7 @@ module Standard
           channel = Server.channel_map[target.to_s.upcase]
           unless channel == nil
             good_targets += 1
-            user_on_channel = false
-            if Options.io_type.to_s == "thread"
-              user.channels_lock.synchronize do
-            end
-            user.channels.each_key do |uc|
-              if uc.casecmp(target) == 0
-                user_on_channel = true
-              end
-            end
-            if Options.io_type.to_s == "thread"
-              end
-            end
-            if user_on_channel || !channel.modes.include?('n')
+            if user.is_on_channel(target) || !channel.modes.include?('n')
               channel.users.each do |u|
                 if u.nick != user.nick
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{target} :#{args[1]}")
