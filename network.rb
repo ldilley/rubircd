@@ -89,7 +89,7 @@ class Network
       unless Options.ssl_port == nil
         ssl_thread.join()
       end
-    else # if io_type == event, use select()
+    else # if io_type == event, then use select()
       handle_select(plain_server, ssl_server)
     end
   end

@@ -170,8 +170,15 @@ class Options
       exit!
     end
 
-    if @@io_type.to_s != "event" && @@io_type.to_s != "thread"
-      error_text = "\nio_type value should be set to either event or thread."
+    if @@io_type.to_s == "em"
+      error_text = "\nio_type \"em\" is not fully implemented yet!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
+    if @@io_type.to_s != "em" && @@io_type.to_s != "event" && @@io_type.to_s != "thread"
+      error_text = "\nio_type value should be set to either em, event, or thread."
       return Exception.new(error_text.lstrip) if called_from_rehash
       puts(error_text)
       exit!

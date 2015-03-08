@@ -141,7 +141,7 @@ module Standard
         unless modes_to_remove == nil
           modes_to_remove.each_char do |mode|
             if Channel::CHANNEL_MODES.include?(mode)
-              if mode == 'o' || mode == 'v'
+              if mode == 'h' || mode == 'o' || mode == 'v'
                 final_remove_modes << mode
               elsif channel.modes.include?(mode)
                 final_remove_modes << mode
@@ -155,7 +155,7 @@ module Standard
           # Remove modes that are given when no arguments to them are provided
           modelist = ""
           final_add_modes.each_char do |mode|
-            if args[2] == nil && mode =~ /[abflkov]/
+            if args[2] == nil && mode =~ /[abfhlkov]/
               final_add_modes.delete(mode)
               next unless mode == nil
             end
@@ -241,6 +241,30 @@ module Standard
                 if arg_index < mode_args.length && was_deleted == false
                   arg_index += 1
                 end
+              elsif mode == 'h'
+                nick_exists = false
+                channel.users.each do |u|
+                  nick_exists = true
+                  if u.nick == mode_args[arg_index]
+                    if u.is_halfop(channel.name)
+                      mode_args.delete_at(arg_index)
+                      was_deleted = true
+                      unless arg_index >= mode_args.length
+                        arg_index += 1
+                      end
+                      next unless u == nil
+                    end
+                    u.add_channel_mode(channel.name, 'h')
+                  end
+                end
+                unless nick_exists
+                  modelist = modelist.delete(mode)
+                  Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                  mode_args.delete_at(arg_index)
+                end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
+                end
               elsif mode == 'v'
                 nick_exists = false
                 channel.users.each do |u|
@@ -271,7 +295,7 @@ module Standard
           final_add_modes = modelist
           unless final_add_modes == nil
             final_add_modes.each_char do |mode|
-              unless mode =~ /[abfov]/
+              unless mode =~ /[abfhov]/
                 channel.add_mode(mode)
               end
             end
@@ -280,7 +304,7 @@ module Standard
         unless final_remove_modes.length == 0
           modelist = ""
           final_remove_modes.each_char do |mode|
-            if args[2] == nil && mode =~ /[abflkov]/
+            if args[2] == nil && mode =~ /[abfhlkov]/
               final_remove_modes.delete(mode)
               next unless mode == nil
             end
@@ -317,6 +341,22 @@ module Standard
                 unless arg_index >= mode_args.length
                   arg_index += 1
                 end
+              elsif mode == 'h'
+                nick_exists = false
+                channel.users.each do |u|
+                  if u.nick == mode_args[arg_index]
+                    u.remove_channel_mode(channel.name, 'h')
+                    nick_exists = true
+                  end
+                end
+                unless nick_exists
+                  modelist = modelist.delete(mode)
+                  Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
+                  mode_args.delete_at(arg_index)
+                end
+                unless arg_index >= mode_args.length
+                  arg_index += 1
+                end
               elsif mode == 'v'
                 nick_exists = false
                 channel.users.each do |u|
@@ -338,7 +378,7 @@ module Standard
           end
           final_remove_modes = modelist
           final_remove_modes.each_char do |mode|
-            unless mode =~ /[abfov]/
+            unless mode =~ /[abfhov]/
               if mode == 'k'
                 channel.set_key(nil)
               end

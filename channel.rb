@@ -32,6 +32,8 @@ class Channel
   FLAG_ADMIN = '&'
   MODE_CHANOP = 'o'     # channel operator
   FLAG_CHANOP = '@'
+  MODE_HALFOP = 'h'     # half operator
+  FLAG_HALFOP = '%'
   MODE_VOICE = 'v'      # can chat in moderated channels
   FLAG_VOICE = '+'
   MODE_FOUNDER = 'f'    # if nick is registered and is founder of the channel
@@ -46,9 +48,9 @@ class Channel
   MODE_REGISTERED = 'r' # channel is registered
   MODE_SECRET = 's'     # will not show up in LIST or WHOIS output
   MODE_TOPIC = 't'      # only channel operators can change topic
-  CHANNEL_MODES = "abfiklmnoprstv"
+  CHANNEL_MODES = "abfhiklmnoprstv"
   ISUPPORT_CHANNEL_MODES = "b,k,l,imnprst" # comma-separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
-  ISUPPORT_PREFIX = "(afov)&~@+"
+  ISUPPORT_PREFIX = "(afhov)&~%@+"
   @bans
   @name
   @key
@@ -147,6 +149,14 @@ class Channel
       @modes_lock.synchronize { @modes.clear() }
     else
       @modes.clear()
+    end
+  end
+
+  def has_mode(mode)
+    if Options.io_type.to_s == "thread"
+      @modes_lock.synchronize { return @modes.include?(mode) }
+    else
+      return @modes.include?(mode)
     end
   end
 

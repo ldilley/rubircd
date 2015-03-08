@@ -36,10 +36,12 @@ max_connections: 128
 
 # Network I/O type
 # Possible values are:
+# em - EventMachine epoll or kqueue (not implemented yet)
 # event - uses select()
 # thread - uses multiple threads
 # If using threading, JRuby is recommended
-# If using CRuby/MRI, event is recommended
+# If using CRuby/MRI, event or em is recommended
+# Note: SSL/TLS does not work when using EventMachine and JRuby!
 io_type: thread
 
 # Set this option to true to enable debugging or

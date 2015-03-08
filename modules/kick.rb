@@ -56,6 +56,10 @@ module Standard
           return
         end
       end
+      if !user.is_chanop(chan.name) && !user.is_admin && !user.is_service
+        Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
+        return
+      end
       nicks = args[1].split(',')
       if args.length == 3
         if args[2][0] == ':'
