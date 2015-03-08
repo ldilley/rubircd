@@ -73,10 +73,8 @@ module Standard
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
         user_on_channel = false
-        if Options.io_type.to_s == "thread"
-          user.channels_lock.synchronize do
-        end
-        user.channels.each_key do |c|
+        user_channels = user.get_channels_array()
+        user_channels.each do |c|
           if c.casecmp(args[0]) == 0
             user_on_channel = true
             chan = Server.channel_map[args[0].to_s.upcase]
@@ -89,9 +87,6 @@ module Standard
               end
               chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
             end
-          end
-        end
-        if Options.io_type.to_s == "thread"
           end
         end
         unless user_on_channel

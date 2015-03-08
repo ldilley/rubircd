@@ -170,13 +170,6 @@ class Options
       exit!
     end
 
-    if @@io_type.to_s == "event"
-      error_text = "\nI/O type \"event\" is not implemented yet!"
-      return Exception.new(error_text.lstrip) if called_from_rehash
-      puts(error_text)
-      exit!
-    end
-
     if @@io_type.to_s != "event" && @@io_type.to_s != "thread"
       error_text = "\nio_type value should be set to either event or thread."
       return Exception.new(error_text.lstrip) if called_from_rehash

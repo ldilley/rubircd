@@ -45,26 +45,19 @@ module Standard
       Server.users.each do |u|
         if u.nick.casecmp(args[0]) == 0
           Network.send(user, Numeric.RPL_WHOISUSER(user.nick, u))
-          if Options.io_type.to_s == "thread"
-            u.channels_lock.synchronize do
-          end
-          if u.channels.length > 0
+          if u.get_channels_length() > 0
             channel_list = []
             chan = nil
-            u.channels.each_key do |c|
+            u_channels = u.get_channels_array()
+            u_channels.each do |c|
               chan = Server.channel_map[c.upcase]
               unless chan == nil
                 # Hide private/secret channel from output unless user is a member of the target's channel
                 if chan.modes.include?('p') || chan.modes.include?('s')
-                  if Options.io_type.to_s == "thread"
-                    user.channels_lock.synchronize do
-                  end
-                  user.channels.each_key do |uc|
+                  user_channels = user.get_channels_array()
+                  user_channels.each do |uc|
                     if uc.casecmp(c) == 0
                       channel_list << c
-                    end
-                  end
-                  if Options.io_type.to_s == "thread"
                     end
                   end
                 else
@@ -73,9 +66,6 @@ module Standard
               end
             end
             Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u, channel_list))
-          end
-          if Options.io_type.to_s == "thread"
-            end
           end
           Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u, true))
           if u.is_operator && !u.is_admin

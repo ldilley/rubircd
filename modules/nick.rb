@@ -73,20 +73,15 @@ module Standard
           end
         end
         if user.is_registered && user.nick != args[0]
-          if Options.io_type.to_s == "thread"
-            user.channels_lock.synchronize do
-          end
-          if user.channels.length > 0
-            user.channels.each_key do |c|
+          if user.get_channels_length() > 0
+            user_channels = user.get_channels_array()
+            user_channels.each do |c|
               chan = Server.channel_map[c.to_s.upcase]
               chan.users.each do |u|
                 if user.nick != u.nick
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
                 end
               end
-            end
-          end
-          if Options.io_type.to_s == "thread"
             end
           end
           Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")

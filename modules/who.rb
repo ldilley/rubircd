@@ -87,28 +87,18 @@ module Standard
         end
         same_channel = false
         userlist.each do |u|
-          same_channel == false
+          same_channel = false
           if args[1] == 'o'
             if u.is_admin || u.is_operator
-              if Options.io_type.to_s == "thread"
-                user.channels_lock.synchronize do
-              end
-              user.channels.each_key do |my_channel|
-                if Options.io_type.to_s == "thread"
-                  u.channels_lock.synchronize do
-                end
-                u.channels.each_key do |c|
+              user_channels = user.get_channels_array()
+              u_channels = u.get_channels_array()
+              user_channels.each do |my_channel|
+                u_channels.each do |c|
                   if c.casecmp(my_channel) == 0
                     Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                     same_channel = true
                     break
                   end
-                end
-                if Options.io_type.to_s == "thread"
-                  end
-                end
-              end
-              if Options.io_type.to_s == "thread"
                 end
               end
               unless same_channel
@@ -116,25 +106,15 @@ module Standard
               end
             end
           else
-            if Options.io_type.to_s == "thread"
-              user.channels_lock.synchronize do
-            end
-            user.channels.each_key do |my_channel|
-              if Options.io_type.to_s == "thread"
-                u.channels_lock.synchronize do
-              end
-              u.channels.each_key do |c|
+            user_channels = user.get_channels_array()
+            u_channels = u.get_channels_array()
+            user_channels.each do |my_channel|
+              u_channels.each do |c|
                 if c.casecmp(my_channel) == 0
                   Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                   same_channel = true
                   break
                 end
-              end
-              if Options.io_type.to_s == "thread"
-                end
-              end
-            end
-            if Options.io_type.to_s == "thread"
               end
             end
             unless same_channel
