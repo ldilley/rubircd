@@ -298,6 +298,19 @@ class User
     return false
   end
 
+  def is_halfop(channel)
+    @channels.each_key do |c|
+      if c.casecmp(channel)
+        if @channels[c].include?('h')
+          return true
+        else
+          return false
+        end
+      end
+    end
+    return false
+  end
+
   def is_voiced(channel)
     @channels.each_key do |c|
       if c.casecmp(channel)
@@ -323,6 +336,9 @@ class User
         end
         if @channels[c].include?('o')
           prefix_list << '@'
+        end
+        if @channels[c].include?('h')
+          prefix_list << '%'
         end
         if @channels[c].include?('v')
           prefix_list << '+'

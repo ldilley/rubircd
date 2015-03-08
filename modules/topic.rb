@@ -43,7 +43,6 @@ module Standard
         return
       end
       args = args.join.split(' ', 2)
-      # ToDo: Check if this user is a chanop to avoid extra processing every time TOPIC is issued by regular nicks
       if args.length > 1
         if args[1][0] == ':'
           args[1] = args[1][1..-1] # remove leading ':'
@@ -79,7 +78,10 @@ module Standard
             user_on_channel = true
             chan = Server.channel_map[args[0].to_s.upcase]
             unless chan == nil
-              # ToDo: Verify chanop status
+              if chan.has_mode('t') && !user.is_chanop(chan.name) && !user.is_admin && !user.is_service
+                Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
+                return
+              end
               if args[1] == nil || args[1].length == 0
                 chan.clear_topic()
               else

@@ -88,7 +88,7 @@ module Optional
           Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, "gcoff - Disables garbage collection"))
           Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, "gcon  - Enables garbage collection"))
           Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, "gcrun - Request garbage collection"))
-          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, "stats - Memory statistics"))
+          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, "stats - Displays memory statistics"))
       end
       Network.send(user, Numeric.RPL_ENDOFDEBUGMSG(user.nick))
     end

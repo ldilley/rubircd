@@ -22,6 +22,7 @@ if RUBY_VERSION < "1.9"
 end
 
 require_relative 'channel'
+require_relative 'eventmach'
 require_relative 'log'
 require_relative 'network'
 require_relative 'options'
@@ -39,6 +40,9 @@ print("Parsing options file... ")
 Options.parse(false)
 puts("done.")
 Log.write(2, "Options loaded.")
+if Options.io_type.to_s == "em"
+  EventMach.check_for_em()
+end
 Opers.parse(false)
 if Options.debug_mode.to_s == "true"
   Thread.abort_on_exception = true
@@ -126,4 +130,8 @@ elsif ARGV[0] != "-f"
     # FixMe: Should we exit here to make the user fix the PID file problem?
   end
 end
-Network.start()
+if Options.io_type.to_s == "em"
+  EventMach.start()
+else
+  Network.start()
+end

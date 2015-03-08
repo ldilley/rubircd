@@ -81,8 +81,10 @@ module Standard
           if u.away_message.length > 0
             Network.send(user, Numeric.RPL_AWAY(user.nick, u))
           end
-          # ToDo: If hostname cloaking is enabled for this user, do not send this numeric
-          Network.send(user, Numeric.RPL_WHOISACTUALLY(user.nick, u))
+          # Only show (real if using cloaking/virtual host) IP address to self, operator, admin, or service
+          if u.nick == user.nick || user.is_operator || user.is_admin || user.is_service
+            Network.send(user, Numeric.RPL_WHOISACTUALLY(user.nick, u))
+          end
           Network.send(user, Numeric.RPL_WHOISIDLE(user.nick, u))
           Network.send(user, Numeric.RPL_ENDOFWHOIS(user.nick, u))
           if u.is_admin && u.nick != user.nick
