@@ -52,7 +52,7 @@ module Standard
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
         Server.users.each do |u|
           if u.nick.casecmp(args[0]) == 0 && user != u
-            unless user.is_registered
+            unless user.is_registered?
               Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
             else
               Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[0]))
@@ -63,7 +63,7 @@ module Standard
         unless Server.qline_mod == nil
           Server.qline_mod.list_qlines().each do |reserved_nick|
             if reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
-              unless user.is_registered
+              unless user.is_registered?
                 Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", args[0], reserved_nick.reason))
               else
                 Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], reserved_nick.reason))
@@ -72,7 +72,7 @@ module Standard
             end
           end
         end
-        if user.is_registered && user.nick != args[0]
+        if user.is_registered? && user.nick != args[0]
           if user.get_channels_length() > 0
             user_channels = user.get_channels_array()
             user_channels.each do |c|

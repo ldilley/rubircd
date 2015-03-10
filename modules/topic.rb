@@ -78,7 +78,7 @@ module Standard
             user_on_channel = true
             chan = Server.channel_map[args[0].to_s.upcase]
             unless chan == nil
-              if chan.has_mode('t') && !user.is_halfop(chan.name) && !user.is_chanop(chan.name) && !user.is_admin && !user.is_service
+              if chan.has_mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
                 Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
                 return
               end

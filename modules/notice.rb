@@ -61,7 +61,7 @@ module Standard
           channel = Server.channel_map[target.to_s.upcase]
           unless channel == nil
             good_targets += 1
-            if user.is_on_channel(target) || !channel.modes.include?('n')
+            if user.is_on_channel?(target) || !channel.modes.include?('n')
               channel.users.each do |u|
                 if u.nick != user.nick
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{target} :#{args[1]}")

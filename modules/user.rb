@@ -45,7 +45,7 @@ module Standard
         Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
         return
       end
-      if user.is_registered
+      if user.is_registered?
         Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
         return
       end

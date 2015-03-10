@@ -68,26 +68,26 @@ module Standard
             Network.send(user, Numeric.RPL_WHOISCHANNELS(user.nick, u, channel_list))
           end
           Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, u, true))
-          if u.is_operator && !u.is_admin
+          if u.is_operator? && !u.is_admin?
             Network.send(user, Numeric.RPL_WHOISOPERATOR(user.nick, u))
           end
-          if u.is_admin && !u.is_operator
+          if u.is_admin? && !u.is_operator?
             Network.send(user, Numeric.RPL_WHOISADMIN(user.nick, u))
           end
-          # ToDo: Add is_bot and is_service check later
-          if u.is_nick_registered
+          # ToDo: Add is_bot? and is_service? check later
+          if u.is_nick_registered?
             Network.send(user, Numeric.RPL_WHOISREGNICK(user.nick, u))
           end
           if u.away_message.length > 0
             Network.send(user, Numeric.RPL_AWAY(user.nick, u))
           end
           # Only show (real if using cloaking/virtual host) IP address to self, operator, admin, or service
-          if u.nick == user.nick || user.is_operator || user.is_admin || user.is_service
+          if u.nick == user.nick || user.is_operator? || user.is_admin? || user.is_service?
             Network.send(user, Numeric.RPL_WHOISACTUALLY(user.nick, u))
           end
           Network.send(user, Numeric.RPL_WHOISIDLE(user.nick, u))
           Network.send(user, Numeric.RPL_ENDOFWHOIS(user.nick, u))
-          if u.is_admin && u.nick != user.nick
+          if u.is_admin? && u.nick != user.nick
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** NOTICE: #{user.nick} has performed a WHOIS on you.")
           end
           return

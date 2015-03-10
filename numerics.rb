@@ -385,7 +385,7 @@ class Numeric
 
   # 381
   def self.RPL_YOUAREOPER(user)
-    if user.is_admin
+    if user.is_admin?
       return sprintf(":%s 381 %s :You are now an IRC Server Administrator", Options.server_name, user.nick)
     else
       return sprintf(":%s 381 %s :You are now an IRC Operator", Options.server_name, user.nick)

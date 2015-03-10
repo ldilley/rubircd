@@ -49,7 +49,7 @@ module Standard
     # args[2] = reason
     def on_qline(user, args)
       args = args.join.split(' ', 3)
-      unless user.is_operator || user.is_admin || user.is_service
+      unless user.is_operator? || user.is_admin? || user.is_service?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
@@ -99,7 +99,7 @@ module Standard
         end
         if qline_found
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has removed a q-line for: #{args[0]}")
             end
           end
@@ -149,7 +149,7 @@ module Standard
           Log.write(3, e)
         end
         Server.users.each do |u|
-          if u.is_admin || u.is_operator
+          if u.is_admin? || u.is_operator?
             if args[1].casecmp("0") == 0
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a q-line for #{args[0]}: #{args[2]}")
             else

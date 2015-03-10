@@ -186,7 +186,7 @@ class Network
   def self.connection_checker()
     loop do
       Server.users.each do |u|
-        if u != nil && u.is_registered
+        if u != nil && u.is_registered?
           Network.send(u, "PING :#{Options.server_name}")
           ping_diff = Time.now.to_i - u.last_ping
           if ping_diff >= Limits::PING_STRIKES * Limits::PING_INTERVAL
@@ -275,7 +275,7 @@ class Network
      #puts(e)
     ensure
       Server.users.each do |u|
-        if u != nil && u.is_admin && u.umodes.include?('v') && u.socket.closed? == false && !lost_socket
+        if u != nil && u.is_admin? && u.umodes.include?('v') && u.socket.closed? == false && !lost_socket
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
@@ -328,7 +328,7 @@ class Network
         if zline.target.casecmp(client_ip) == 0
           Network.send(user, "ERROR :Closing link: #{client_ip} [Z-lined (#{zline.reason})]")
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{client_ip} was z-lined: #{zline.reason}")
             end
           end
@@ -383,14 +383,14 @@ class Network
       else
         Command.parse(user, input)
       end
-      if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.is_negotiating_cap
+      if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.is_negotiating_cap?
         if Options.server_hash != nil && !good_pass
           Network.send(user, "ERROR :Closing link: [Access denied]")
           Network.close(user, "Access denied", false)
         end
         registered = true
       else
-        if user.nick != "*" && user.ident != nil && user.gecos != nil && user.is_negotiating_cap
+        if user.nick != "*" && user.ident != nil && user.gecos != nil && user.is_negotiating_cap?
           Network.send(user, Numeric.ERR_NOTREGISTERED("CAP")) # user has not closed CAP with END
         end
         redo
@@ -433,7 +433,7 @@ class Network
       if (tokens[0].casecmp(user.ident) == 0 && tokens[1] == '*') || (tokens[0].casecmp(user.ident) == 0 && tokens[1].casecmp(user.hostname) == 0)
         Network.send(user, "ERROR :Closing link: #{kline.target} [K-lined (#{kline.reason})]")
         Server.users.each do |u|
-          if u.is_admin || u.is_operator
+          if u.is_admin? || u.is_operator?
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{kline.target} was k-lined: #{kline.reason}")
           end
           Log.write(2, "#{kline.target} was k-lined: #{kline.reason}")
@@ -445,7 +445,7 @@ class Network
 
   def self.welcome(user)
     Server.users.each do |u|
-      if u.is_admin && u.umodes.include?('v')
+      if u.is_admin? && u.umodes.include?('v')
         Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** CONNECT: #{user.nick}!#{user.ident}@#{user.hostname} has connected.")
       end
     end

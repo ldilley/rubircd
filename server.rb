@@ -28,7 +28,7 @@ class Server
   MODE_SERVER = 's'       # can see server messages such as kills
   MODE_VERBOSE = 'v'      # can see client connect/quit messages
   MODE_WALLOPS = 'w'      # can receive oper wall messages
-  USER_MODES = "abiorsvw"
+  USER_MODES = "abiorsvwx"
   STATUS_PREFIXES = "~&@+"
   @@client_count = 0
   @@visible_count = 0
@@ -125,7 +125,7 @@ class Server
     if Options.io_type.to_s == "thread"
       @@users_lock.synchronize do
         if @@users.delete(user) != nil
-          if user.is_admin || user.is_operator
+          if user.is_admin? || user.is_operator?
             Server.oper_count -= 1
           end
           return true
@@ -135,7 +135,7 @@ class Server
       end
     else
       if @@users.delete(user) != nil
-        if user.is_admin || user.is_operator
+        if user.is_admin? || user.is_operator?
           Server.oper_count -= 1
         end
         return true

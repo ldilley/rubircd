@@ -22,15 +22,16 @@ class User
     @nick = nick
     @ident = ident
     @hostname = hostname
+    @virtual_hostname = nil       # this field is also used for hostname cloaking (umode +x)
     @server = Options.server_name
     @ip_address = ip_address
     @gecos = gecos
-    @is_registered = false
-    @is_admin = false
-    @is_operator = false
-    @is_service = false
-    @is_nick_registered = false
-    @is_negotiating_cap = false
+    @registered = false
+    @admin = false
+    @operator = false
+    @service = false
+    @nick_registered = false
+    @negotiating_cap = false
     @away_message = ""
     @away_since = nil              # gets set to current time when calling AWAY
     @socket = socket
@@ -76,32 +77,83 @@ class User
     end
   end
 
+  def has_vhost?
+    if Options.io_type.to_s == "thread"
+      @hostname_lock.synchronize do
+        if @virtual_hostname != nil
+          return true
+        end
+      end
+    else
+      if @virtual_hostname != nil
+        return true
+      end
+    end
+    return false
+  end
+
+  def change_virtual_hostname(new_virtual_hostname)
+    if Options.io_type.to_s == "thread"
+      @hostname_lock.synchronize { @virtual_hostname = new_virtual_hostname }
+    else
+      @virtual_hostname = new_virtual_hostname
+    end
+  end
+
   def change_gecos(new_gecos)
     @gecos = new_gecos
   end
 
+  def is_registered?
+    @registered
+  end
+
   def set_registered()
-    @is_registered = true
+    @registered = true
+  end
+
+  def is_admin?
+    @admin
   end
 
   def set_admin()
-    @is_admin = true
+    @admin = true
     add_umode('a')
     Server.oper_count += 1
   end
 
+  def is_oper?
+    @operator
+  end
+
   def set_operator()
-    @is_operator = true
+    @operator = true
     add_umode('o')
     Server.oper_count += 1
   end
 
+  def is_service?
+    @service
+  end
+
   def set_service()
-    @is_service = true
+    @service = true
+  end
+
+  def is_nick_registered?
+    @nick_registered
   end
 
   def set_nick_registered()
-    @is_nick_registered = true
+    @nick_registered = true
+  end
+
+  def is_negotiating_cap?
+    @negotiating_cap
+  end
+
+  def set_negotiating_cap(value)
+    @negotiating_cap = value
   end
 
   def set_away(message)
@@ -143,10 +195,10 @@ class User
       @umodes.delete(umode)
     end
     if umode == 'a'
-      @is_admin = false
+      @admin = false
     end
     if umode == 'o'
-      @is_operator = false
+      @operator = false
     end
   end
 
@@ -266,7 +318,7 @@ class User
     end
   end
 
-  def is_on_channel(channel)
+  def is_on_channel?(channel)
     if Options.io_type.to_s == "thread"
       @channels_lock.synchronize do
         @channels.each_key do |c|
@@ -285,7 +337,7 @@ class User
     return false
   end
 
-  def is_chanop(channel)
+  def is_chanop?(channel)
     @channels.each_key do |c|
       if c.casecmp(channel)
         if @channels[c].include?('o')
@@ -298,7 +350,7 @@ class User
     return false
   end
 
-  def is_halfop(channel)
+  def is_halfop?(channel)
     @channels.each_key do |c|
       if c.casecmp(channel)
         if @channels[c].include?('h')
@@ -311,7 +363,7 @@ class User
     return false
   end
 
-  def is_voiced(channel)
+  def is_voiced?(channel)
     @channels.each_key do |c|
       if c.casecmp(channel)
         if @channels[c].include?('v')
@@ -368,8 +420,8 @@ class User
     @last_activity
   end
 
-  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :is_registered, :is_admin, :is_operator, :is_service, :is_nick_registered, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :is_negotiating_cap, :session_capabilities
+  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :thread, :channels, :signon_time
+  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :session_capabilities
 end
 
 class Oper

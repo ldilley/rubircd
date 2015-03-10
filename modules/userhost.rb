@@ -49,7 +49,7 @@ module Standard
         end
         Server.users.each do |u|
           if u.nick.casecmp(a) == 0
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
             else
               userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"
