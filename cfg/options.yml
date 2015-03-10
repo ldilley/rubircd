@@ -34,6 +34,10 @@ listen_port: 6667
 # will support
 max_connections: 128
 
+# Maximum number of connections from the same IP address
+# Leave blank or comment out for unlimited sessions.
+max_clones: 3
+
 # Hostname cloaking (umode +x)
 # If a value is defined here, all clients with umode +x will
 # have this hostname which hides their real origin. This can
@@ -42,8 +46,8 @@ max_connections: 128
 # cloaking.
 cloak_host: users.irc.rubircd.rocks
 
-# Enable this option to automatically set connecting clients
-# umode to include +x which will hide their real hostname or
+# Enable this option to automatically set a umode of +x for
+# connecting clients which will hide their real hostname or
 # IP address.
 auto_cloak: false
 
