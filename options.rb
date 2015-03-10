@@ -29,7 +29,6 @@ class Options
   @@listen_port = nil
   @@ssl_port = nil
   @@debug_mode = nil
-  @@max_clones = nil
 
   # If called_from_rehash is true, we make this method more resilient so it will not bring down the server while it is up
   def self.parse(called_from_rehash)
@@ -54,9 +53,10 @@ class Options
       @@debug_mode = options_file["debug_mode"]
     end
     @@max_connections = options_file["max_connections"]
+    @@max_clones = options_file["max_clones"]
     @@control_hash = options_file["control_hash"]
     @@server_hash = options_file["server_hash"]
-    @@max_clones = options_file["max_clones"]
+
     if @@admin_name == nil
       error_text = "\nUnable to read admin_name option from options.yml file!"
       return Exception.new(error_text.lstrip) if called_from_rehash
@@ -171,6 +171,13 @@ class Options
       exit!
     end
 
+    if @@max_clones < 1
+      error_text = "\nmax_clones value is set too low!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
     if @@io_type.to_s == "em"
       error_text = "\nio_type \"em\" is not fully implemented yet!"
       return Exception.new(error_text.lstrip) if called_from_rehash
@@ -233,6 +240,10 @@ class Options
     return @@max_connections
   end
 
+  def self.max_clones
+    return @@max_clones
+  end
+
   def self.io_type
     return @@io_type
   end
@@ -247,9 +258,6 @@ class Options
 
   def self.server_hash
     return @@server_hash
-  end
-  def self.max_clones
-    return @@max_clones
   end
 end
 
