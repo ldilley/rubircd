@@ -337,6 +337,21 @@ class Network
         end
       end
     end
+    unless Options.max_clones == nil
+      clone_count = 0
+      Server.users.each do |u|
+        Log.write(1, "check #{u.ip_address} and #{user.ip_address}")
+        if u.ip_address == user.ip_address
+          clone_count += 1
+          Log.write(1, "Received connection from #{clone_count}")
+          if clone_count == Options.max_clones
+            Log.write(1, "Maximum number of connections from #{user.ip_address} exceeded")
+            Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Maximum number of connections from the same IP exceeded...")
+            Network.close(user, "Maximum number of connections from the same ip address", false)
+          end
+        end
+      end
+    end
     Server.add_user(user)
     Log.write(1, "Received connection from #{user.ip_address}")
     Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Looking up your hostname...")
