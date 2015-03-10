@@ -67,7 +67,7 @@ module Standard
               user.set_admin()
               Network.send(user, Numeric.RPL_YOUAREOPER(user))
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
@@ -80,7 +80,7 @@ module Standard
               user.set_admin()
               Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
@@ -88,7 +88,7 @@ module Standard
               return
             else
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
                 end
               end
@@ -98,7 +98,7 @@ module Standard
             end
           else
             Server.users.each do |u|
-              if u.is_admin || u.is_operator
+              if u.is_admin? || u.is_operator?
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
               end
             end
@@ -115,7 +115,7 @@ module Standard
               user.set_operator()
               Network.send(user, Numeric.RPL_YOUAREOPER(user))
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
                 end
               end
@@ -128,7 +128,7 @@ module Standard
               user.set_operator()
               Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
                 end
               end
@@ -136,7 +136,7 @@ module Standard
               return
             else
               Server.users.each do |u|
-                if u.is_admin || u.is_operator
+                if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
                 end
               end
@@ -146,7 +146,7 @@ module Standard
             end
           else
             Server.users.each do |u|
-              if u.is_admin || u.is_operator
+              if u.is_admin? || u.is_operator?
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
               end
             end

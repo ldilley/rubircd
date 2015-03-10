@@ -116,11 +116,11 @@ module Standard
           Network.send(user, Numeric.RPL_ENDOFBANLIST(user.nick, channel.name))
           return
         end
-        unless user.is_on_channel(channel.name)
+        unless user.is_on_channel?(channel.name)
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target))
           return
         end
-        unless user.is_chanop(channel.name)
+        unless user.is_chanop?(channel.name)
           Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, channel.name))
           return
         end
@@ -216,7 +216,7 @@ module Standard
                 channel.users.each do |u|
                   if u.nick == mode_args[arg_index]
                     nick_exists = true
-                    if u.is_chanop(channel.name)
+                    if u.is_chanop?(channel.name)
                       modelist = modelist.split
                       modelist = modelist.delete_at(mode_index)
                       mode_args.delete_at(arg_index)
@@ -246,7 +246,7 @@ module Standard
                 channel.users.each do |u|
                   nick_exists = true
                   if u.nick == mode_args[arg_index]
-                    if u.is_halfop(channel.name)
+                    if u.is_halfop?(channel.name)
                       mode_args.delete_at(arg_index)
                       was_deleted = true
                       unless arg_index >= mode_args.length
@@ -270,7 +270,7 @@ module Standard
                 channel.users.each do |u|
                   nick_exists = true
                   if u.nick == mode_args[arg_index]
-                    if u.is_voiced(channel.name)
+                    if u.is_voiced?(channel.name)
                       mode_args.delete_at(arg_index)
                       was_deleted = true
                       unless arg_index >= mode_args.length

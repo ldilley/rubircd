@@ -38,14 +38,14 @@ module Standard
     # args[0] = config
     # args[1] = server
     def on_rehash(user, args)
-      unless user.is_operator || user.is_admin
+      unless user.is_operator? || user.is_admin?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
       args = args.join.split(' ', 2)
       if args.length < 1 # reload of options.yml is the default behavior
         Server.users.each do |u|
-          if u.is_admin || u.is_operator
+          if u.is_admin? || u.is_operator?
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing options.yml.")
           end
         end
@@ -59,7 +59,7 @@ module Standard
       end
       if args.length == 1
         if args[0].to_s.casecmp("modules") == 0
-          unless user.is_admin
+          unless user.is_admin?
             Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
             return
           end
@@ -68,7 +68,7 @@ module Standard
             return
           end
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing modules.yml.")
             end
           end
@@ -95,7 +95,7 @@ module Standard
           end
         elsif args[0].to_s.casecmp("motd") == 0
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing the MotD.")
             end
           end
@@ -109,7 +109,7 @@ module Standard
           end
         elsif args[0].to_s.casecmp("opers") == 0
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing opers.yml.")
             end
           end
@@ -123,7 +123,7 @@ module Standard
           end
         elsif args[0].to_s.casecmp("options") == 0
           Server.users.each do |u|
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing options.yml.")
             end
           end

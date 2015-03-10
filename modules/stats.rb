@@ -41,7 +41,7 @@ module Standard
     # args[1] = optional server
     def on_stats(user, args)
       args = args.join.split(' ', 2)
-      unless user.is_operator || user.is_admin || user.is_service
+      unless user.is_operator? || user.is_admin? || user.is_service?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
@@ -67,7 +67,7 @@ module Standard
         when 'i' # online admins and operators with idle times
           oper_count = 0
           Server.users.each do |u|
-            if u.is_admin || u.is_operator || u.is_service
+            if u.is_admin? || u.is_operator? || u.is_service?
               Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, sprintf("%s (%s) Idle: %i seconds", u.nick, u.hostname, (::Time.now.to_i - u.last_activity))))
               oper_count += 1
             end

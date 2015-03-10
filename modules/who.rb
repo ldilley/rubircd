@@ -50,7 +50,7 @@ module Standard
           # ToDo: Also calculate hops once server linking support is added
           if args[1] == 'o'
             channel.users.each do |u|
-              if u.is_admin || u.is_operator
+              if u.is_admin? || u.is_operator?
                 Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
               end
             end
@@ -89,7 +89,7 @@ module Standard
         userlist.each do |u|
           same_channel = false
           if args[1] == 'o'
-            if u.is_admin || u.is_operator
+            if u.is_admin? || u.is_operator?
               user_channels = user.get_channels_array()
               u_channels = u.get_channels_array()
               user_channels.each do |my_channel|

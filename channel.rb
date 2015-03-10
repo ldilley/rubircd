@@ -62,7 +62,7 @@ class Channel
   @users
   @url
   @founder
-  @is_registered
+  @registered
   @create_timestamp
 
   def initialize(name, founder)
@@ -76,7 +76,7 @@ class Channel
     @topic = ""
     @users = Array.new
     @founder = founder
-    @is_registered = false
+    @registered = false
     @create_timestamp = Time.now.to_i
     if Options.io_type.to_s == "thread"
       @bans_lock = Mutex.new
@@ -152,7 +152,7 @@ class Channel
     end
   end
 
-  def has_mode(mode)
+  def has_mode?(mode)
     if Options.io_type.to_s == "thread"
       @modes_lock.synchronize { return @modes.include?(mode) }
     else
@@ -174,8 +174,12 @@ class Channel
     end
   end
 
+  def is_registered?
+    @registered
+  end
+
   def set_registered()
-    @is_registered = true
+    @registered = true
   end
 
   def clear_topic()
@@ -228,5 +232,5 @@ class Channel
     @create_timestamp
   end
 
-  attr_reader :name, :key, :limit, :topic, :topic_author, :topic_time, :url, :founder, :is_registered
+  attr_reader :name, :key, :limit, :topic, :topic_author, :topic_time, :url, :founder
 end

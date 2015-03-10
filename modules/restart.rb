@@ -38,7 +38,7 @@ module Standard
     # ToDo: Fix paths since RESTART is now a module and in a different directory
     # args[0] = password
     def on_restart(user, args)
-      unless user.is_admin
+      unless user.is_admin?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end

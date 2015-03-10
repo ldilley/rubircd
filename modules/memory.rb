@@ -52,7 +52,7 @@ module Optional
 
     # args[0] = subcommand
     def on_memory(user, args)
-      unless user.is_admin
+      unless user.is_admin?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end

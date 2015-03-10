@@ -40,7 +40,7 @@ module Standard
 
     # args[0] = message
     def on_wallops(user, args)
-      unless user.is_operator || user.is_admin || user.is_service
+      unless user.is_operator? || user.is_admin? || user.is_service?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end

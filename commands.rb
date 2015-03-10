@@ -82,7 +82,7 @@ class Command
   # MODLIST
   # args[0] = optional server (ToDo: Add ability to specify server to get its modules)
   def self.handle_modlist(user, args)
-    unless user.is_admin
+    unless user.is_admin?
       Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
       return
     end
@@ -101,7 +101,7 @@ class Command
   # args[0] = module
   def self.handle_modload(user, args)
     unless user == nil
-      unless user.is_admin 
+      unless user.is_admin? 
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
@@ -165,7 +165,7 @@ class Command
   # MODRELOAD
   # args[0] = module
   def self.handle_modreload(user, args)
-    unless user.is_admin 
+    unless user.is_admin? 
       Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
       return
     end
@@ -180,7 +180,7 @@ class Command
   # MODUNLOAD
   # args[0] = module
   def self.handle_modunload(user, args)
-    unless user.is_admin 
+    unless user.is_admin? 
       Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
       return
     end

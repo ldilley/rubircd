@@ -56,7 +56,7 @@ module Standard
           return
         end
       end
-      if !user.is_chanop(chan.name) && !user.is_admin && !user.is_service
+      if !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
         Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
         return
       end
@@ -81,11 +81,11 @@ module Standard
       good_nicks.each do |n|
         Server.users.each do |u|
           if u.nick.casecmp(n) == 0
-            if !u.is_on_channel(chan.name)
+            if !u.is_on_channel?(chan.name)
               Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
-            elsif (u.is_admin && !user.is_admin) || u.is_service
+            elsif (u.is_admin? && !user.is_admin?) || u.is_service?
               Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
-              if u.is_admin
+              if u.is_admin?
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
               end
             elsif kick_count >= Limits::MODES
@@ -100,7 +100,7 @@ module Standard
               kick_count += 1
               chan.remove_user(u)
               u.remove_channel(chan.name)
-              unless chan.users.length > 0 || chan.is_registered
+              unless chan.users.length > 0 || chan.is_registered?
                 Server.remove_channel(chan)
               end
             end
