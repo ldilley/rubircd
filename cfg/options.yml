@@ -34,6 +34,9 @@ listen_port: 6667
 # will support
 max_connections: 128
 
+# Maximum number of connections from the same ip
+max_clones: 3
+
 # Network I/O type
 # Possible values are:
 # em - EventMachine epoll or kqueue (not implemented yet)
