@@ -1,0 +1,17 @@
+language: ruby
+rvm:
+  - "1.9.3"
+  - "2.0.0"
+  - "2.2.0"
+  - ruby-head
+  - jruby-19mode # JRuby in 1.9 mode
+  - jruby-head
+  - rbx
+  - rbx-2
+# Uncomment this line if your project needs to run something other than `rake`:
+# script: bundle exec rspec spec
+
+notifications:
+  irc:
+    - "irc.rubircd.rocks#rubircd"
+    - "irc.rubircd.rocks#sysadmininkudzu"

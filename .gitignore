@@ -4,3 +4,5 @@
 *.pem
 *.pid
 logs/
+rdoc/
+Gemfile.lock
