@@ -52,4 +52,5 @@ modules:
   - fjoin    # forces channel joins
   - fnick    # forces nick changes (needed if using integrated services for enforcement of nicknames)
   - memory   # memory statistics/garbage collection
+  - vhost    # virtual host support
 # - example  # example module

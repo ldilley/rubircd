@@ -103,6 +103,10 @@ qline_loaded = Command.command_map["QLINE"]
 unless qline_loaded == nil
   Server.init_qline()
 end
+vhost_loaded = Command.command_map["VHOST"]
+unless vhost_loaded == nil
+  Server.init_vhost()
+end
 zline_loaded = Command.command_map["ZLINE"]
 unless zline_loaded == nil
   Server.init_zline()

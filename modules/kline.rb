@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require 'options'
+require 'utility'
 require 'xline'
 
 module Standard
@@ -131,7 +132,7 @@ module Standard
           end
           return
         end
-        unless tokens[1] == '*' || tokens[1] =~ /^(?:[a-zA-Z0-9]+(?:\-*[a-zA-Z0-9])*\.)+[a-zA-Z]{2,6}$/i
+        unless tokens[1] == '*' || Utility.is_valid_hostname?(tokens[1])
           if tokens[1] == nil || tokens[1] == ""
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid host in k-line. It was empty!")
           else

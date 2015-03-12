@@ -196,6 +196,21 @@ class Channel
     end
   end
 
+  def nick_in_channel?(nick)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize do
+        @users.each do |u|
+          return true if u.nick.casecmp(nick) == 0
+        end
+      end
+    else
+      @users.each do |u|
+        return true if u.nick.casecmp(nick) == 0
+      end
+    end
+    return false
+  end
+
   def add_user(user)
     if Options.io_type.to_s == "thread"
       @users_lock.synchronize do

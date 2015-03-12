@@ -69,6 +69,24 @@ class User
     @ident = new_ident
   end
 
+  def hostname()
+    if Options.io_type.to_s == "thread"
+      @hostname_lock.synchronize do
+        if @virtual_hostname != nil
+          return @virtual_hostname
+        else
+          return @hostname
+        end
+      end
+    else
+      if @virtual_hostname != nil
+        return @virtual_hostname
+      else
+        return @hostname
+      end
+    end
+  end
+
   def change_hostname(new_hostname)
     if Options.io_type.to_s == "thread"
       @hostname_lock.synchronize { @hostname = new_hostname }
@@ -80,23 +98,21 @@ class User
   def has_vhost?
     if Options.io_type.to_s == "thread"
       @hostname_lock.synchronize do
-        if @virtual_hostname != nil
-          return true
-        end
+        return true if @virtual_hostname != nil
       end
     else
-      if @virtual_hostname != nil
-        return true
-      end
+      return true if @virtual_hostname != nil
     end
     return false
   end
 
-  def change_virtual_hostname(new_virtual_hostname)
+  # There are currently no restrictions on the vhost. It could contain a single word or
+  # contain characters that are not allowed in RFC-compliant hostnames/FQDNs.
+  def set_vhost(new_vhost)
     if Options.io_type.to_s == "thread"
-      @hostname_lock.synchronize { @virtual_hostname = new_virtual_hostname }
+      @hostname_lock.synchronize { @virtual_hostname = new_vhost }
     else
-      @virtual_hostname = new_virtual_hostname
+      @virtual_hostname = new_vhost
     end
   end
 
@@ -122,7 +138,7 @@ class User
     Server.oper_count += 1
   end
 
-  def is_oper?
+  def is_operator?
     @operator
   end
 
@@ -228,9 +244,7 @@ class User
 
   def add_channel(channel)
     if Options.io_type.to_s == "thread"
-      @channels_lock.synchronize do
-        @channels[channel] = ""
-      end
+      @channels_lock.synchronize { @channels[channel] = "" }
     else
       @channels[channel] = ""
     end
@@ -240,16 +254,12 @@ class User
     if Options.io_type.to_s == "thread"
       @channels_lock.synchronize do
         @channels.each_key do |c|
-          if c.casecmp(channel)
-            @channels.delete(c)
-          end
+          @channels.delete(c) if c.casecmp(channel) == 0
         end
       end
     else
       @channels.each_key do |c|
-        if c.casecmp(channel)
-          @channels.delete(c)
-        end
+        @channels.delete(c) if c.casecmp(channel) == 0
       end
     end
   end
@@ -258,7 +268,7 @@ class User
     if Options.io_type.to_s == "thread"
       @channels_lock.synchronize do
         @channels.each_key do |c|
-          if c.casecmp(channel)
+          if c.casecmp(channel) == 0
             modes = @channels[c]
             if modes.include?(mode)
               return
@@ -270,7 +280,7 @@ class User
       end
     else
       @channels.each_key do |c|
-        if c.casecmp(channel)
+        if c.casecmp(channel) == 0
           modes = @channels[c]
           if modes.include?(mode)
             return
@@ -286,7 +296,7 @@ class User
     if Options.io_type.to_s == "thread"
       @channels_lock.synchronize do
         @channels.each_key do |c|
-          if c.casecmp(channel)
+          if c.casecmp(channel) == 0
             modes = @channels[c]
             @channels[c] = modes.delete(mode)
           end
@@ -294,7 +304,7 @@ class User
       end
     else
       @channels.each_key do |c|
-        if c.casecmp(channel)
+        if c.casecmp(channel) == 0
           modes = @channels[c]
           @channels[c] = modes.delete(mode)
         end
@@ -339,7 +349,7 @@ class User
 
   def is_chanop?(channel)
     @channels.each_key do |c|
-      if c.casecmp(channel)
+      if c.casecmp(channel) == 0
         if @channels[c].include?('o')
           return true
         else
@@ -352,7 +362,7 @@ class User
 
   def is_halfop?(channel)
     @channels.each_key do |c|
-      if c.casecmp(channel)
+      if c.casecmp(channel) == 0
         if @channels[c].include?('h')
           return true
         else
@@ -365,7 +375,7 @@ class User
 
   def is_voiced?(channel)
     @channels.each_key do |c|
-      if c.casecmp(channel)
+      if c.casecmp(channel) == 0
         if @channels[c].include?('v')
           return true
         else
@@ -379,7 +389,7 @@ class User
   def get_prefixes(channel)
     prefix_list = []
     @channels.each_key do |c|
-      if c.casecmp(channel)
+      if c.casecmp(channel) == 0
         if @channels[c].include?('a')
           prefix_list << '~'
         end
@@ -420,7 +430,7 @@ class User
     @last_activity
   end
 
-  attr_reader :nick, :ident, :hostname, :server, :ip_address, :gecos, :thread, :channels, :signon_time
+  attr_reader :nick, :ident, :server, :ip_address, :gecos, :thread, :channels, :signon_time
   attr_accessor :socket, :last_ping, :data_recv, :data_sent, :session_capabilities
 end
 
