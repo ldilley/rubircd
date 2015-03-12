@@ -76,6 +76,10 @@ class Server
     @@qline_mod = Command::Standard::Qline.new
   end
 
+  def self.init_vhost()
+    @@vhost_mod = Command::Optional::Vhost.new
+  end
+
   def self.init_zline()
     @@zline_mod = Command::Standard::Zline.new
   end
@@ -111,6 +115,36 @@ class Server
       @@client_count -= 1
       @@local_users -= 1
     end
+  end
+
+  def self.nick_exists?(nick)
+    if Options.io_type.to_s == "thread"
+      @@users_lock.synchronize do
+        @@users.each do |u|
+          return true if u.nick.casecmp(nick) == 0
+        end
+      end
+    else
+      @@users.each do |u|
+        return true if u.nick.casecmp(nick) == 0
+      end
+    end
+    return false
+  end
+
+  def self.get_user_by_nick(nick)
+    if Options.io_type.to_s == "thread"
+      @@users_lock.synchronize do
+        @@users.each do |u|
+          return u if u.nick.casecmp(nick) == 0
+        end
+      end
+    else
+      @@users.each do |u|
+        return u if u.nick.casecmp(nick) == 0
+      end
+    end
+    return nil
   end
 
   def self.add_user(user)
@@ -175,9 +209,7 @@ class Server
 
   def self.add_data_recv(amount)
     if Options.io_type.to_s == "thread"
-      @@data_recv_lock.synchronize do
-        @@data_recv += amount
-      end
+      @@data_recv_lock.synchronize { @@data_recv += amount }
     else
       @@data_recv += amount
     end
@@ -226,6 +258,10 @@ class Server
 
   def self.qline_mod
     @@qline_mod
+  end
+
+  def self.vhost_mod
+    @@vhost_mod
   end
 
   def self.zline_mod

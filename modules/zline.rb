@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 require 'options'
+require 'utility'
 require 'xline'
 
 module Standard
@@ -122,7 +123,7 @@ module Standard
           end
         end
         # Validate IP address and duration
-        unless args[0] =~ /^\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b$/
+        unless Utility.is_valid_address?(args[0])
           if args[0] == nil || args[0] == ""
             Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid IP address in z-line. It was empty!")
           else

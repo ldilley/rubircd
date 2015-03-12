@@ -1,0 +1,19 @@
+# A virtual host only lasts for the session when
+# using the VHOST command. If you want to make the
+# vhost permanent, you must add an entry in this file.
+# If ident is set to "*", all users from the same host
+# will have the same vhost.
+# host can be an IP address, hostname, or "*" for any host.
+# vhost must be a valid hostname or IP address.
+---
+ident: ldilley
+host: "rubircd.rocks"
+vhost: "admin.irc.rubircd.rocks"
+---
+ident: foo
+host: "*"
+vhost: "totally.spoofed.host"
+---
+ident: "*"
+host: "127.0.0.1"
+vhost: "no.place.like.home"

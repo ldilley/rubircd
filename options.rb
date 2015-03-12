@@ -18,6 +18,7 @@
 
 require 'yaml'
 require_relative 'user'
+require_relative 'utility'
 
 class Options
   @@admin_name = nil
@@ -28,6 +29,8 @@ class Options
   @@server_description = nil
   @@listen_port = nil
   @@ssl_port = nil
+  @@max_clones = nil
+  @@cloak_host = nil
   @@debug_mode = nil
 
   # If called_from_rehash is true, we make this method more resilient so it will not bring down the server while it is up
@@ -54,6 +57,8 @@ class Options
     end
     @@max_connections = options_file["max_connections"]
     @@max_clones = options_file["max_clones"]
+    @@cloak_host = options_file["cloak_host"]
+    @@auto_cloak = options_file["auto_cloak"]
     @@control_hash = options_file["control_hash"]
     @@server_hash = options_file["server_hash"]
 
@@ -171,8 +176,33 @@ class Options
       exit!
     end
 
-    if @@max_clones < 1
-      error_text = "\nmax_clones value is set too low!"
+    unless @@max_clones == nil
+      if @@max_clones < 1
+        error_text = "\nmax_clones value is set too low!"
+        return Exception.new(error_text.lstrip) if called_from_rehash
+        puts(error_text)
+        exit!
+      end
+    end
+
+    unless @@cloak_host == nil
+      unless Utility.is_valid_hostname?(@@cloak_host) || Utility.is_valid_address?(@@cloak_host)
+        error_text = "\ncloak_host value is not a valid hostname or address!"
+        return Exception.new(error_text.lstrip) if called_from_rehash
+        puts(error_text)
+        exit!
+      end
+    end
+
+    if @@auto_cloak.to_s != "true" && @@auto_cloak.to_s != "false"
+      error_text = "\nauto_cloak value should be set to either true or false."
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
+    if @@auto_cloak.to_s == "true" && @@cloak_host == nil
+      error_text = "\nauto_cloak value is set to true when cloak_host is not defined!"
       return Exception.new(error_text.lstrip) if called_from_rehash
       puts(error_text)
       exit!
@@ -185,8 +215,15 @@ class Options
       exit!
     end
 
-    if @@io_type.to_s != "em" && @@io_type.to_s != "event" && @@io_type.to_s != "thread"
-      error_text = "\nio_type value should be set to either em, event, or thread."
+    if @@io_type.to_s == "cell"
+      error_text = "\nio_type \"cell\" is not fully implemented yet!"
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
+    if @@io_type.to_s != "em" && @@io_type.to_s != "cell" && @@io_type.to_s != "event" && @@io_type.to_s != "thread"
+      error_text = "\nio_type value should be set to either em, cell, event, or thread."
       return Exception.new(error_text.lstrip) if called_from_rehash
       puts(error_text)
       exit!

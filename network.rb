@@ -23,6 +23,7 @@ require_relative 'commands'
 require_relative 'numerics'
 require_relative 'options'
 require_relative 'server'
+require_relative 'utility'
 
 class Network
   @@ipv6_enabled = false
@@ -433,6 +434,22 @@ class Network
           Thread.kill(timer_thread)
           user.set_registered
           user.last_ping = Time.now.to_i
+
+          # ToDo: Set cloak_host if auto_cloak is true or umode is +x.
+          # This must be taken care of before virtual hosts are used to avoid overwriting the user's virtual host.
+
+          # Set vhost if module is loaded and user criteria is met...
+          unless Server.vhost_mod == nil
+            vhost = Server.vhost_mod.find_vhost(user.ident, user.hostname)
+            if vhost != nil
+              if Utility.is_valid_hostname?(vhost) || Utility.is_valid_address?(vhost)
+                user.set_vhost(vhost)
+              else
+                Log.write(3, "Virtual host was not set for #{user.nick}!#{user.ident}@#{user.hostname} since vhost is invalid: #{vhost}")
+              end
+            end
+          end
+
           return user
         else
           redo # ping response incorrect

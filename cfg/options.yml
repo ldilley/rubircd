@@ -42,8 +42,7 @@ max_clones: 3
 # If a value is defined here, all clients with umode +x will
 # have this hostname which hides their real origin. This can
 # increase user privacy and defend against malicious attacks
-# on clients. Leave blank or comment out to disable hostname
-# cloaking.
+# on clients. Leave blank or comment out to disable cloaking.
 cloak_host: users.irc.rubircd.rocks
 
 # Enable this option to automatically set a umode of +x for
