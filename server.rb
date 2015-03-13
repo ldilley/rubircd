@@ -20,14 +20,14 @@ class Server
   VERSION = "RubIRCd v0.2a"
   RELEASE = "mildly dangerous"
   URL = "http://www.rubircd.rocks/"
-  MODE_ADMIN = 'a'        # is an IRC administrator
-  MODE_BOT = 'b'          # is a bot
-  MODE_INVISIBLE = 'i'    # invisible in WHO and NAMES output
-  MODE_OPERATOR = 'o'     # is an IRC operator
-  MODE_REGISTERED = 'r'   # indicates that the nickname is registered
-  MODE_SERVER = 's'       # can see server messages such as kills
-  MODE_VERBOSE = 'v'      # can see client connect/quit messages
-  MODE_WALLOPS = 'w'      # can receive oper wall messages
+  MODE_ADMIN = 'a'          # is an IRC administrator
+  MODE_BOT = 'b'            # is a bot
+  MODE_INVISIBLE = 'i'      # invisible in WHO and NAMES output
+  MODE_OPERATOR = 'o'       # is an IRC operator
+  MODE_REGISTERED = 'r'     # indicates that the nickname is registered
+  MODE_SERVER = 's'         # can see server messages such as kills
+  MODE_VERBOSE = 'v'        # can see client connect/quit messages
+  MODE_WALLOPS = 'w'        # can receive oper wall messages
   USER_MODES = "abiorsvwx"
   STATUS_PREFIXES = "~&@+"
   @@client_count = 0
@@ -65,23 +65,28 @@ class Server
   end
 
   def self.init_whowas()
-    @@whowas_mod = Command::Standard::Whowas.new
+    @@whowas_mod = Mod.find("WHOWAS")
+    #@@whowas_mod = Command::Standard::Whowas.new
   end
 
   def self.init_kline()
-    @@kline_mod = Command::Standard::Kline.new
+    @@kline_mod = Mod.find("KLINE")
+    #@@kline_mod = Command::Standard::Kline.new
   end
 
   def self.init_qline()
-    @@qline_mod = Command::Standard::Qline.new
+    @@qline_mod = Mod.find("QLINE")
+    #@@qline_mod = Command::Standard::Qline.new
   end
 
   def self.init_vhost()
-    @@vhost_mod = Command::Optional::Vhost.new
+    @@vhost_mod = Mod.find("VHOST")
+    #@@vhost_mod = Command::Optional::Vhost.new
   end
 
   def self.init_zline()
-    @@zline_mod = Command::Standard::Zline.new
+    @@zline_mod = Mod.find("ZLINE")
+    #@@zline_mod = Command::Standard::Zline.new
   end
 
   # ToDo: Pass user as an argument and determine if they are invisible, an operator, unknown, etc.

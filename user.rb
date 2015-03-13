@@ -128,6 +128,14 @@ class User
     @registered = true
   end
 
+  def has_umode?(umode)
+    if Options.io_type.to_s == "thread"
+      @umodes_lock.synchronize { return @umodes.include?(umode) }
+    else
+      return @umodes.include?(umode)
+    end
+  end
+
   def is_admin?
     @admin
   end

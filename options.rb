@@ -59,6 +59,7 @@ class Options
     @@max_clones = options_file["max_clones"]
     @@cloak_host = options_file["cloak_host"]
     @@auto_cloak = options_file["auto_cloak"]
+    @@auto_invisible = options_file["auto_invisible"]
     @@control_hash = options_file["control_hash"]
     @@server_hash = options_file["server_hash"]
 
@@ -208,6 +209,13 @@ class Options
       exit!
     end
 
+    if @@auto_invisible.to_s != "true" && @@auto_invisible.to_s != "false"
+      error_text = "\nauto_invisible value should be set to either true or false."
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
     if @@io_type.to_s == "em"
       error_text = "\nio_type \"em\" is not fully implemented yet!"
       return Exception.new(error_text.lstrip) if called_from_rehash
@@ -279,6 +287,18 @@ class Options
 
   def self.max_clones
     return @@max_clones
+  end
+
+  def self.cloak_host
+    return @@cloak_host
+  end
+
+  def self.auto_cloak
+    return @@auto_cloak
+  end
+
+  def self.auto_invisible
+    return @@auto_invisible
   end
 
   def self.io_type

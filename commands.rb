@@ -188,32 +188,36 @@ class Command
       Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODUNLOAD"))
       return
     end
+    if args.is_a?(String)
+      mod_name = args
+    else
+      mod_name = args[0]
+    end
     if Mod.modules == nil || Mod.modules.length < 1
-      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "No modules are currently loaded."))
+       Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, mod_name, "No modules are currently loaded."))
       return
     end
-    mod = Mod.modules[args[0].to_s.upcase]
+    mod = Mod.modules[mod_name.to_s.upcase]
     unless mod == nil
       begin
-        mod_name = args[0]
         mod.plugin_finish(Command)
       rescue NameError => e
         Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Invalid class name."))
-        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{args[0]}.")
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{mod_name}.")
         Log.write(3, e)
         return
       else
-        Mod.modules.delete(args[0].to_s.upcase)
-        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, args[0], "#{mod}"))
+        Mod.modules.delete(mod_name.to_s.upcase)
+        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, mod_name, "#{mod}"))
         Server.users.each do |u|
           if u.umodes.include?('s')
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has unloaded module: #{args[0]} (#{mod})")
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has unloaded module: #{mod_name} (#{mod})")
           end
         end
-        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{args[0]} (#{mod})")
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{mod_name} (#{mod})")
       end
     else
-      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Module does not exist."))
+      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, mod_name, "Module does not exist."))
     end
   end
 
@@ -253,7 +257,6 @@ class Command
   # shun
   # silence
   # userip
-  # vhost <nick> <new_hostname> (administrative command to change a user's hostname)
   # watch
 
   def self.command_map
@@ -281,6 +284,15 @@ class Mod
       @@modules_lock.synchronize { @@modules[mod.command_name.upcase] = mod }
     else
       @@modules[mod.command_name.upcase] = mod
+    end
+  end
+
+  # Find module by command name
+  def self.find(command)
+    if Options.io_type.to_s == "thread"
+      @@modules_lock.synchronize { return @@modules[command.upcase] }
+    else
+      return @@modules[command.upcase]
     end
   end
 end

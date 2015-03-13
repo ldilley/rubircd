@@ -435,8 +435,21 @@ class Network
           user.set_registered
           user.last_ping = Time.now.to_i
 
-          # ToDo: Set cloak_host if auto_cloak is true or umode is +x.
+          # Set umode +i if auto_invisible is enabled.
+          if Options.auto_invisible.to_s == "true"
+            user.add_umode('i')
+          end
+
+          # Set cloak_host if auto_cloak is true or umode is +x.
           # This must be taken care of before virtual hosts are used to avoid overwriting the user's virtual host.
+          unless Options.cloak_host == nil
+            unless user.has_umode?('x')
+              if Options.auto_cloak.to_s == "true"
+                user.add_umode('x')
+                user.set_vhost(Options.cloak_host)
+              end
+            end
+          end
 
           # Set vhost if module is loaded and user criteria is met...
           unless Server.vhost_mod == nil

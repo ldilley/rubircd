@@ -460,6 +460,9 @@ module Standard
             modelist = modelist.delete('v')
             Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
           end
+          if modelist.include?('x')
+            user.set_vhost(Options.cloak_host)
+          end
           final_add_modes = modelist
           final_add_modes.each_char { |mode| user.add_umode(mode) }
         end
@@ -473,6 +476,9 @@ module Standard
             if modelist =~ /[#{Server::USER_MODES}]/
               final_remove_modes.delete(mode)
             end
+          end
+          if modelist.include?('x')
+            user.set_vhost(nil)
           end
           final_remove_modes = modelist
           final_remove_modes.each_char do |mode|

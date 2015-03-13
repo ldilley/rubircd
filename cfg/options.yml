@@ -50,6 +50,11 @@ cloak_host: users.irc.rubircd.rocks
 # IP address.
 auto_cloak: false
 
+# Enable this option to automatically set a umode of +i for
+# connecting clients which hides them in NAMES and WHO output
+# for other users.
+auto_invisible: false
+
 # Network I/O type
 # Possible values are:
 # em - EventMachine epoll or kqueue (requires the eventmachine gem)
