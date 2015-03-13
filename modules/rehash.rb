@@ -134,6 +134,37 @@ module Standard
             Network.send(user, Numeric.ERR_FILEERROR(user.nick, reason))
             Log.write(3, "Failed to read options.yml: #{reason}")
           end
+        elsif args[0].to_s.casecmp("vhosts") == 0
+          Server.users.each do |u|
+            if u.is_admin? || u.is_operator?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing vhosts.")
+            end
+          end
+          Command.handle_modreload(user, "vhost")
+          Server.init_vhost()
+        # All xlines
+        # ToDo: Add g-line in 0.3a
+        elsif args[0].to_s.casecmp("klines") == 0
+          Server.users.each do |u|
+            if u.is_admin? || u.is_operator?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing k-lines.")
+            end
+          end
+          Command.handle_modreload(user, "kline")
+        elsif args[0].to_s.casecmp("qlines") == 0
+          Server.users.each do |u|
+            if u.is_admin? || u.is_operator?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing q-lines.")
+            end
+          end
+          Command.handle_modreload(user, "qline")
+        elsif args[0].to_s.casecmp("zlines") == 0
+          Server.users.each do |u|
+            if u.is_admin? || u.is_operator?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is rehashing z-lines.")
+            end
+          end
+          Command.handle_modreload(user, "zline")
         end
       end
     end

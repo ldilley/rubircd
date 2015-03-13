@@ -27,6 +27,7 @@ module Standard
 
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
+      Server.init_whowas()
     end
 
     def plugin_finish(caller)

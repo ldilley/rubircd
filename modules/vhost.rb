@@ -28,6 +28,7 @@ module Optional
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
       read_config()
+      Server.init_vhost()
     end
 
     def plugin_finish(caller)
