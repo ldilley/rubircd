@@ -141,7 +141,6 @@ module Standard
             end
           end
           Command.handle_modreload(user, "vhost")
-          Server.init_vhost()
         # All xlines
         # ToDo: Add g-line in 0.3a
         elsif args[0].to_s.casecmp("klines") == 0
