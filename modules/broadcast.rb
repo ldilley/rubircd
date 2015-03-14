@@ -16,11 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-module Standard
-  class Quit
+module Optional
+  class Broadcast
     def initialize()
-      @command_name = "quit"
-      @command_proc = Proc.new() { |user, args| on_quit(user, args) }
+      @command_name = "broadcast"
+      @command_proc = Proc.new() { |user, args| on_broadcast(user, args) }
     end
 
     def plugin_init(caller)
@@ -35,25 +35,21 @@ module Standard
       @command_name
     end
 
-    # args[0] = optional quit message
-    def on_quit(user, args)
-      if args.length > 0
-        if args[0][0] == ':'
-          args = args[0][1..-1] # remove leading ':'
-        end
-        if args.length > Limits::MAXQUIT
-          args = args[0][0..Limits::MAXQUIT-1]
-        end
-      else
-        args = "Client quit"
+    # args[0] = message
+    def on_broadcast(user, args)
+      unless user.is_admin?
+        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        return
       end
-      if user.nick == '*'
-        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: Client exited)")
-      else
-        Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: #{args})")
+      if args.length < 1
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "BROADCAST"))
+        return
       end
-      Network.close(user, args, false)
+      Server.users.each do |u|
+        Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}: #{args[0]}")
+      end
+      Log.write(2, "BROADCAST issued by #{user.nick}!#{user.ident}@#{user.hostname}: #{args[0]}")
     end
   end
 end
-Standard::Quit.new
+Optional::Broadcast.new
