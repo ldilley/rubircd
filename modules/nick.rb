@@ -49,7 +49,11 @@ module Standard
       if args[0][0] == ':'
         args[0] = args[0][1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
       end
-      if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i && args[0].length >=1 && args[0].length <= Limits::NICKLEN
+      if args[0].length < 1 || args[0].length > Limits::NICKLEN
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Nickname does not meet length requirements."))
+        return
+      end
+      if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         Server.users.each do |u|
           if u.nick.casecmp(args[0]) == 0 && user != u
             unless user.is_registered?
@@ -93,10 +97,8 @@ module Standard
           end
         end
         user.change_nick(args[0])
-        return
       else
         Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Nickname contains invalid characters."))
-        return
       end
     end
   end

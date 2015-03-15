@@ -24,6 +24,12 @@ module Optional
     end
 
     def plugin_init(caller)
+      Mod.require_dependency("QUIT")
+      req_mod = Mod.find("QUIT")
+      if req_mod == nil
+        Log.write(3, "Refusing to load FQUIT module. Unable to load required module: QUIT")
+        return
+      end
       caller.register_command(@command_name, @command_proc)
     end
 
@@ -64,11 +70,14 @@ module Optional
       if args.length > 1
         Log.write(2, "FQUIT issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} with message: #{args[1]}")
       else
-        args[1] = "" # Set to empty string since on_quit() does not work with nils as the quit message
+        args[1] = "" # set to empty string since on_quit() does not work with nils as the quit message
         Log.write(2, "FQUIT issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname}")
       end
       quit_mod = Mod.find("QUIT")
-      unless quit_mod == nil
+      if quit_mod == nil
+        Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: FQUIT requires QUIT module, but it is not loaded.")
+        Log.write(3, "FQUIT requires QUIT module, but it is not loaded.")
+      else
         quit_mod.on_quit(target_user, args[1])
       end
     end

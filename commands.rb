@@ -100,7 +100,7 @@ class Command
   # MODLOAD
   # args[0] = module
   def self.handle_modload(user, args)
-    unless user == nil
+    unless user == nil || user == ""
       unless user.is_admin? 
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
@@ -132,6 +132,8 @@ class Command
     rescue Errno::ENOENT, LoadError, NameError, SyntaxError => e
       if user == nil # called during startup for module autoload, so don't send message down the socket
         puts("Failed to load module: #{mod_name} #{e}")
+      elsif user == ""
+        # No action required for attempting to load a dependency
       else
         Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
         Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
@@ -143,13 +145,13 @@ class Command
     else
       mod_exists = Mod.modules[mod_name.to_s.upcase]
       unless mod_exists == nil
-        unless user == nil
+        unless user == nil || user == ""
           Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, "Module already loaded @ #{mod_exists}"))
           return
         end
       end
       Mod.add(new_module)
-      unless user == nil
+      unless user == nil || user == ""
         Network.send(user, Numeric.RPL_LOADEDMODULE(user.nick, mod_name, new_module))
         Server.users.each do |u|
           if u.umodes.include?('s')
@@ -244,11 +246,8 @@ class Command
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
   # Custom commands that may get implemented as modules:
-  # broadcast <message> (administrative command to alert users of anything significant such as an upcoming server outage)
   # fjoin <channel> <nick> (administrative force join)
   # fpart <channel> <nick> (administrative force part)
-  # fnick <current_nick> <new_nick> (administrative force nick change -- also useful for future services and registered nickname protection) - 0.4a
-  # fquit <nick> <quit_message>
   # identify - 0.4a
   # ijoin <channel> (administrative command to join a channel while being invisible to its members)
   # jupe - 0.4a
@@ -293,6 +292,14 @@ class Mod
       @@modules_lock.synchronize { return @@modules[command.upcase] }
     else
       return @@modules[command.upcase]
+    end
+  end
+
+  # Load module if not loaded
+  def self.require_dependency(mod_name)
+    mod = Mod.find(mod_name.upcase)
+    if mod == nil
+      Command.handle_modload("", mod_name.downcase)
     end
   end
 end

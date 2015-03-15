@@ -35,8 +35,72 @@ module Optional
       @command_name
     end
 
+    # args[0] = nick
+    # args[1] = new nick
     def on_fnick(user, args)
-      # ToDo: Add command
+      args = args.join.split(' ', 2)
+      unless user.is_admin?
+        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        return
+      end
+      if args.length < 2
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "FNICK"))
+        return
+      end
+      if args[1].length < 1 || args[1].length > Limits::NICKLEN
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[1], "Nickname does not meet length requirements."))
+        return
+      end
+      unless args[1] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[1], "Nickname contains invalid characters."))
+        return
+      end
+      target_user = Server.get_user_by_nick(args[0])
+      if target_user == nil
+        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        return
+      end
+      if target_user.nick == args[1]
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[1], "Nickname matches new nick."))
+        return
+      end
+      if Server.nick_exists?(args[1]) && args[0].casecmp(args[1]) != 0
+        Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[1]))
+        return
+      end
+      unless Server.qline_mod == nil
+        Server.qline_mod.list_qlines().each do |reserved_nick|
+          if reserved_nick.target.casecmp(args[1]) == 0
+            Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[1], reserved_nick.reason))
+            return
+          end
+        end
+      end
+      if target_user.is_registered?
+        if target_user.get_channels_length() > 0
+          user_channels = target_user.get_channels_array()
+          user_channels.each do |c|
+            chan = Server.channel_map[c.to_s.upcase]
+            chan.users.each do |u|
+              if target_user.nick != u.nick && u.nick.casecmp(args[1]) != 0
+                Network.send(u, ":#{target_user.nick}!#{target_user.ident}@#{target_user.hostname} NICK :#{args[1]}")
+              end
+            end
+          end
+        end
+        Network.send(target_user, ":#{target_user.nick}!#{target_user.ident}@#{target_user.hostname} NICK :#{args[1]}")
+      end
+      whowas_loaded = Command.command_map["WHOWAS"]
+      unless whowas_loaded == nil
+        Server.whowas_mod.add_entry(target_user, ::Time.now.asctime)
+      end
+      target_user.change_nick(args[1])
+      Server.users.each do |u|
+        if u.is_admin? || u.is_operator?
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FNICK for #{args[0]} changing nick to: #{args[1]}")
+        end
+      end
+      Log.write(2, "FNICK issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} changing nick to: #{args[1]}")
     end
   end
 end
