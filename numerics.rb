@@ -494,7 +494,7 @@ class Numeric
 
   # 442
   def self.ERR_NOTONCHANNEL(nick, channel)
-    return sprintf(":%s 442 %s %s :You're not on that channel", Options.server_name, nick, channel)
+    return sprintf(":%s 442 %s %s :Not on that channel", Options.server_name, nick, channel)
   end
 
   # 443

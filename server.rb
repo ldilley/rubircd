@@ -64,29 +64,24 @@ class Server
     @@channel_map = {}
   end
 
-  def self.init_whowas()
-    @@whowas_mod = Mod.find("WHOWAS")
-    #@@whowas_mod = Command::Standard::Whowas.new
-  end
-
   def self.init_kline()
     @@kline_mod = Mod.find("KLINE")
-    #@@kline_mod = Command::Standard::Kline.new
   end
 
   def self.init_qline()
     @@qline_mod = Mod.find("QLINE")
-    #@@qline_mod = Command::Standard::Qline.new
   end
 
   def self.init_vhost()
     @@vhost_mod = Mod.find("VHOST")
-    #@@vhost_mod = Command::Optional::Vhost.new
+  end
+
+  def self.init_whowas()
+    @@whowas_mod = Mod.find("WHOWAS")
   end
 
   def self.init_zline()
     @@zline_mod = Mod.find("ZLINE")
-    #@@zline_mod = Command::Standard::Zline.new
   end
 
   # ToDo: Pass user as an argument and determine if they are invisible, an operator, unknown, etc.
@@ -184,6 +179,15 @@ class Server
     end
   end
 
+  def self.channel_exists?(channel)
+    if Options.io_type.to_s == "thread"
+      @@channels_lock.synchronize { return @@channel_map.include?(channel.upcase) }
+    else
+      return @@channel_map.include?(channel.upcase)
+    end
+    return false
+  end
+
   def self.add_channel(channel)
     if Options.io_type.to_s == "thread"
       @@channels_lock.synchronize { @@channel_map[channel.name.upcase] = channel }
@@ -253,8 +257,8 @@ class Server
     @@channel_map
   end
 
-  def self.whowas_mod
-    @@whowas_mod
+  def self.fjoin_mod
+    @@fjoin_mod
   end
 
   def self.kline_mod
@@ -267,6 +271,10 @@ class Server
 
   def self.vhost_mod
     @@vhost_mod
+  end
+
+  def self.whowas_mod
+    @@whowas_mod
   end
 
   def self.zline_mod

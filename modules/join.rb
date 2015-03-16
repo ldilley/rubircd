@@ -69,7 +69,7 @@ module Standard
           end
           next unless channel == nil
         end
-        unless channel =~ /[#&][A-Za-z0-9_!-]/
+        unless Channel.is_valid_channel_name?(channel)
           Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
           unless keys.nil?
             if keys.length > key_index

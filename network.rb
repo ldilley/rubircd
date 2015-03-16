@@ -517,6 +517,14 @@ class Network
     unless motd_cmd == nil
       motd_cmd.call(user, "")
     end
+    fjoin_cmd = Command.command_map["FJOIN"]
+    unless fjoin_cmd == nil
+      unless Options.auto_join == nil
+        arg_array = []
+        arg_array[0] = "#{user.nick} #{Options.auto_join}"
+        fjoin_cmd.call(Options.server_name, arg_array)
+      end
+    end
   end
 
   def self.main_loop(user)

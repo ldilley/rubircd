@@ -30,6 +30,7 @@ class Options
   @@listen_port = nil
   @@ssl_port = nil
   @@max_clones = nil
+  @@auto_join = nil
   @@cloak_host = nil
   @@debug_mode = nil
 
@@ -60,6 +61,7 @@ class Options
     @@cloak_host = options_file["cloak_host"]
     @@auto_cloak = options_file["auto_cloak"]
     @@auto_invisible = options_file["auto_invisible"]
+    @@auto_join = options_file["auto_join"]
     @@control_hash = options_file["control_hash"]
     @@server_hash = options_file["server_hash"]
 
@@ -216,6 +218,13 @@ class Options
       exit!
     end
 
+    if @@auto_join != nil && !Channel.is_valid_channel_name?(@@auto_join)
+      error_text = "\nauto_join value is not a valid channel name."
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts(error_text)
+      exit!
+    end
+
     if @@io_type.to_s == "em"
       error_text = "\nio_type \"em\" is not fully implemented yet!"
       return Exception.new(error_text.lstrip) if called_from_rehash
@@ -299,6 +308,10 @@ class Options
 
   def self.auto_invisible
     return @@auto_invisible
+  end
+
+  def self.auto_join
+    return @@auto_join
   end
 
   def self.io_type

@@ -54,7 +54,7 @@ module Standard
       channels = args[0].split(',')
       channels.each do |channel|
         user_on_channel = false
-        if channel =~ /[#&+][A-Za-z0-9_!-]/
+        if Channel.is_valid_channel_name?(channel)
           user_channels = user.get_channels_array()
           user_channels.each do |c|
             if c.casecmp(channel) == 0

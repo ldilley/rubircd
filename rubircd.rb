@@ -90,10 +90,6 @@ Log.write(2, "Server statistics initialized.")
 print("Loading modules... ")
 Modules.parse(false)
 # The modules below need to be initialized in the server class before the network starts
-whowas_loaded = Command.command_map["WHOWAS"]
-unless whowas_loaded == nil
-  Server.init_whowas()
-end
 # ToDo: Add G-line mod check here
 kline_loaded = Command.command_map["KLINE"]
 unless kline_loaded == nil
@@ -106,6 +102,10 @@ end
 vhost_loaded = Command.command_map["VHOST"]
 unless vhost_loaded == nil
   Server.init_vhost()
+end
+whowas_loaded = Command.command_map["WHOWAS"]
+unless whowas_loaded == nil
+  Server.init_whowas()
 end
 zline_loaded = Command.command_map["ZLINE"]
 unless zline_loaded == nil

@@ -37,18 +37,23 @@ module Standard
 
     # args[0] = channel
     def on_names(user, args)
+      if args.is_a?(String)
+        args = args
+      else
+        args = args[0]
+      end
       if args.length < 1
         Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
         return
       end
       userlist = []
-      channel = Server.channel_map[args[0].to_s.upcase]
+      channel = Server.channel_map[args.to_s.upcase]
       unless channel == nil
         channel.users.each { |u| userlist << u.get_prefixes(channel.name) + u.nick }
       end
       userlist = userlist[0..-1].join(" ")
-      Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args[0], userlist))
-      Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args[0]))
+      Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args, userlist))
+      Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args))
     end
   end
 end
