@@ -55,6 +55,13 @@ auto_cloak: false
 # for other users.
 auto_invisible: false
 
+# Automatically join users to a channel after they connect to the
+# network. This feature requires that the FJOIN module be loaded.
+# The value must be quoted since '#' would otherwise be interpreted
+# as a comment.
+# Leave blank or comment out to disable auto joining.
+auto_join: "#rubircd"
+
 # Network I/O type
 # Possible values are:
 # em - EventMachine epoll or kqueue (requires the eventmachine gem)

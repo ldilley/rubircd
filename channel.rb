@@ -94,6 +94,11 @@ class Channel
     @limit = limit
   end
 
+  def self.is_valid_channel_name?(channel)
+    return true if channel =~ /^[#&][A-Za-z0-9_!-]*$/
+    return false
+  end
+
   def add_ban(creator, mask, reason)
     if Options.io_type.to_s == "thread"
       @bans_lock.synchronize do

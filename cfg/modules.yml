@@ -50,9 +50,9 @@ modules:
 
 # The modules below are optional
   - broadcast # adds the ability to broadcast messages to all connected clients
-# - fjoin     # forces channel joins
+  - fjoin     # forces channel joins
   - fnick     # forces nick changes (needed if using integrated services for enforcement of nicknames)
-# - fpart     # forces parting from a channel
+  - fpart     # forces parting from a channel
   - fquit     # forces quit
   - memory    # memory statistics/garbage collection
   - vhost     # virtual host support

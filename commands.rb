@@ -133,7 +133,7 @@ class Command
       if user == nil # called during startup for module autoload, so don't send message down the socket
         puts("Failed to load module: #{mod_name} #{e}")
       elsif user == ""
-        # No action required for attempting to load a dependency
+        # No action required for attempting to load a dependency or performing an ad hoc load
       else
         Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
         Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
@@ -246,8 +246,6 @@ class Command
   # CAPAB, SERVER, PASS, BURST, SJOIN, SMODE? are required for server-to-server linking and data propagation
 
   # Custom commands that may get implemented as modules:
-  # fjoin <channel> <nick> (administrative force join)
-  # fpart <channel> <nick> (administrative force part)
   # identify - 0.4a
   # ijoin <channel> (administrative command to join a channel while being invisible to its members)
   # jupe - 0.4a

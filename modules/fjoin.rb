@@ -35,8 +35,65 @@ module Optional
       @command_name
     end
 
+    # args[0] = nick
+    # args[1] = channel
     def on_fjoin(user, args)
-      # ToDo: Add command
+      args = args.join.split(' ', 2)
+      unless user == Options.server_name || user.is_admin?
+        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        return
+      end
+      if args.length < 2 && user != Options.server_name
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "FJOIN"))
+        return
+      end
+      if user != Options.server_name && !Channel.is_valid_channel_name?(args[1])
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[1]))
+        return
+      end
+      target_user = Server.get_user_by_nick(args[0])
+      if target_user == nil && user != Options.server_name
+        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        return
+      end
+      if user != Options.server_name && target_user.is_on_channel?(args[1])
+        Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, target_user.nick, args[1]))
+        return
+      end
+      if user != Options.server_name && target_user.get_channels_length() >= Limits::MAXCHANNELS
+        Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, args[1]))
+        return
+      end
+      channel_existed = false
+      chan = Server.channel_map[args[1].to_s.upcase]
+      if chan == nil
+        channel_object = Channel.new(args[1], target_user.nick)
+        Server.add_channel(channel_object)
+        chan = Server.channel_map[args[1].to_s.upcase]
+        target_user.add_channel(args[1])
+        target_user.add_channel_mode(args[1], 'o')
+      else
+        channel_existed = true
+        target_user.add_channel(args[1])
+      end
+      chan.add_user(target_user)
+      chan.users.each { |u| Network.send(u, ":#{target_user.nick}!#{target_user.ident}@#{target_user.hostname} JOIN :#{args[1]}") }
+      unless channel_existed
+        # ToDo: Make user chanop if they are the first user on the channel and channel is not +r
+        Network.send(target_user, ":#{Options.server_name} MODE #{args[1]} +nt")
+      end
+      names_cmd = Command.command_map["NAMES"]
+      unless names_cmd == nil
+        names_cmd.call(target_user, args[1])
+      end
+      unless user == Options.server_name
+        Server.users.each do |u|
+          if u.is_admin? || u.is_operator?
+            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FJOIN for #{args[0]} joining to: #{args[1]}")
+          end
+        end
+        Log.write(2, "FJOIN issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} joining to: #{args[1]}")
+      end
     end
   end
 end
