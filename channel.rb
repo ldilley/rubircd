@@ -60,6 +60,7 @@ class Channel
   @topic_author
   @topic_time
   @users
+  @invisible_users
   @url
   @founder
   @registered
@@ -75,6 +76,7 @@ class Channel
     @modes.push('t')
     @topic = ""
     @users = Array.new
+    @invisible_users = Array.new # Users who IJOIN
     @founder = founder
     @registered = false
     @create_timestamp = Time.now.to_i
@@ -216,6 +218,21 @@ class Channel
     return false
   end
 
+  def invisible_nick_in_channel?(nick)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize do
+        @invisible_users.each do |iu|
+          return true if iu.nick.casecmp(nick) == 0
+        end
+      end
+    else
+      @invisible_users.each do |iu|
+        return true if iu.nick.casecmp(nick) == 0
+      end
+    end
+    return false
+  end
+
   def add_user(user)
     if Options.io_type.to_s == "thread"
       @users_lock.synchronize do
@@ -236,12 +253,32 @@ class Channel
     end
   end
 
+  def add_invisible_user(user)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize { @invisible_users << user }
+    else
+      @invisible_users << user
+    end
+  end
+
+  def remove_invisible_user(user)
+    if Options.io_type.to_s == "thread"
+      @users_lock.synchronize { @invisible_users.delete(user) }
+    else
+      @invisible_users.delete(user)
+    end
+  end
+
   def bans
     @bans
   end
 
   def users
     @users
+  end
+
+  def invisible_users
+    @invisible_users
   end
 
   def modes

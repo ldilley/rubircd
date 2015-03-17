@@ -62,11 +62,25 @@ module Standard
               chan = Server.channel_map[channel.to_s.upcase]
               unless chan == nil
                 if args[1] == nil
-                  chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}") }
+                  chan.users.each do |u|
+                    # Omit PART by invisible administrators for anyone not an administrator
+                    if chan.invisible_nick_in_channel?(user.nick) && u.is_admin?
+                      Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")
+                    elsif !chan.invisible_nick_in_channel?(user.nick)
+                      Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")                      
+                    end
+                  end
                 else
-                  chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}") }
+                  chan.users.each do |u|
+                    if chan.invisible_nick_in_channel?(user.nick) && u.is_admin?
+                      Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}")
+                    elsif !chan.invisible_nick_in_channel?(user.nick)
+                      Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}")
+                    end
+                  end
                 end
                 chan.remove_user(user)
+                chan.remove_invisible_user(user)
                 if chan.users.length < 1
                   Server.remove_channel(channel.upcase)
                 end

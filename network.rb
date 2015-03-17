@@ -286,14 +286,23 @@ class Network
           chan = Server.channel_map[c.to_s.upcase]
           if chan != nil
             chan.users.each do |u|
+              # Do not broadcast QUIT for invisible administrators in a channel who disconnect.
+              # Only do this for other administrators
+              user_is_invisible = chan.invisible_nick_in_channel?(u.nick)
+              if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false && user_is_invisible && u.is_admin?
+                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
+              end
               # Checking if user and 'u' are nil below prevent a "SystemStackError: stack level too deep" exception.
               # However, this may need to be fixed since stale nicks may hang around in channels when no client is actually connected.
               # So, FixMe: Figure out why user and/or 'u' objects become nil in the first place and prevent this from happening.
-              if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false
-                Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
+              unless user_is_invisible
+                if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false
+                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
+                end
               end
             end
             chan.remove_user(user)
+            chan.remove_invisible_user(user)
             unless chan.modes.include?('r') || chan.users.length > 0
               Server.remove_channel(chan.name.upcase)
             end

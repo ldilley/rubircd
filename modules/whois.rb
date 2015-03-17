@@ -52,6 +52,7 @@ module Standard
             u_channels.each do |c|
               chan = Server.channel_map[c.upcase]
               unless chan == nil
+                next if !user.is_admin? && chan.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
                 # Hide private/secret channel from output unless user is a member of the target's channel
                 if chan.modes.include?('p') || chan.modes.include?('s')
                   user_channels = user.get_channels_array()

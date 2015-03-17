@@ -133,8 +133,18 @@ module Standard
           end
         end
         chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{channel}") }
+        # There is only one non-invisible user in the channel, so give them chanop
+        if chan.users.length - chan.invisible_users.length == 1
+          user.add_channel_mode(channel, 'o')
+          # Hack to update user list to make new user appear as a chanop for the invisible admins
+          chan.invisible_users.each { |iu| Network.send(iu, ":#{Options.server_name} MODE #{channel} +o #{user.nick}") }
+        end
         unless channel_existed
           # ToDo: Make user chanop if they are the first user on the channel and channel is not +r
+          Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
+        end
+        if channel_existed && chan.users.length - chan.invisible_users.length == 1
+          # There is only one non-invisible user in the channel, so reset default modes to make them think the channel is being created
           Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
         end
         names_cmd = Command.command_map["NAMES"]
