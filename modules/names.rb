@@ -49,7 +49,10 @@ module Standard
       userlist = []
       channel = Server.channel_map[args.to_s.upcase]
       unless channel == nil
-        channel.users.each { |u| userlist << u.get_prefixes(channel.name) + u.nick }
+        channel.users.each do |u|
+          next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
+          userlist << u.get_prefixes(channel.name) + u.nick
+        end
       end
       userlist = userlist[0..-1].join(" ")
       Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args, userlist))

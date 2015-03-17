@@ -257,10 +257,6 @@ class Server
     @@channel_map
   end
 
-  def self.fjoin_mod
-    @@fjoin_mod
-  end
-
   def self.kline_mod
     @@kline_mod
   end

@@ -54,6 +54,7 @@ modules:
   - fnick     # forces nick changes (needed if using integrated services for enforcement of nicknames)
   - fpart     # forces parting from a channel
   - fquit     # forces quit
+  - ijoin     # invisible join
   - memory    # memory statistics/garbage collection
   - vhost     # virtual host support
 # - example   # example module

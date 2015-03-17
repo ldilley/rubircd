@@ -247,7 +247,6 @@ class Command
 
   # Custom commands that may get implemented as modules:
   # identify - 0.4a
-  # ijoin <channel> (administrative command to join a channel while being invisible to its members)
   # jupe - 0.4a
   # knock
   # rules

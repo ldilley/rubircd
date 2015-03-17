@@ -50,12 +50,17 @@ module Standard
           # ToDo: Also calculate hops once server linking support is added
           if args[1] == 'o'
             channel.users.each do |u|
+              next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
               if u.is_admin? || u.is_operator?
                 Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
               end
             end
           else
-            channel.users.each { |u| Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0)) } # target here is the channel
+            # Target here is the channel
+            channel.users.each do |u|
+              next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
+            end
           end
           Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, args[0]))
           return
@@ -95,6 +100,10 @@ module Standard
               user_channels.each do |my_channel|
                 u_channels.each do |c|
                   if c.casecmp(my_channel) == 0
+                    channel = Server.channel_map[c.upcase]
+                    if channel != nil
+                      next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+                    end
                     Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                     same_channel = true
                     break
@@ -111,6 +120,10 @@ module Standard
             user_channels.each do |my_channel|
               u_channels.each do |c|
                 if c.casecmp(my_channel) == 0
+                  channel = Server.channel_map[c.upcase]
+                  if channel != nil
+                    next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+                  end
                   Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
                   same_channel = true
                   break

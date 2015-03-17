@@ -261,8 +261,16 @@ class Numeric
 
   # 322
   # Returning modes is not standard, but more informative (InspIRCd does this)
-  def self.RPL_LIST(nick, channel)
-    return sprintf(":%s 322 %s %s %i :[+%s] %s", Options.server_name, nick, channel.name, channel.users.length, channel.modes.join(""), channel.topic)
+  def self.RPL_LIST(nick, channel, is_admin)
+    if is_admin # show administrators the actual client count
+      return sprintf(":%s 322 %s %s %i :[+%s] %s", Options.server_name, nick, channel.name, channel.users.length, channel.modes.join(""), channel.topic)
+    else        # hide invisible administrators in user count from everyone else and do not list the channel if only invisible administrators occupy it
+      if channel.users.length - channel.invisible_users.length >= 1
+        return sprintf(":%s 322 %s %s %i :[+%s] %s", Options.server_name, nick, channel.name, channel.users.length - channel.invisible_users.length, channel.modes.join(""), channel.topic)
+      else
+        return nil
+      end
+    end
   end
 
   # 323

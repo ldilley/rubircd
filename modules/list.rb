@@ -46,8 +46,11 @@ module Standard
           unless chan == nil
             if chan.modes.include?('s') && user.is_on_channel?(chan.name) == false # do not list secret channels unless user is a member
               next unless chan == nil
+            elsif user.is_admin?
+              Network.send(user, Numeric.RPL_LIST(user.nick, chan, true))
             else
-              Network.send(user, Numeric.RPL_LIST(user.nick, chan))
+              numeric_output = Numeric.RPL_LIST(user.nick, chan, false) # need to check for nils before sending
+              Network.send(user, numeric_output) unless numeric_out == nil
             end
           end
         end
@@ -55,8 +58,11 @@ module Standard
         Server.channel_map.values.each do |c|
           if c.modes.include?('s') && user.is_on_channel?(c.name) == false # do not list secret channels unless user is a member
             next unless c == nil
+          elsif user.is_admin?
+            Network.send(user, Numeric.RPL_LIST(user.nick, c, true))
           else
-            Network.send(user, Numeric.RPL_LIST(user.nick, c))
+            numeric_output = Numeric.RPL_LIST(user.nick, c, false) # need to check for nils before sending
+            Network.send(user, numeric_output) unless numeric_output == nil
           end
         end
       end
