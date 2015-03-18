@@ -18,11 +18,12 @@
 
 # Check Ruby version
 if RUBY_VERSION < '1.9'
-  puts('RubIRCd requires Ruby >=1.9!')
+  puts 'RubIRCd requires Ruby >=1.9!'
   exit!
 end
 
 # Local class requirements
+require_relative 'cell'
 require_relative 'channel'
 require_relative 'eventmach'
 require_relative 'log'
@@ -35,53 +36,52 @@ require_relative 'user'
 $LOAD_PATH << Dir.pwd
 
 # Print version and initialize logging
-puts(Server::VERSION)
-print('Initializing logging... ')
+puts Server::VERSION
+print 'Initializing logging... '
 Log.write(2, 'Initializing logging...')
-puts('done.')
+puts 'done.'
 Log.write(2, 'Logging initialized.')
 
 # Parse configuration
-print('Parsing options file... ')
+print 'Parsing options file... '
 Options.parse(false)
-puts('done.')
+puts 'done.'
 Log.write(2, 'Options loaded.')
-EventMach.check_for_em if Options.io_type.to_s == 'em'
 Opers.parse(false)
 Thread.abort_on_exception = true if Options.debug_mode.to_s == 'true'
 if !Options.listen_host.nil? && !Options.ssl_port.nil?
-  puts("Server name: #{Options.server_name}\nAddress: #{Options.listen_host}  \
-       \nTCP port: #{Options.listen_port}\nSSL port: #{Options.ssl_port}")
+  puts "Server name: #{Options.server_name}\nAddress: #{Options.listen_host}  \
+       \nTCP port: #{Options.listen_port}\nSSL port: #{Options.ssl_port}"
 elsif !Options.listen_host.nil? && Options.ssl_port.nil?
-  puts("Server name: #{Options.server_name}\nAddress: #{Options.listen_host}  \
-       \nTCP port: #{Options.listen_port}")
+  puts "Server name: #{Options.server_name}\nAddress: #{Options.listen_host}  \
+       \nTCP port: #{Options.listen_port}"
 elsif Options.listen_host.nil? && !Options.ssl_port.nil?
-  puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port} \
-       \nSSL port: #{Options.ssl_port}")
+  puts "Server name: #{Options.server_name}\nTCP port: #{Options.listen_port} \
+       \nSSL port: #{Options.ssl_port}"
 else
-  puts("Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}")
+  puts "Server name: #{Options.server_name}\nTCP port: #{Options.listen_port}"
 end
-print('Reading MotD... ')
+print 'Reading MotD... '
 Server.read_motd(false)
-puts('done.')
+puts 'done.'
 Log.write(2, 'MotD loaded.')
 
 # Load module handler methods
-print('Registering commands... ')
+print 'Registering commands... '
 Command.register_commands
 Command.init_counters
-puts('done.')
+puts 'done.'
 Log.write(2, 'Commands registered.')
 if Options.io_type.to_s == 'thread'
-  print('Initializing mutexes... ')
+  print 'Initializing mutexes... '
   Mod.init_locks
   Server.init_locks
-  puts('done.')
+  puts 'done.'
   Log.write(2, 'Mutexes initialized.')
 end
 
 # Initialize server variables
-print('Initializing server statistics... ')
+print 'Initializing server statistics... '
 Server.init_chanmap
 Server.channel_count = 0
 Server.friendly_start_date = Time.now.asctime
@@ -93,11 +93,11 @@ Server.invisible_count = 0
 # FIXME: Calculate global_users and max count later
 Server.global_users = 0
 Server.global_users_max = 0
-puts('done.')
+puts 'done.'
 Log.write(2, 'Server statistics initialized.')
 
 # Load modules
-print('Loading modules... ')
+print 'Loading modules... '
 Modules.parse(false)
 # The modules below need to be initialized in the server class before the
 # network starts.
@@ -112,14 +112,14 @@ whowas_loaded = Command.command_map['WHOWAS']
 Server.init_whowas unless whowas_loaded.nil?
 zline_loaded = Command.command_map['ZLINE']
 Server.init_zline unless zline_loaded.nil?
-puts('done.')
+puts 'done.'
 Log.write(2, 'Modules loaded.')
 
 # Daemonize or run in foreground if using JRuby
-puts('Going into daemon mode and waiting for incoming connections... ')
+puts 'Going into daemon mode and waiting for incoming connections... '
 Log.write(2, 'Going into daemon mode and waiting for incoming connections... ')
 if RUBY_PLATFORM == 'java' && ARGV[0] != '-f'
-  puts('You are using JRuby which does not support fork!')
+  puts 'You are using JRuby which does not support fork!'
 elsif ARGV[0] != '-f'
   exit if fork
   Process.setsid
@@ -140,7 +140,9 @@ elsif ARGV[0] != '-f'
 end
 
 # Start the network
-if Options.io_type.to_s == 'em'
+if Options.io_type.to_s == 'cell'
+  Cell.start
+elsif Options.io_type.to_s == 'em'
   EventMach.start
 else
   Network.start

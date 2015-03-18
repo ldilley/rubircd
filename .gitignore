@@ -1,4 +1,6 @@
 *.class
+*.crt
+*.key
 *.log
 *.out
 *.pem

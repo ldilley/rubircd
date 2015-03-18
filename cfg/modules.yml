@@ -56,5 +56,6 @@ modules:
   - fquit     # forces quit
   - ijoin     # invisible join
   - memory    # memory statistics/garbage collection
+  - userip    # like USERHOST, but returns IP address instead of hostname
   - vhost     # virtual host support
 # - example   # example module
