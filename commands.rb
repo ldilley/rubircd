@@ -252,7 +252,6 @@ class Command
   # rules
   # shun
   # silence
-  # userip
   # watch
 
   def self.command_map

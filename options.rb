@@ -232,13 +232,6 @@ class Options
       exit!
     end
 
-    if @@io_type.to_s == "cell"
-      error_text = "\nio_type \"cell\" is not fully implemented yet!"
-      return Exception.new(error_text.lstrip) if called_from_rehash
-      puts(error_text)
-      exit!
-    end
-
     if @@io_type.to_s != "em" && @@io_type.to_s != "cell" && @@io_type.to_s != "event" && @@io_type.to_s != "thread"
       error_text = "\nio_type value should be set to either em, cell, event, or thread."
       return Exception.new(error_text.lstrip) if called_from_rehash

@@ -76,7 +76,7 @@ class Channel
     @modes.push('t')
     @topic = ""
     @users = Array.new
-    @invisible_users = Array.new # Users who IJOIN
+    @invisible_users = Array.new # users who IJOIN
     @founder = founder
     @registered = false
     @create_timestamp = Time.now.to_i

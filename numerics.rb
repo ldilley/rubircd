@@ -174,6 +174,7 @@ class Numeric
   end
 
   # 302
+  # Also used for USERIP module if loaded
   def self.RPL_USERHOST(nick, userhost_list)
     return sprintf(":%s 302 %s :%s", Options.server_name, nick, userhost_list.join(" "))
   end
