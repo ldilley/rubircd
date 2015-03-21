@@ -30,6 +30,8 @@ end
 class Channel
   MODE_ADMIN = 'a'      # server administrator
   FLAG_ADMIN = '&'
+  MODE_OPER = 'z'       # IRC operator
+  FLAG_OPER = '!'
   MODE_CHANOP = 'o'     # channel operator
   FLAG_CHANOP = '@'
   MODE_HALFOP = 'h'     # half operator
@@ -48,9 +50,9 @@ class Channel
   MODE_REGISTERED = 'r' # channel is registered
   MODE_SECRET = 's'     # will not show up in LIST or WHOIS output
   MODE_TOPIC = 't'      # only channel operators can change topic
-  CHANNEL_MODES = "abfhiklmnoprstv"
+  CHANNEL_MODES = "abfhiklmnoprstvz"
   ISUPPORT_CHANNEL_MODES = "b,k,l,imnprst" # comma-separated modes that accept arguments -- needed for numeric 005 (RPL_ISUPPORT)
-  ISUPPORT_PREFIX = "(afhov)&~%@+"
+  ISUPPORT_PREFIX = "(azfohv)&!~@%+"
   @bans
   @name
   @key
@@ -97,7 +99,7 @@ class Channel
   end
 
   def self.is_valid_channel_name?(channel)
-    return true if channel =~ /^[#&][A-Za-z0-9_!-]*$/
+    return true if channel =~ /^[#][A-Za-z0-9_!-]*$/
     return false
   end
 

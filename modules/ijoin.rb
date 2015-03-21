@@ -70,6 +70,8 @@ module Optional
         channel_existed = true
         user.add_channel(args[0])
       end
+      user.add_channel_mode(channel, 'a') if user.is_admin?
+      user.add_channel_mode(channel, 'z') if user.is_operator?
       chan.add_user(user)
       chan.add_invisible_user(user)
       # Only show IJOIN to other administrators in the channel

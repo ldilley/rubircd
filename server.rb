@@ -29,7 +29,7 @@ class Server
   MODE_VERBOSE = 'v'        # can see client connect/quit messages
   MODE_WALLOPS = 'w'        # can receive oper wall messages
   USER_MODES = "abiorsvwx"
-  STATUS_PREFIXES = "~&@+"
+  STATUS_PREFIXES = "&!~@%+"
   @@client_count = 0
   @@visible_count = 0
   @@invisible_count = 0

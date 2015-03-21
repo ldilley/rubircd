@@ -120,7 +120,7 @@ module Standard
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, target))
           return
         end
-        unless user.is_chanop?(channel.name)
+        unless user.is_chanop?(channel.name) || user.is_admin?
           Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, channel.name))
           return
         end

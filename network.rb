@@ -27,9 +27,14 @@ require_relative 'utility'
 
 class Network
   @@ipv6_enabled = false
+  @@listen_address = nil
 
   def self.ipv6_enabled
-    return @@ipv6_enabled
+    @@ipv6_enabled
+  end
+
+  def self.listen_address
+    @@listen_address
   end
 
   def self.start()
@@ -65,8 +70,10 @@ class Network
       begin
         if Options.listen_host != nil
           base_server = TCPServer.open(Options.listen_host, Options.ssl_port)
+          *_, @@listen_address = base_server.addr
         else
           base_server = TCPServer.open(Options.ssl_port)
+          *_, @@listen_address = base_server.addr
         end
         ssl_context = OpenSSL::SSL::SSLContext.new
         ssl_context.cert = OpenSSL::X509::Certificate.new(File.read("cfg/cert.pem"))
@@ -516,6 +523,10 @@ class Network
     Network.send(user, Numeric.RPL_MYINFO(user.nick))
     Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
     Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
+    # If WALLCHOPS/WALLVOICES module not loaded, don't bother sending a third ISUPPORT
+    unless Mod.find("WALLCHOPS").nil? && Mod.find("WALLVOICES").nil?
+      Network.send(user, Numeric.RPL_ISUPPORT3(user.nick, Options.server_name))
+    end
     Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
     Network.send(user, Numeric.RPL_LUSEROP(user.nick))
     Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))

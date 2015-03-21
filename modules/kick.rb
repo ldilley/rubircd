@@ -49,12 +49,9 @@ module Standard
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
-      user_channels = user.get_channels_array()
-      user_channels.each do |c|
-        unless c.casecmp(chan.name) == 0
-          Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
-          return
-        end
+      unless user.is_on_channel?(chan.name)
+        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+        return
       end
       if !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
         Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))

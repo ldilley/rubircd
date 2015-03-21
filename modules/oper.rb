@@ -72,6 +72,7 @@ module Standard
                 end
               end
               Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Server Administrator.")
+              update_channel_prefix(user, 'a')
               return
             end
             hostmask = admin.host.to_s.gsub('\*', '.*?')
@@ -85,6 +86,7 @@ module Standard
                 end
               end
               Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Server Administrator.")
+              update_channel_prefix(user, 'a')
               return
             else
               Server.users.each do |u|
@@ -120,6 +122,7 @@ module Standard
                 end
               end
               Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
+              update_channel_prefix(user, 'z')
               return
             end
             hostmask = oper.host.to_s.gsub('\*', '.*?')
@@ -133,6 +136,7 @@ module Standard
                 end
               end
               Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
+              update_channel_prefix(user, 'z')
               return
             else
               Server.users.each do |u|
@@ -153,6 +157,18 @@ module Standard
             Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
             Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
           end
+        end
+      end
+    end
+
+    def update_channel_prefix(user, mode)
+      # Add oper prefix to each channel the user is in
+      user_channels = user.get_channels_array()
+      user_channels.each do |channel|
+        user.add_channel_mode(channel, mode)
+        chan = Server.channel_map[channel.to_s.upcase]
+        unless chan.nil?
+          chan.users.each { |cu| Network.send(cu, ":#{Options.server_name} MODE #{channel} +#{mode} #{user.nick}") }
         end
       end
     end

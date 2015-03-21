@@ -47,19 +47,37 @@ class Numeric
   # Need to break ISUPPORT up to possibly avoid hitting the message length ceiling
   # 005.1
   def self.RPL_ISUPPORT1(nick, server)
-    return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s CHANTYPES=#& CHARSET=ascii KICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
-                   server, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
+    unless Mod.find("FNICK").nil?
+      fnc = "FNC " # forced nick changes
+    end
+    return sprintf(":%s 005 %s AWAYLEN=%i CASEMAPPING=rfc1459 CHANMODES=%s CHANTYPES=# CHARSET=ascii %sKICKLEN=%i MAXBANS=%i MAXCHANNELS=%i :are supported by this server",
+                   server, nick, Limits::AWAYLEN, Channel::ISUPPORT_CHANNEL_MODES, fnc, Limits::KICKLEN, Limits::MAXBANS, Limits::MAXCHANNELS)
   end
   # 005.2
   def self.RPL_ISUPPORT2(nick, server)
-    if Options.ssl_port != nil
-      return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s SSL=%s:%i STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
-                     Limits::MAXTARGETS, Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Options.server_name, Options.ssl_port, 
-                     Server::STATUS_PREFIXES, Limits::TOPICLEN)
-    else
-      return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s NETWORK=%s NICKLEN=%i PREFIX=%s STATUSMSG=%s TOPICLEN=%i :are supported by this server", server, nick,
-                     Limits::MAXTARGETS, Limits::MODES, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, Server::STATUS_PREFIXES, Limits::TOPICLEN)
+    unless Options.ssl_port.nil?
+      ssl_info = "SSL=#{Network.listen_address}:#{Options.ssl_port} "
     end
+    unless Mod.find("PROTOCTL").nil?
+      namesx = "NAMESX "
+      uhnames = " UHNAMES"
+    end
+    unless Mod.find("USERIP").nil?
+      userip = " USERIP"
+    end
+    return sprintf(":%s 005 %s MAXTARGETS=%s MODES=%s %sNETWORK=%s NICKLEN=%i OPERLOG PREFIX=%s %sSTARTTLS STATUSMSG=%s TOPICLEN=%i%s%s :are supported by this server",
+                   server, nick, Limits::MAXTARGETS, Limits::MODES, namesx, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, ssl_info, Server::STATUS_PREFIXES,
+                   Limits::TOPICLEN, uhnames, userip)
+  end
+  # 005.3
+  def self.RPL_ISUPPORT3(nick, server)
+    unless Mod.find("WALLCHOPS").nil?
+      wallchops = " WALLCHOPS"
+    end
+    unless Mod.find("WALLVOICES").nil?
+      wallvoices = " WALLVOICES"
+    end
+    return sprintf(":%s 005 %s%s%s :are supported by this server", server, nick, wallchops, wallvoices)
   end
 
   # 211
