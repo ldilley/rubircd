@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,15 @@ module Standard
       unless channel == nil
         channel.users.each do |u|
           next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
-          userlist << u.get_prefixes(channel.name) + u.nick
+          if user.capabilities[:namesx] && user.capabilities[:uhnames] # NAMESX and UHNAMES/userhost-in-names extensions
+            userlist << u.get_prefixes(channel.name) + "#{u.nick}!#{user.ident}@#{user.hostname}"
+          elsif user.capabilities[:namesx] && !user.capabilities[:uhnames]
+            userlist << u.get_prefixes(channel.name) + u.nick
+          elsif !user.capabilities[:namesx] && user.capabilities[:uhnames]
+            userlist << u.get_highest_prefix(channel.name) + "#{u.nick}!#{user.ident}@#{user.hostname}"
+          else
+            userlist << u.get_highest_prefix(channel.name) + u.nick
+          end
         end
       end
       userlist = userlist[0..-1].join(" ")

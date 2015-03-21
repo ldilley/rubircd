@@ -124,6 +124,8 @@ module Standard
         else
           user.add_channel(channel)
         end
+        user.add_channel_mode(channel, 'a') if user.is_admin?
+        user.add_channel_mode(channel, 'z') if user.is_operator?
         chan.add_user(user)
         if user.invites.length > 0
           user.invites.each do |channel_invite|

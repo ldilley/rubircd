@@ -57,7 +57,7 @@ module Standard
           Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, target))
           next unless target == nil
         end
-        if target =~ /[#&+][A-Za-z0-9_!-]/
+        if Channel.is_valid_channel_name?(target)
           channel = Server.channel_map[target.to_s.upcase]
           unless channel == nil
             good_targets += 1

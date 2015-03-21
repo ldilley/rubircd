@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@ class User
     @nick = nick
     @ident = ident
     @hostname = hostname
-    @virtual_hostname = nil       # this field is also used for hostname cloaking (umode +x)
+    @virtual_hostname = nil         # this field is also used for hostname cloaking (umode +x)
     @server = Options.server_name
     @ip_address = ip_address
     @gecos = gecos
@@ -32,8 +32,13 @@ class User
     @service = false
     @nick_registered = false
     @negotiating_cap = false
+    @capabilities = {}
+    @capabilities[:multiprefix] = false # same as NAMESX, but also applies to WHO output
+    @capabilities[:namesx] = false      # multiple prefixes in NAMES output
+    @capabilities[:uhnames] = false     # userhost-in-names PROTOCTL equivalent
+    @capabilities[:tls] = false         # STARTTLS
     @away_message = ""
-    @away_since = nil              # gets set to current time when calling AWAY
+    @away_since = nil                   # gets set to current time when calling AWAY
     @socket = socket
     @thread = thread
     @umodes = Array.new
@@ -41,14 +46,14 @@ class User
     @channels = Hash.new
     @session_capabilities = Array.new
     @signon_time = Time.now.to_i
-    @last_activity = Time.now.to_i # used to determine whether the client should be pinged
+    @last_activity = Time.now.to_i  # used to determine whether the client should be pinged
     @last_ping = Time.now.to_i
-    @data_recv = 0                 # amount of data client has received from us in bytes
-    @data_sent = 0                 # amount of data client has sent to us in bytes
+    @data_recv = 0                  # amount of data client has received from us in bytes
+    @data_sent = 0                  # amount of data client has sent to us in bytes
     if Options.io_type.to_s == "thread"
       # Only create locks for items that can change (ident should not for example)
       @nick_lock = Mutex.new
-      @hostname_lock = Mutex.new # for vhost support
+      @hostname_lock = Mutex.new    # for vhost support
       @away_lock = Mutex.new
       @umodes_lock = Mutex.new
       @invites_lock = Mutex.new
@@ -394,15 +399,40 @@ class User
     return false
   end
 
+  def get_highest_prefix(channel)
+    @channels.each_key do |c|
+      if c.casecmp(channel) == 0
+        if @channels[c].include?('a')
+          return '&'
+        elsif @channels[c].include?('z')
+          return '!'
+        elsif @channels[c].include?('f')
+          return '~'
+        elsif @channels[c].include?('o')
+          return '@'
+        elsif @channels[c].include?('h')
+          return '%'
+        elsif @channels[c].include?('v')
+          return '+'
+        else
+          return ''
+        end
+      end
+    end
+  end
+
   def get_prefixes(channel)
     prefix_list = []
     @channels.each_key do |c|
       if c.casecmp(channel) == 0
         if @channels[c].include?('a')
-          prefix_list << '~'
+          prefix_list << '&'
+        end
+        if @channels[c].include?('z')
+          prefix_list << '!'
         end
         if @channels[c].include?('f')
-          prefix_list << '&'
+          prefix_list << '~'
         end
         if @channels[c].include?('o')
           prefix_list << '@'
@@ -439,7 +469,7 @@ class User
   end
 
   attr_reader :nick, :ident, :server, :ip_address, :gecos, :thread, :channels, :signon_time
-  attr_accessor :socket, :last_ping, :data_recv, :data_sent, :session_capabilities
+  attr_accessor :capabilities, :socket, :last_ping, :data_recv, :data_sent, :session_capabilities
 end
 
 class Oper
