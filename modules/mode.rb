@@ -39,7 +39,7 @@ module Standard
     # args[1] = mode(s)
     # args[2..-1] = nick, ban mask, limit, and/or key
     def on_mode(user, args)
-      # ToDo: Check if user has chanop, founder, or admin privs before setting channel modes (not implemented for testing purposes at the moment)
+      # TODO: Check if user has chanop, founder, or admin privs before setting channel modes (not implemented for testing purposes at the moment)
       #       Also allow more than one 'b' and/or 'o' mode at once up to Limits::MODES (6) and limit the rest
       #       Add flag prefixes somewhere upon setting the appropriate modes or channel modes for each user
       #       Handle ban additional and removal
@@ -67,17 +67,17 @@ module Standard
     end
 
     def get_modes(modes)
-      modes_to_add = ""
-      modes_to_remove = ""
+      modes_to_add = ''
+      modes_to_remove = ''
       was_add = true
       modes.each_char do |char|
         if char == '+'
           was_add = true
-          next unless char == nil
+          next unless char.nil?
         end
         if char == '-'
           was_add = false
-          next unless char == nil
+          next unless char.nil?
         end
         if was_add
           modes_to_add << char
@@ -91,26 +91,24 @@ module Standard
     def handle_channel_modes(user, args, target, modes_to_add, modes_to_remove, mode_args)
       arg_index = 0
       mode_targets = 0
-      final_add_modes = ""
-      final_remove_modes = ""
+      final_add_modes = ''
+      final_remove_modes = ''
       channel = Server.channel_map[target.to_s.upcase]
-      unless channel == nil
+      if !channel.nil?
         if args.length == 1
-          if channel.limit == nil && channel.key == nil
-            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(""), nil, ""))
-          elsif channel.limit != nil && channel.key == nil
-            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(""), channel.limit, ""))
-          elsif channel.limit == nil && channel.key != nil
-            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(""), nil, channel.key))
+          if channel.limit.nil? && channel.key.nil?
+            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(''), nil, ''))
+          elsif !channel.limit.nil? && channel.key.nil?
+            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(''), channel.limit, ''))
+          elsif channel.limit.nil? && !channel.key.nil?
+            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(''), nil, channel.key))
           else
-            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(""), channel.limit, channel.key))
+            Network.send(user, Numeric.RPL_CHANNELMODEIS(user.nick, channel.name, channel.modes.join(''), channel.limit, channel.key))
           end
           Network.send(user, Numeric.RPL_CREATIONTIME(user.nick, channel))
           return
         end
-        if modes_to_add.length == 0 && modes_to_remove.length == 0
-          return
-        end
+        return if modes_to_add.length == 0 && modes_to_remove.length == 0
         if modes_to_add.length == 1 && modes_to_add == 'b'
           channel.bans.each { |ban| Network.send(user, Numeric.RPL_BANLIST(user.nick, channel.name, ban.creator, ban.create_timestamp)) }
           Network.send(user, Numeric.RPL_ENDOFBANLIST(user.nick, channel.name))
@@ -124,7 +122,7 @@ module Standard
           Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, channel.name))
           return
         end
-        unless modes_to_add == nil
+        unless modes_to_add.nil?
           modes_to_add.each_char do |mode|
             if Channel::CHANNEL_MODES.include?(mode)
               # Allow resetting of channel key or send numeric 467 (ERR_KEYSET)?
@@ -138,7 +136,7 @@ module Standard
             end
           end
         end
-        unless modes_to_remove == nil
+        unless modes_to_remove.nil?
           modes_to_remove.each_char do |mode|
             if Channel::CHANNEL_MODES.include?(mode)
               if mode == 'h' || mode == 'o' || mode == 'v'
@@ -153,15 +151,15 @@ module Standard
         end
         unless final_add_modes.length == 0
           # Remove modes that are given when no arguments to them are provided
-          modelist = ""
+          modelist = ''
           final_add_modes.each_char do |mode|
-            if args[2] == nil && mode =~ /[abfhlkov]/
+            if args[2].nil? && mode =~ /[abfhlkov]/
               final_add_modes.delete(mode)
-              next unless mode == nil
+              next unless mode.nil?
             end
             if modelist.include?(mode) && mode =~ /[filkmnprst]/
               final_add_modes.delete(mode)
-              next unless mode == nil
+              next unless mode.nil?
             end
             modelist << mode
           end
@@ -170,66 +168,54 @@ module Standard
             was_deleted = false
             mode_index = 0
             modelist.each_char do |mode|
-              #if mode == 'b'
-                # ToDo: Handle ban mask in regex
+              # TODO: Handle if mode == 'b' and ban mask in regex
               if mode == 'k'
                 if mode_args[arg_index] =~ /[[:punct:]A-Za-z0-9]/
-                  if channel.modes.include?(mode)
-                    channel.remove_mode(mode)
-                  end
+                  channel.remove_mode(mode) if channel.modes.include?(mode)
                   channel.set_key(mode_args[arg_index])
                 else
                   # Invalid key provided
                   modelist = modelist.delete(mode)
                   mode_args.delete_at(arg_index)
                   was_deleted = true
-                  unless channel.key == nil
-                    channel.set_key(nil)
-                  end
+                  channel.set_key(nil) unless channel.key.nil?
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               elsif mode == 'l'
                 if mode_args[arg_index] =~ /\d/ && mode_args[arg_index].to_i >= 0
-                  if channel.modes.include?(mode)
-                    channel.remove_mode(mode)
-                  end
+                  channel.remove_mode(mode) if channel.modes.include?(mode)
                   channel.set_limit(mode_args[arg_index])
                 else
                   # Invalid limit provided (not an integer)
                   modelist = modelist.delete(mode)
                   mode_args.delete_at(arg_index)
                   was_deleted = true
-                  unless channel.limit == nil
-                    channel.set_limit(nil)
-                  end
+                  channel.set_limit(nil) unless channel.limit.nil?
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
-              elsif mode == 'a' || mode == 'f' || mode == 'r' # ToDo: Allow servers and services to set these later
+                arg_index += 1 unless arg_index >= mode_args.length
+              elsif mode == 'a' || mode == 'f' || mode == 'r' # TODO: Allow servers and services to set these later
                 Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
                 modelist = modelist.delete(mode)
               elsif mode == 'o'
                 nick_exists = false
                 channel.users.each do |u|
-                  if u.nick == mode_args[arg_index]
-                    nick_exists = true
-                    if u.is_chanop?(channel.name)
-                      modelist = modelist.split
-                      modelist = modelist.delete_at(mode_index)
-                      mode_args.delete_at(arg_index)
-                      was_deleted = true
-                    elsif mode_targets >= Limits::MODES
-                      Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
-                      modelist = modelist.delete(mode)
-                      mode_args.delete_at(arg_index)
-                      was_deleted = true
-                    else
-                      u.add_channel_mode(channel.name, 'o')
-                      mode_targets += 1 # only ban/unban, kick, and op/deop have limits
-                    end
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  # Make nick argument match actual nickname if the case differs
+                  mode_args[arg_index] = u.nick
+                  nick_exists = true
+                  if u.is_chanop?(channel.name)
+                    modelist = modelist.split
+                    modelist = modelist.delete_at(mode_index)
+                    mode_args.delete_at(arg_index)
+                    was_deleted = true
+                  elsif mode_targets >= Limits::MODES
+                    Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+                    modelist = modelist.delete(mode)
+                    mode_args.delete_at(arg_index)
+                    was_deleted = true
+                  else
+                    u.add_channel_mode(channel.name, 'o')
+                    mode_targets += 1 # only ban/unban, kick, and op/deop have limits
                   end
                 end
                 unless nick_exists
@@ -238,79 +224,67 @@ module Standard
                   mode_args.delete_at(arg_index)
                   was_deleted = true
                 end
-                if arg_index < mode_args.length && was_deleted == false
-                  arg_index += 1
-                end
+                arg_index += 1 if arg_index < mode_args.length && was_deleted == false
               elsif mode == 'h'
                 nick_exists = false
                 channel.users.each do |u|
                   nick_exists = true
-                  if u.nick == mode_args[arg_index]
-                    if u.is_halfop?(channel.name)
-                      mode_args.delete_at(arg_index)
-                      was_deleted = true
-                      unless arg_index >= mode_args.length
-                        arg_index += 1
-                      end
-                      next unless u == nil
-                    end
-                    u.add_channel_mode(channel.name, 'h')
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  mode_args[arg_index] = u.nick
+                  if u.is_halfop?(channel.name)
+                    mode_args.delete_at(arg_index)
+                    was_deleted = true
+                    arg_index += 1 unless arg_index >= mode_args.length
+                    next unless u.nil?
                   end
+                  u.add_channel_mode(channel.name, 'h')
                 end
                 unless nick_exists
                   modelist = modelist.delete(mode)
                   Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                   mode_args.delete_at(arg_index)
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               elsif mode == 'v'
                 nick_exists = false
                 channel.users.each do |u|
                   nick_exists = true
-                  if u.nick == mode_args[arg_index]
-                    if u.is_voiced?(channel.name)
-                      mode_args.delete_at(arg_index)
-                      was_deleted = true
-                      unless arg_index >= mode_args.length
-                        arg_index += 1
-                      end
-                      next unless u == nil
-                    end
-                    u.add_channel_mode(channel.name, 'v')
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  mode_args[arg_index] = u.nick
+                  if u.is_voiced?(channel.name)
+                    mode_args.delete_at(arg_index)
+                    was_deleted = true
+                    arg_index += 1 unless arg_index >= mode_args.length
+                    next unless u.nil?
                   end
+                  u.add_channel_mode(channel.name, 'v')
                 end
                 unless nick_exists
                   modelist = modelist.delete(mode)
                   Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                   mode_args.delete_at(arg_index)
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               end
             end
           end
           final_add_modes = modelist
-          unless final_add_modes == nil
+          unless final_add_modes.nil?
             final_add_modes.each_char do |mode|
-              unless mode =~ /[abfhov]/
-                channel.add_mode(mode)
-              end
+              channel.add_mode(mode) unless mode =~ /[abfhov]/
             end
           end
         end
         unless final_remove_modes.length == 0
-          modelist = ""
+          modelist = ''
           final_remove_modes.each_char do |mode|
-            if args[2] == nil && mode =~ /[abfhlkov]/
+            if args[2].nil? && mode =~ /[abfhlkov]/
               final_remove_modes.delete(mode)
-              next unless mode == nil
+              next unless mode.nil?
             end
             if modelist.include?(mode) && mode =~ /[filkmnprst]/
               final_remove_modes.delete(mode)
-              next unless mode == nil
+              next unless mode.nil?
             end
             modelist << mode
           end
@@ -319,32 +293,29 @@ module Standard
               if mode == 'o'
                 nick_exists = false
                 channel.users.each do |u|
-                  if u.nick == mode_args[arg_index]
-                    nick_exists = true
-                    if mode_targets >= Limits::MODES
-                      Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
-                      mode_args.delete_at(arg_index)
-                      unless arg_index >= mode_args.length
-                        arg_index += 1
-                      end
-                      next unless u == nil
-                    end
-                    u.remove_channel_mode(channel.name, 'o')
-                    mode_targets += 1 # only ban/unban, kick, and op/deop have limits
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  mode_args[arg_index] = u.nick
+                  nick_exists = true
+                  if mode_targets >= Limits::MODES
+                    Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+                    mode_args.delete_at(arg_index)
+                    arg_index += 1 unless arg_index >= mode_args.length
+                    next unless u.nil?
                   end
+                  u.remove_channel_mode(channel.name, 'o')
+                  mode_targets += 1 # only ban/unban, kick, and op/deop have limits
                 end
                 unless nick_exists
                   modelist = modelist.delete(mode)
                   Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                   mode_args.delete_at(arg_index)
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               elsif mode == 'h'
                 nick_exists = false
                 channel.users.each do |u|
-                  if u.nick == mode_args[arg_index]
+                  if !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                    mode_args[arg_index] = u.nick
                     u.remove_channel_mode(channel.name, 'h')
                     nick_exists = true
                   end
@@ -354,13 +325,12 @@ module Standard
                   Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                   mode_args.delete_at(arg_index)
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               elsif mode == 'v'
                 nick_exists = false
                 channel.users.each do |u|
-                  if u.nick == mode_args[arg_index]
+                  if !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                    mode_args[arg_index] = u.nick
                     u.remove_channel_mode(channel.name, 'v')
                     nick_exists = true
                   end
@@ -370,35 +340,28 @@ module Standard
                   Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, mode_args[arg_index]))
                   mode_args.delete_at(arg_index)
                 end
-                unless arg_index >= mode_args.length
-                  arg_index += 1
-                end
+                arg_index += 1 unless arg_index >= mode_args.length
               end
             end
           end
           final_remove_modes = modelist
           final_remove_modes.each_char do |mode|
-            unless mode =~ /[abfhov]/
-              if mode == 'k'
-                channel.set_key(nil)
-              end
-              if mode == 'l'
-                channel.set_limit(nil)
-              end
-              channel.remove_mode(mode)
-            end
+            next if mode =~ /[abfhov]/
+            channel.set_key(nil) if mode == 'k'
+            channel.set_limit(nil) if mode == 'l'
+            channel.remove_mode(mode)
           end
         end
         channel.users.each do |u|
-          # FixMe: Check if final_add/remove_modes is nil
+          # FIXME: Check if final_add/remove_modes is nil
           if final_add_modes.length == 0 && final_remove_modes.length == 0
             return
           elsif final_add_modes.length > 0 && final_remove_modes.length > 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}-#{final_remove_modes} #{mode_args.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes}-#{final_remove_modes} #{mode_args.join(' ')}")
           elsif final_add_modes.length > 0 && final_remove_modes.length == 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes} #{mode_args.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} +#{final_add_modes} #{mode_args.join(' ')}")
           elsif final_add_modes.length == 0 && final_remove_modes.length > 0
-            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} -#{final_remove_modes} #{mode_args.join(" ")}")
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} MODE #{channel.name} -#{final_remove_modes} #{mode_args.join(' ')}")
           end
         end
       else
@@ -407,31 +370,27 @@ module Standard
       end
     end
 
-    def handle_nick_modes(user, args, modes_to_add, modes_to_remove, mode_args)
-      final_add_modes = ""
-      final_remove_modes = ""
-      if args[0] == user.nick && args[1] == nil
-        Network.send(user, Numeric.RPL_UMODEIS(user.nick, user.umodes.join("")))
+    def handle_nick_modes(user, args, modes_to_add, modes_to_remove, _mode_args)
+      final_add_modes = ''
+      final_remove_modes = ''
+      if args[0] == user.nick && args[1].nil?
+        Network.send(user, Numeric.RPL_UMODEIS(user.nick, user.umodes.join('')))
         return
       end
-      if args[0] == user.nick && args[1] != nil
-        unless modes_to_add == nil
+      if args[0] == user.nick && !args[1].nil?
+        unless modes_to_add.nil?
           modes_to_add.each_char do |mode|
             if Server::USER_MODES.include?(mode)
-              unless user.umodes.include?(mode)
-                final_add_modes << mode
-              end
+              final_add_modes << mode unless user.umodes.include?(mode)
             else
               Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
             end
           end
         end
-        unless modes_to_remove == nil
+        unless modes_to_remove.nil?
           modes_to_remove.each_char do |mode|
             if Server::USER_MODES.include?(mode)
-              if user.umodes.include?(mode)
-                final_remove_modes << mode
-              end
+              final_remove_modes << mode if user.umodes.include?(mode)
             else
               Network.send(user, Numeric.ERR_UNKNOWNMODE(user.nick, mode))
             end
@@ -439,11 +398,9 @@ module Standard
         end
         # Remove duplicate + umodes
         unless final_add_modes.length == 0
-          modelist = ""
+          modelist = ''
           final_add_modes.each_char do |mode|
-            unless modelist.include?(mode)
-              modelist << mode
-            end
+            modelist << mode unless modelist.include?(mode)
             if modelist =~ /[#{Server::USER_MODES}]/
               final_add_modes.delete(mode)
             end
@@ -460,32 +417,26 @@ module Standard
             modelist = modelist.delete('v')
             Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
           end
-          if modelist.include?('x')
-            user.set_vhost(Options.cloak_host)
-          end
+          user.set_vhost(Options.cloak_host) if modelist.include?('x')
           final_add_modes = modelist
           final_add_modes.each_char { |mode| user.add_umode(mode) }
         end
         # Remove duplicate - umodes
         unless final_remove_modes.length == 0
-          modelist = ""
+          modelist = ''
           final_remove_modes.each_char do |mode|
-            unless modelist.include?(mode)
-              modelist << mode
-            end
+            modelist << mode unless modelist.include?(mode)
             if modelist =~ /[#{Server::USER_MODES}]/
               final_remove_modes.delete(mode)
             end
           end
-          if modelist.include?('x')
-            user.set_vhost(nil)
-          end
+          user.set_vhost(nil) if modelist.include?('x')
           final_remove_modes = modelist
           final_remove_modes.each_char do |mode|
             user.remove_umode(mode)
           end
         end
-        # FixMe: Check if final_add/remove_modes is nil
+        # FIXME: Check if final_add/remove_modes is nil
         if final_add_modes.length == 0 && final_remove_modes.length == 0
           return
         elsif final_add_modes.length > 0 && final_remove_modes.length > 0
@@ -497,16 +448,15 @@ module Standard
         end
         return
       end
-      if args[0] != user.nick
-        Server.users.each do |u|
-          if u.nick.casecmp(args[0]) == 0 && args[1] == nil
-            Network.send(user, Numeric.ERR_USERSDONTMATCH1(user.nick))
-          elsif u.nick.casecmp(args[0]) == 0 && args[1] != nil
-            Network.send(user, Numeric.ERR_USERSDONTMATCH2(user.nick))
-          end
+      return unless args[0] != user.nick
+      Server.users.each do |u|
+        if u.nick.casecmp(args[0]) == 0 && args[1].nil?
+          Network.send(user, Numeric.ERR_USERSDONTMATCH1(user.nick))
+        elsif u.nick.casecmp(args[0]) == 0 && !args[1].nil?
+          Network.send(user, Numeric.ERR_USERSDONTMATCH2(user.nick))
         end
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
       end
+      Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
     end
   end
 end

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # This command is part of the RFC, but will not be implemented since there is
+  # little practical use for it
   class Summon
-    def initialize()
-      @command_name = "summon"
-      @command_proc = Proc.new() { |user| on_summon(user) }
+    def initialize
+      @command_name = 'summon'
+      @command_proc = proc { |user| on_summon(user) }
     end
 
     def plugin_init(caller)
@@ -31,11 +33,8 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
-    # This command is part of the RFC, but will not be implemented since there is little practical use for it.
     def on_summon(user)
       Network.send(user, Numeric.ERR_SUMMONDISABLED(user.nick))
     end

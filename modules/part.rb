@@ -43,12 +43,8 @@ module Standard
         return
       end
       if args.length > 1
-        if args[1][0] == ':'
-          args[1] = args[1][1..-1] # remove leading ':'
-        end
-        if args[1].length > Limits::MAXPART
-          args[1] = args[1][0..Limits::MAXPART - 1]
-        end
+        args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
+        args[1] = args[1][0..Limits::MAXPART - 1] if args[1].length > Limits::MAXPART
       end
       channels = args[0].split(',')
       channels.each do |channel|

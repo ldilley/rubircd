@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Returns the IP address of a specified nick or IP addresses for a group of
+  # space-separated nicks
+  # This command is limited to operators and administrators
   class Userip
-    def initialize()
-      @command_name = "userip"
-      @command_proc = Proc.new() { |user, args| on_userip(user, args) }
+    def initialize
+      @command_name = 'userip'
+      @command_proc = proc { |user, args| on_userip(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +34,7 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0..-1] = nick or space-separated nicks
     def on_userip(user, args)
@@ -44,22 +45,19 @@ module Optional
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USERIP"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USERIP'))
         return
       end
       args = args.join.split
       userip_list = []
       args.each do |a|
-        if userip_list.length >= Limits::MAXTARGETS
-          break
-        end
+        break if userip_list.length >= Limits::MAXTARGETS
         Server.users.each do |u|
-          if u.nick.casecmp(a) == 0
-            if u.is_admin? || u.is_operator?
-              userip_list << "#{u.nick}*=+#{u.ident}@#{u.ip_address}"
-            else
-              userip_list << "#{u.nick}=+#{u.ident}@#{u.ip_address}"
-            end
+          next unless u.nick.casecmp(a) == 0
+          if u.is_admin? || u.is_operator?
+            userip_list << "#{u.nick}*=+#{u.ident}@#{u.ip_address}"
+          else
+            userip_list << "#{u.nick}=+#{u.ident}@#{u.ip_address}"
           end
         end
       end

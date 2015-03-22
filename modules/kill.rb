@@ -48,9 +48,7 @@ module Standard
         return
       end
       if args.length == 2
-        if args[1][0] == ':'
-          args[1] = args[1][1..-1] # remove leading ':'
-        end
+        args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
       else
         args[1] = 'No reason given'
       end

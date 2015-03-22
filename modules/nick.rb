@@ -45,9 +45,8 @@ module Standard
         Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(' '), 'Nicknames cannot contain spaces.'))
         return
       end
-      if args[0][0] == ':'
-        args[0] = args[0][1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
-      end
+      # Remove leading ':' (fix for Pidgin and possibly other clients)
+      args[0] = args[0][1..-1].strip if args[0][0] == ':'
       if args[0].length < 1 || args[0].length > Limits::NICKLEN
         Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], 'Nickname does not meet length requirements.'))
         return

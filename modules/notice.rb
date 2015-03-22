@@ -46,9 +46,7 @@ module Standard
         Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
         return
       end
-      if args[1][0] == ':'
-        args[1] = args[1][1..-1] # remove leading ':'
-      end
+      args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
       good_targets = 0
       targets = args[0].split(',')
       targets.each do |target|

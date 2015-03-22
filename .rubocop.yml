@@ -221,6 +221,7 @@ Style/RedundantBegin:
 # Configuration parameters: AllowMultipleReturnValues.
 Style/RedundantReturn:
   Enabled: true
+  AllowMultipleReturnValues: true
 
 # Offense count: 5
 # Cop supports --auto-correct.

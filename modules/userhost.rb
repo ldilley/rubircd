@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Returns the hostname of a specified nick or hostnames for a group of space-separated nicks
   class Userhost
-    def initialize()
-      @command_name = "userhost"
-      @command_proc = Proc.new() { |user, args| on_userhost(user, args) }
+    def initialize
+      @command_name = 'userhost'
+      @command_proc = proc { |user, args| on_userhost(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,29 +32,24 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0..-1] = nick or space-separated nicks
     def on_userhost(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USERHOST"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USERHOST'))
         return
       end
       args = args.join.split
       userhost_list = []
       args.each do |a|
-        if userhost_list.length >= Limits::MAXTARGETS
-          break
-        end
+        break if userhost_list.length >= Limits::MAXTARGETS
         Server.users.each do |u|
-          if u.nick.casecmp(a) == 0
-            if u.is_admin? || u.is_operator?
-              userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
-            else
-              userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"
-            end
+          next unless u.nick.casecmp(a) == 0
+          if u.is_admin? || u.is_operator?
+            userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
+          else
+            userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"
           end
         end
       end

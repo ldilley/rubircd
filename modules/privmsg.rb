@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Sends a specified message to a target channel or nick
   class Privmsg
-    def initialize()
-      @command_name = "privmsg"
-      @command_proc = Proc.new() { |user, args| on_privmsg(user, args) }
+    def initialize
+      @command_name = 'privmsg'
+      @command_proc = proc { |user, args| on_privmsg(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,35 +32,33 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = target channel or nick or comma-separated channels and nicks
     # args[1] = message
     def on_privmsg(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "PRIVMSG"))
+        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, 'PRIVMSG'))
         return
       end
       if args.length < 2
         Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
         return
       end
-      if args[1][0] == ':'
-        args[1] = args[1][1..-1] # remove leading ':'
-      end
+      args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
       good_targets = 0
       targets = args[0].split(',')
       targets.each do |target|
         if good_targets >= Limits::MAXTARGETS
           Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, target))
-          next unless target == nil
+          next unless target.nil?
         end
         if Channel.is_valid_channel_name?(target)
           channel = Server.channel_map[target.to_s.upcase]
-          unless channel == nil
+          if channel.nil?
+            Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
+          else
             good_targets += 1
             if user.is_on_channel?(target) || !channel.modes.include?('n')
               channel.users.each do |u|
@@ -68,19 +67,16 @@ module Standard
                 end
               end
             else
-              Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, channel.name, "no external messages"))
+              Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, channel.name, 'no external messages'))
             end
-          else
-            Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
           end
         else
           good_nick = false
           Server.users.each do |u|
-            if u.nick.casecmp(target) == 0
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{u.nick} :#{args[1]}")
-              good_nick = true
-              good_targets += 1
-            end
+            next unless u.nick.casecmp(target) == 0
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{u.nick} :#{args[1]}")
+            good_nick = true
+            good_targets += 1
           end
           unless good_nick
             Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, target))

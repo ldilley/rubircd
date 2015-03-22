@@ -41,9 +41,7 @@ module Standard
         return
       end
       args = args.join.split
-      if args[0][0] == ':'
-        args[0] = args[0][1..-1] # remove leading ':'
-      end
+      args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
       good_nicks = []
       Server.users.each do |u|
         args.each do |n|

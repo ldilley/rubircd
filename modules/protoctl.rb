@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Legacy client extensions (NAMESX and UHNAMES)
+  # Newer clients should be using CAP to enable similar features
   class Protoctl
-    def initialize()
-      @command_name = "protoctl"
-      @command_proc = Proc.new() { |user, args| on_protoctl(user, args) }
+    def initialize
+      @command_name = 'protoctl'
+      @command_proc = proc { |user, args| on_protoctl(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,25 +33,23 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = space-separated extensions
     def on_protoctl(user, args)
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "PROTOCTL"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'PROTOCTL'))
         return
       end
       args.each do |arg|
         case arg
-          # Be more forgiving by making these case insensitive if there are
-          # any clients who do not upcase the extensions
-          when /^NAMESX$/i # multi-prefix
-            user.capabilities[:namesx] = true
-          when /^UHNAMES$/i # userhost-in-names
-            user.capabilities[:uhnames] = true
+        # Be more forgiving by making these case insensitive if there are
+        # any clients who do not upcase the extensions
+        when /^NAMESX$/i # multi-prefix
+          user.capabilities[:namesx] = true
+        when /^UHNAMES$/i # userhost-in-names
+          user.capabilities[:uhnames] = true
         end
       end
     end

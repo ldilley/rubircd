@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Retrieves topic information for a target channel or sets the topic on a
+  # target channel to the one specified
   class Topic
-    def initialize()
-      @command_name = "topic"
-      @command_proc = Proc.new() { |user, args| on_topic(user, args) }
+    def initialize
+      @command_name = 'topic'
+      @command_proc = proc { |user, args| on_topic(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,30 +33,24 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel
     # args[1] = topic
     def on_topic(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "TOPIC"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'TOPIC'))
         return
       end
       args = args.join.split(' ', 2)
       if args.length > 1
-        if args[1][0] == ':'
-          args[1] = args[1][1..-1] # remove leading ':'
-        end
-        if args[1].length >= Limits::TOPICLEN
-          args[1] = args[1][0..Limits::TOPICLEN]
-        end
+        args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
+        args[1] = args[1][0..Limits::TOPICLEN] if args[1].length >= Limits::TOPICLEN
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length == 1
         chan = Server.channel_map[args[0].to_s.upcase]
-        unless chan == nil
-          # ToDo: Add if check for channel modes +p and +s
+        unless chan.nil?
+          # TODO: Add if check for channel modes +p and +s
           if chan.topic.length == 0
             Network.send(user, Numeric.RPL_NOTOPIC(user.nick, args[0]))
             return
@@ -65,31 +61,29 @@ module Standard
             end
             return
           end
-        # ToDo: else to send numeric here if +p and/or +s are set
+          # TODO: else send numeric here if +p and/or +s are set
         end
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
         user_on_channel = false
-        user_channels = user.get_channels_array()
+        user_channels = user.get_channels_array
         user_channels.each do |c|
-          if c.casecmp(args[0]) == 0
-            user_on_channel = true
-            chan = Server.channel_map[args[0].to_s.upcase]
-            unless chan == nil
-              if chan.has_mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
-                Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
-                return
-              end
-              if args[1] == nil || args[1].length == 0
-                chan.clear_topic()
-              else
-                chan.set_topic(user, args[1])
-              end
-              chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
-            end
+          next unless c.casecmp(args[0]) == 0
+          user_on_channel = true
+          chan = Server.channel_map[args[0].to_s.upcase]
+          next if chan.nil?
+          if chan.has_mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
+            Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
+            return
           end
+          if args[1].nil? || args[1].length == 0
+            chan.clear_topic
+          else
+            chan.set_topic(user, args[1])
+          end
+          chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
         end
         unless user_on_channel
           Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))

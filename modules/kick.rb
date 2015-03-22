@@ -59,12 +59,8 @@ module Standard
       end
       nicks = args[1].split(',')
       if args.length == 3
-        if args[2][0] == ':'
-          args[2] = args[2][1..-1] # remove leading ':'
-        end
-        if args[2].length > Limits::KICKLEN
-          args[2] = args[2][0..Limits::KICKLEN - 1]
-        end
+        args[2] = args[2][1..-1] if args[2][0] == ':' # remove leading ':'
+        args[2] = args[2][0..Limits::KICKLEN - 1] if args[2].length > Limits::KICKLEN
       end
       good_nicks = []
       kick_count = 0

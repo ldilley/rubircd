@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Used to respond to a ping request sent by a server
+  # Your client should handle this automatically
   class Pong
-    def initialize()
-      @command_name = "pong"
-      @command_proc = Proc.new() { |user, args| on_pong(user, args) }
+    def initialize
+      @command_name = 'pong'
+      @command_proc = proc { |user, args| on_pong(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = server
     def on_pong(user, args)
@@ -41,12 +41,9 @@ module Standard
         Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
         return
       end
-      if args[0][0] == ':'
-        args[0] = args[0][1..-1] # remove leading ':'
-      end
-      if args[0].strip.casecmp(Options.server_name) == 0
-        user.last_ping = ::Time.now.to_i
-      end
+      args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
+      return unless args[0].strip.casecmp(Options.server_name) == 0
+      user.last_ping = ::Time.now.to_i
     end
   end
 end

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Sends a ping request to a server with the specified message
+  # The server will respond with a pong containing the message
   class Ping
-    def initialize()
-      @command_name = "ping"
-      @command_proc = Proc.new() { |user, args| on_ping(user, args) }
+    def initialize
+      @command_name = 'ping'
+      @command_proc = proc { |user, args| on_ping(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = message
     def on_ping(user, args)

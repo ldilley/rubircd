@@ -41,12 +41,8 @@ module Standard
         user.set_away('')
         Network.send(user, Numeric.RPL_UNAWAY(user.nick))
       else
-        if args[0][0] == ':'
-          args[0] = args[0][1..-1] # remove leading ':'
-        end
-        if args[0].length > Limits::AWAYLEN
-          args[0] = args[0][0..Limits::AWAYLEN - 1]
-        end
+        args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
+        args[0] = args[0][0..Limits::AWAYLEN - 1] if args[0].length > Limits::AWAYLEN
         user.set_away(args[0])
         Network.send(user, Numeric.RPL_NOWAWAY(user.nick))
       end
