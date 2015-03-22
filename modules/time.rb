@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Reports the current time on a given server or current server if no argument is provided
   class Time
-    def initialize()
-      @command_name = "time"
-      @command_proc = Proc.new() { |user, args| on_time(user, args) }
+    def initialize
+      @command_name = 'time'
+      @command_proc = proc { |user, args| on_time(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,20 +32,16 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = optional server
     def on_time(user, args)
-      if args[0] != nil
-        if args[0][0] == ':'
-          args[0] = args[0][1..-1] # remove leading ':'
-        end
+      unless args[0].nil?
+        args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
       end
       if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         Network.send(user, Numeric.RPL_TIME(user.nick, Options.server_name))
-      #elsif to handle arbitrary servers when others are linked
+      # elsif to handle arbitrary servers when others are linked
       else
         Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
       end

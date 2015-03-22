@@ -118,9 +118,7 @@ module Standard
       end
       return unless args.length >= 3
       # Attempt to add the k-line
-      if args[2][0] == ':'
-        args[2] = args[2][1..-1] # remove leading ':'
-      end
+      args[2] = args[2][1..-1] if args[2][0] == ':' # remove leading ':'
       # Verify this is not a duplicate entry
       if @kline_data.length > 0
         @kline_data.each do |k|

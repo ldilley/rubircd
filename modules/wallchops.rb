@@ -46,9 +46,7 @@ module Optional
         Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
         return
       end
-      if args[1][0] == ':'
-        args[1] = args[1][1..-1] # remove leading ':'
-      end
+      args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
       unless Channel.is_valid_channel_name?(args[0])
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return

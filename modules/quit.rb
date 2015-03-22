@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Exits from the server with optional reason
   class Quit
-    def initialize()
-      @command_name = "quit"
-      @command_proc = Proc.new() { |user, args| on_quit(user, args) }
+    def initialize
+      @command_name = 'quit'
+      @command_proc = proc { |user, args| on_quit(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,21 +32,16 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = optional quit message
     def on_quit(user, args)
       if args.length > 0
-        if args[0][0] == ':'
-          args = args[0][1..-1] # remove leading ':'
-        end
-        if args.length > Limits::MAXQUIT
-          args = args[0][0..Limits::MAXQUIT-1]
-        end
+        # Remove leading ':'
+        args = args[0][1..-1] if args[0][0] == ':'
+        args = args[0][0..Limits::MAXQUIT - 1] if args.length > Limits::MAXQUIT
       else
-        args = "Client quit"
+        args = 'Client quit'
       end
       if user.nick == '*'
         Network.send(user, "ERROR :Closing link: #{user.hostname} (Quit: Client exited)")

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,39 +19,39 @@
 require 'options'
 
 module Standard
+  # Returns the history for a given nick
   class Whowas
-    def initialize()
-      @command_name = "whowas"
-      @command_proc = Proc.new() { |user, args| on_whowas(user, args) }
+    def initialize
+      @whowas_data = []
+      @whowas_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
+      @command_name = 'whowas'
+      @command_proc = proc { |user, args| on_whowas(user, args) }
     end
 
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
-      Server.init_whowas()
+      Server.init_whowas
     end
 
     def plugin_finish(caller)
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = nick
     def on_whowas(user, args)
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "WHOWAS"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'WHOWAS'))
         return
       end
       nick_found = false
-      @@whowas_data.each do |entry|
-        if entry.nick.casecmp(args[0]) == 0
-          Network.send(user, Numeric.RPL_WHOWASUSER(user.nick, entry))
-          Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, entry, false))
-          nick_found = true
-        end
+      @whowas_data.each do |entry|
+        next unless entry.nick.casecmp(args[0]) == 0
+        Network.send(user, Numeric.RPL_WHOWASUSER(user.nick, entry))
+        Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, entry, false))
+        nick_found = true
       end
       unless nick_found
         Network.send(user, Numeric.ERR_WASNOSUCHNICK(user.nick, args[0]))
@@ -59,43 +59,37 @@ module Standard
       Network.send(user, Numeric.RPL_ENDOFWHOWAS(user.nick))
     end
 
-    @@whowas_data = []
-    if Options.io_type.to_s == "thread"
-      @@whowas_data_lock = Mutex.new
-    end
-
     def add_entry(user, signoff_time)
       entry = Entry.new(user.nick, user.ident, user.hostname, user.gecos, user.server, signoff_time)
       # Purge older entries below to stop this data from growing out of control
-      if @@whowas_data.length >= Limits::WHOWASMAX
+      if @whowas_data.length >= Limits::WHOWASMAX
         nick_count = 0
         first_occurrence = 0
         first_occurrence_set = false
-        @@whowas_data.each_with_index do |ent, idx|
-          if ent.nick.casecmp(user.nick) == 0
-            nick_count += 1
-            unless first_occurrence_set
-              first_occurrence = idx
-              first_occurrence_set = true
-            end
+        @whowas_data.each_with_index do |ent, idx|
+          next unless ent.nick.casecmp(user.nick) == 0
+          nick_count += 1
+          unless first_occurrence_set
+            first_occurrence = idx
+            first_occurrence_set = true
           end
-          if nick_count >= Limits::WHOWASMAX
-            if Options.io_type.to_s == "thread"
-              @@whowas_data_lock.synchronize { @@whowas_data.delete_at(first_occurrence) }
-            else
-              @@whowas_data.delete_at(first_occurrence)
-            end
+          next unless nick_count >= Limits::WHOWASMAX
+          if Options.io_type.to_s == 'thread'
+            @whowas_data_lock.synchronize { @whowas_data.delete_at(first_occurrence) }
+          else
+            @whowas_data.delete_at(first_occurrence)
           end
         end
-      end    
-      if Options.io_type.to_s == "thread"
-        @@whowas_data_lock.synchronize { @@whowas_data.push(entry) }
+      end
+      if Options.io_type.to_s == 'thread'
+        @whowas_data_lock.synchronize { @whowas_data.push(entry) }
       else
-        @@whowas_data << entry
+        @whowas_data << entry
       end
     end
   end
 
+  # Represents a historical record for a nick
   class Entry
     def initialize(nick, ident, hostname, gecos, server, signoff_time)
       @nick = nick
@@ -107,6 +101,6 @@ module Standard
     end
 
     attr_reader :nick, :ident, :hostname, :gecos, :server, :signoff_time
-  end  
+  end
 end
 Standard::Whowas.new

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Restarts the server if the correct password is provided
+  # This command can only be used by administrators
   class Restart
-    def initialize()
-      @command_name = "restart"
-      @command_proc = Proc.new() { |user, args| on_restart(user, args) }
+    def initialize
+      @command_name = 'restart'
+      @command_proc = proc { |user, args| on_restart(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,11 +33,9 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
-    # ToDo: Fix paths since RESTART is now a module and in a different directory
+    # TODO: Fix paths since RESTART is now a module and in a different directory
     # args[0] = password
     def on_restart(user, args)
       unless user.is_admin?
@@ -43,7 +43,7 @@ module Standard
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "RESTART"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'RESTART'))
         return
       end
       hash = Digest::SHA2.new(256) << args[0].strip
@@ -53,16 +53,16 @@ module Standard
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued a server restart.")
           end
         end
-        # ToDo: Write any klines, etc.)
+        # TODO: Write any klines, etc.)
         Log.write(2, "RESTART issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         if RbConfig::CONFIG['host_os'] =~ /mswin|win|mingw/
-          if RUBY_PLATFORM == "java"
+          if RUBY_PLATFORM == 'java'
             exec("start cmd /C #{File.expand_path(File.dirname(__FILE__))}/rubircd.bat")
           else
             exec("start cmd /C ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb")
           end
         else
-          if RUBY_PLATFORM == "java"
+          if RUBY_PLATFORM == 'java'
             system("kill #{Process.pid} && sleep 5 && #{File.expand_path(File.dirname(__FILE__))}/rubircd.sh&")
           else
             system("kill #{Process.pid} && sleep 5 && ruby #{File.expand_path(File.dirname(__FILE__))}/rubircd.rb&")

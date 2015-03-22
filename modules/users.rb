@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Shows local and global client counts
   class Users
-    def initialize()
-      @command_name = "users"
-      @command_proc = Proc.new() { |user| on_users(user) }
+    def initialize
+      @command_name = 'users'
+      @command_proc = proc { |user| on_users(user) }
     end
 
     def plugin_init(caller)
@@ -31,12 +32,11 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
-    # This command takes no args and is not RFC compliant (in that it does not return information in the format described by the RFC).
-    # DALnet and EFnet return the same numerics.
+    # This command takes no args and is not RFC compliant (in that it does
+    # not return information in the format described by the RFC)
+    # DALnet and EFnet return the same numerics
     def on_users(user)
       Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
       Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))

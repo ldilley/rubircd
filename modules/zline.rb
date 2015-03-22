@@ -117,9 +117,7 @@ module Standard
       end
       return unless args.length >= 3
       # Attempt to add the z-line
-      if args[2][0] == ':'
-        args[2] = args[2][1..-1] # remove leading ':'
-      end
+      args[2] = args[2][1..-1] if args[2][0] == ':' # remove leading ':'
       # Verify this is not a duplicate entry
       if @zline_data.length > 0
         @zline_data.each do |z|

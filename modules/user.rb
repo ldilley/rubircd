@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Used to register your session with the server
+  # This takes place only once upon connecting
   class User
-    def initialize()
-      @command_name = "user"
-      @command_proc = Proc.new() { |user, args| on_user(user, args) }
+    def initialize
+      @command_name = 'user'
+      @command_proc = proc { |user, args| on_user(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = ident/username
     # args[1] = sometimes ident or hostname (can be spoofed... so we ignore this arg)
@@ -42,7 +42,7 @@ module Standard
     def on_user(user, args)
       args = args.join.split(' ', 4)
       if args.length < 4
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "USER"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USER'))
         return
       end
       if user.is_registered?
@@ -51,17 +51,13 @@ module Standard
       end
       # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
       # The 2nd field also matches the 1st (ident string) for certain clients (FYI)
-      if args[0].length > Limits::IDENTLEN
-        args[0] = args[0][0..Limits::IDENTLEN-1] # truncate ident if it is too long
-      end
+      # Truncate ident if it is too long
+      args[0] = args[0][0..Limits::IDENTLEN - 1] if args[0].length > Limits::IDENTLEN
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         user.change_ident(args[0])
-        if args[3][0] == ':'
-          args[3] = args[3][1..-1] # remove leading ':'
-        end
-        if args[3].length > Limits::GECOSLEN
-          args[3] = args[3][0..Limits::GECOSLEN-1] # truncate gecos if it is too long
-        end
+        args[3] = args[3][1..-1] if args[3][0] == ':' # remove leading ':'
+        # Truncate gecos if it is too long
+        args[3] = args[3][0..Limits::GECOSLEN - 1] if args[3].length > Limits::GECOSLEN
         user.change_gecos(args[3])
       else
         Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident

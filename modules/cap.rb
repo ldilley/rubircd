@@ -45,9 +45,7 @@ module Standard
       end
       args = args.join.split
       if args.length > 1
-        if args[1][0] == ':'
-          args[1] = args[1][1..-1] # remove leading ':'
-        end
+        args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
       end
       case args[0].to_s.upcase
       when 'CLEAR'
