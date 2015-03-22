@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Displays administrative info about a given server or current server if no argument is provide
   class Admin
-    def initialize()
-      @command_name = "admin"
-      @command_proc = Proc.new() { |user, args| on_admin(user, args) }
+    def initialize
+      @command_name = 'admin'
+      @command_proc = proc { |user, args| on_admin(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +32,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = optional server name
     def on_admin(user, args)
@@ -42,7 +41,7 @@ module Standard
         Network.send(user, Numeric.RPL_ADMINLOC1(user.nick, Options.server_name))
         Network.send(user, Numeric.RPL_ADMINLOC2(user.nick, Options.server_name))
         Network.send(user, Numeric.RPL_ADMINEMAIL(user.nick, Options.server_name))
-      #elsif to handle arbitrary servers when others are linked
+      # TODO: elsif to handle arbitrary servers when others are linked
       else
         Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
       end

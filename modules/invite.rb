@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Sends an invitation to a target nick for the specified channel and allows
+  # the nick to join the channel if it is set to invite only (+i)
   class Invite
-    def initialize()
-      @command_name = "invite"
-      @command_proc = Proc.new() { |user, args| on_invite(user, args) }
+    def initialize
+      @command_name = 'invite'
+      @command_proc = proc { |user, args| on_invite(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,26 +33,22 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = nick
     # args[1] = channel
     def on_invite(user, args)
       args = args.join.split(' ', 2)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "INVITE"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'INVITE'))
         return
       end
-      # ToDo: Check for chanop status once a place for users' channel modes is figured out and a place to write invites
+      # TODO: Check for chanop status once a place for users' channel modes is figured out and a place to write invites
       target_user = nil
       Server.users.each do |u|
-        if u.nick.casecmp(args[0]) == 0
-          target_user = u
-        end
+        target_user = u if u.nick.casecmp(args[0]) == 0
       end
-      if target_user == nil
+      if target_user.nil?
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
         return
       end
@@ -69,10 +67,9 @@ module Standard
       target_user.add_invite(args[1])
       Network.send(target_user, ":#{user.nick}!#{user.ident}@#{user.hostname} INVITE #{args[0]} :#{args[1]}")
       chan = Server.channel_map[args[1].to_s.upcase]
-      unless chan == nil
-        # ToDo: Only send to chanops?
-        chan.users.each { |u| Network.send(u, ":#{Options.server_name} NOTICE @#{args[1]} :#{user.nick} invited #{args[0]} into channel #{args[1]}") }
-      end
+      return if chan.nil?
+      # TODO: Only send to chanops?
+      chan.users.each { |u| Network.send(u, ":#{Options.server_name} NOTICE @#{args[1]} :#{user.nick} invited #{args[0]} into channel #{args[1]}") }
     end
   end
 end

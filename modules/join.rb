@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Joins a channel or group of channels if a comma-separated list of channels is provided
+  # An optional key or comma-separated keys can also be provided for keyed (+k) channels
   class Join
-    def initialize()
-      @command_name = "join"
-      @command_proc = Proc.new() { |user, args| on_join(user, args) }
+    def initialize
+      @command_name = 'join'
+      @command_proc = proc { |user, args| on_join(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,91 +33,61 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel or comma-separated channels
     # args[1] = optional key or comma-separated keys
     def on_join(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "JOIN"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'JOIN'))
         return
       end
       channels = args[0].split(',')
-      if args.length == 2
-        keys = args[1].split(',')
-      end
+      keys = args[1].split(',') if args.length == 2
       key_index = 0
       user_on_channel = false
       channels.each do |channel|
         user_on_channel = user.is_on_channel?(channel)
         if user_on_channel
           Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, user.nick, channel))
-          unless keys.nil?
-            if keys.length > key_index
-              key_index += 1
-            end
-          end
-          next unless channel == nil
+          key_index += 1 if !keys.nil? && keys.length > key_index
+          next unless channel.nil?
         end
-        if user.get_channels_length() >= Limits::MAXCHANNELS
+        if user.get_channels_length >= Limits::MAXCHANNELS
           Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
-          unless keys.nil?
-            if keys.length > key_index
-              key_index += 1
-            end
-          end
-          next unless channel == nil
+          key_index += 1 if !keys.nil? && keys.length > key_index
+          next unless channel.nil?
         end
         unless Channel.is_valid_channel_name?(channel)
           Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
-          unless keys.nil?
-            if keys.length > key_index
-              key_index += 1
-            end
-          end
-          next unless channel == nil
+          key_index += 1 if !keys.nil? && keys.length > key_index
+          next unless channel.nil?
         end
         chan = Server.channel_map[channel.to_s.upcase]
         channel_existed = true
-        if chan == nil
-          channel_existed = false
-        end
-        unless chan == nil
-          # ToDo: Check for bans against user here
+        channel_existed = false if chan.nil?
+        unless chan.nil?
+          # TODO: Check for bans against user here
           if chan.modes.include?('l') && chan.users.length >= chan.limit.to_i && !user.is_admin?
             Network.send(user, Numeric.ERR_CHANNELISFULL(user.nick, channel))
-            unless keys.nil?
-              if keys.length > key_index
-                key_index += 1
-              end
-            end
-            next unless channel == nil
+            key_index += 1 if !keys.nil? && keys.length > key_index
+            next unless channel.nil?
           end
           if chan.modes.include?('k') && !user.is_admin?
             if keys.nil? || keys[key_index] != chan.key
               Network.send(user, Numeric.ERR_BADCHANNELKEY(user.nick, channel))
-              unless keys.nil?
-                if keys.length > key_index
-                  key_index += 1
-                end
-              end
-              next unless channel == nil
+              key_index += 1 if !keys.nil? && keys.length > key_index
+              next unless channel.nil?
             end
           end
           if chan.modes.include?('i') && !user.invites.any? { |channel_invite| channel_invite.casecmp(channel) == 0 } && !user.is_admin?
             Network.send(user, Numeric.ERR_INVITEONLYCHAN(user.nick, channel))
-            unless keys.nil?
-              if keys.length > key_index
-                key_index += 1
-              end
-            end
-            next unless channel == nil
+            key_index += 1 if !keys.nil? && keys.length > key_index
+            next unless channel.nil?
           end
         end
-        if chan == nil
+        if chan.nil?
           channel_object = Channel.new(channel, user.nick)
           Server.add_channel(channel_object)
           chan = Server.channel_map[channel.to_s.upcase]
@@ -142,22 +114,16 @@ module Standard
           chan.invisible_users.each { |iu| Network.send(iu, ":#{Options.server_name} MODE #{channel} +o #{user.nick}") }
         end
         unless channel_existed
-          # ToDo: Make user chanop if they are the first user on the channel and channel is not +r
+          # TODO: Make user chanop if they are the first user on the channel and channel is not +r
           Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
         end
         if channel_existed && chan.users.length - chan.invisible_users.length == 1
           # There is only one non-invisible user in the channel, so reset default modes to make them think the channel is being created
           Network.send(user, ":#{Options.server_name} MODE #{channel} +nt")
         end
-        names_cmd = Command.command_map["NAMES"]
-        unless names_cmd == nil
-          names_cmd.call(user, channel.split)
-        end
-        unless keys.nil?
-          if keys.length > key_index
-            key_index += 1
-          end
-        end
+        names_cmd = Command.command_map['NAMES']
+        names_cmd.call(user, channel.split) unless names_cmd.nil?
+        key_index += 1 if !keys.nil? && keys.length > key_index
       end
     end
   end

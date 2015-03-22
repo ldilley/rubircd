@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Forces a given nick to leave a given channel
+  # This command is limited to administrators and services
   class Fpart
-    def initialize()
-      @command_name = "fpart"
-      @command_proc = Proc.new() { |user, args| on_fpart(user, args) }
+    def initialize
+      @command_name = 'fpart'
+      @command_proc = proc { |user, args| on_fpart(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = nick
     # args[1] = channel
@@ -45,7 +45,7 @@ module Optional
         return
       end
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "FPART"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'FPART'))
         return
       end
       unless Channel.is_valid_channel_name?(args[1])
@@ -53,7 +53,7 @@ module Optional
         return
       end
       target_user = Server.get_user_by_nick(args[0])
-      if target_user == nil
+      if target_user.nil?
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
         return
       end
@@ -62,28 +62,25 @@ module Optional
         return
       end
       chan = Server.channel_map[args[1].to_s.upcase]
-      unless chan == nil
-        if args[2] == nil
+      unless chan.nil?
+        if args[2].nil?
           chan.users.each { |u| Network.send(u, ":#{target_user.nick}!#{target_user.ident}@#{target_user.hostname} PART #{args[1]}") }
         else
           chan.users.each { |u| Network.send(u, ":#{target_user.nick}!#{target_user.ident}@#{target_user.hostname} PART #{args[1]} :#{args[2]}") }
         end
         chan.remove_user(target_user)
-        if chan.users.length < 1
-          Server.remove_channel(args[1].upcase)
-        end
+        Server.remove_channel(args[1].upcase) if chan.users.length < 1
         target_user.remove_channel(args[1])
       end
       Server.users.each do |u|
-        if u.is_admin? || u.is_operator?
-          if args[2] == nil
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FPART for #{args[0]} parting from: #{args[1]}")
-          else
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FPART for #{args[0]} parting from #{args[1]} with message: #{args[2]}")
-          end
+        next unless u.is_admin? || u.is_operator?
+        if args[2].nil?
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FPART for #{args[0]} parting from: #{args[1]}")
+        else
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FPART for #{args[0]} parting from #{args[1]} with message: #{args[2]}")
         end
       end
-      if args[2] == nil
+      if args[2].nil?
         Log.write(2, "FPART issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} parting from: #{args[1]}")
       else
         Log.write(2, "FPART issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} parting from #{args[1]} with message: #{args[2]}")

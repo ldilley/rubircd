@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Checks if a nick or list of space-separated nicks are on the network
   class Ison
-    def initialize()
-      @command_name = "ison"
-      @command_proc = Proc.new() { |user, args| on_ison(user, args) }
+    def initialize
+      @command_name = 'ison'
+      @command_proc = proc { |user, args| on_ison(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,14 +32,12 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0..-1] = nick or space-separated nicks
     def on_ison(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "ISON"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'ISON'))
         return
       end
       args = args.join.split
@@ -48,9 +47,7 @@ module Standard
       good_nicks = []
       Server.users.each do |u|
         args.each do |n|
-          if u.nick.casecmp(n) == 0
-            good_nicks << u.nick
-          end
+          good_nicks << u.nick if u.nick.casecmp(n) == 0
         end
       end
       Network.send(user, Numeric.RPL_ISON(user.nick, good_nicks))

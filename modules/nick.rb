@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Changes your nick to a specified nick
   class Nick
-    def initialize()
-      @command_name = "nick"
-      @command_proc = Proc.new() { |user, args| on_nick(user, args) }
+    def initialize
+      @command_name = 'nick'
+      @command_proc = proc { |user, args| on_nick(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +32,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = new nick
     def on_nick(user, args)
@@ -43,42 +42,40 @@ module Standard
         return
       end
       if args.length > 1
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(" "), "Nicknames cannot contain spaces."))
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(' '), 'Nicknames cannot contain spaces.'))
         return
       end
       if args[0][0] == ':'
         args[0] = args[0][1..-1].strip # remove leading ':' (fix for Pidgin and possibly other clients)
       end
       if args[0].length < 1 || args[0].length > Limits::NICKLEN
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Nickname does not meet length requirements."))
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], 'Nickname does not meet length requirements.'))
         return
       end
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         Server.users.each do |u|
-          if u.nick.casecmp(args[0]) == 0 && user != u
-            unless user.is_registered?
-              Network.send(user, Numeric.ERR_NICKNAMEINUSE("*", args[0]))
+          next unless u.nick.casecmp(args[0]) == 0 && user != u
+          if user.is_registered?
+            Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[0]))
+          else
+            Network.send(user, Numeric.ERR_NICKNAMEINUSE('*', args[0]))
+          end
+          return
+        end
+        unless Server.qline_mod.nil?
+          Server.qline_mod.list_qlines.each do |reserved_nick|
+            next unless reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
+            if user.is_registered?
+              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], reserved_nick.reason))
             else
-              Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[0]))
+              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME('*', args[0], reserved_nick.reason))
             end
             return
           end
         end
-        unless Server.qline_mod == nil
-          Server.qline_mod.list_qlines().each do |reserved_nick|
-            if reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
-              unless user.is_registered?
-                Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME("*", args[0], reserved_nick.reason))
-              else
-                Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], reserved_nick.reason))
-              end
-              return
-            end
-          end
-        end
         if user.is_registered? && user.nick != args[0]
-          if user.get_channels_length() > 0
-            user_channels = user.get_channels_array()
+          if user.get_channels_length > 0
+            user_channels = user.get_channels_array
             user_channels.each do |c|
               chan = Server.channel_map[c.to_s.upcase]
               chan.users.each do |u|
@@ -90,15 +87,15 @@ module Standard
           end
           Network.send(user, ":#{user.nick}!#{user.ident}@#{user.hostname} NICK :#{args[0]}")
         end
-        whowas_loaded = Command.command_map["WHOWAS"]
-        unless whowas_loaded == nil
-          unless user.nick == nil || user.nick == "*"
+        whowas_loaded = Command.command_map['WHOWAS']
+        unless whowas_loaded.nil?
+          unless user.nick.nil? || user.nick == '*'
             Server.whowas_mod.add_entry(user, ::Time.now.asctime)
           end
         end
         user.change_nick(args[0])
       else
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], "Nickname contains invalid characters."))
+        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], 'Nickname contains invalid characters.'))
       end
     end
   end

@@ -113,7 +113,7 @@ module Standard
           Network.send(user, Numeric.RPL_STATSUPTIME(user.nick, days, hours, minutes, seconds))
         when 'z' # zlines
           if Server.zline_mod != nil
-            Server.zline_mod.list_zlines().each { |zline| Network.send(user, Numeric.RPL_STATSZLINE(user.nick, zline.target, zline.create_time, zline.duration, zline.creator, zline.reason)) }
+            Server.zline_mod.list_zlines.each { |zline| Network.send(user, Numeric.RPL_STATSZLINE(user.nick, zline.target, zline.create_time, zline.duration, zline.creator, zline.reason)) }
           end
         # when does not require "end"
       end

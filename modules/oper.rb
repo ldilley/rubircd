@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Allows users to become IRC operators or administrators by specifying the
+  # appropriate nick and corresponding password
   class Oper
-    def initialize()
-      @command_name = "oper"
-      @command_proc = Proc.new() { |user, args| on_oper(user, args) }
+    def initialize
+      @command_name = 'oper'
+      @command_proc = proc { |user, args| on_oper(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,40 +33,30 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = nick
     # args[1] = password
     def on_oper(user, args)
       args = args.join.split(' ', 2)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "OPER"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'OPER'))
         return
       end
       admin_nick = nil
       oper_nick = nil
-      Server.admins.each do |admin|
-        if admin.nick.casecmp(args[0]) == 0
-          admin_nick = admin.nick
-        end
-      end
-      Server.opers.each do |oper|
-        if oper.nick.casecmp(args[0]) == 0
-          oper_nick = oper.nick
-        end
-      end
-      if admin_nick == nil && oper_nick == nil
+      Server.admins.each { |admin| admin_nick = admin.nick if admin.nick.casecmp(args[0]) == 0 }
+      Server.opers.each { |oper| oper_nick = oper.nick if oper.nick.casecmp(args[0]) == 0 }
+      if admin_nick.nil? && oper_nick.nil?
         Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
         return
       end
       hash = Digest::SHA2.new(256) << args[1].strip
-      unless admin_nick == nil
+      unless admin_nick.nil?
         Server.admins.each do |admin|
           if admin.nick == admin_nick && admin.hash == hash.to_s
-            if admin.host == nil || admin.host == "" || admin.host == '*'
-              user.set_admin()
+            if admin.host.nil? || admin.host == '' || admin.host == '*'
+              user.set_admin
               Network.send(user, Numeric.RPL_YOUAREOPER(user))
               Server.users.each do |u|
                 if u.is_admin? || u.is_operator?
@@ -78,7 +70,7 @@ module Standard
             hostmask = admin.host.to_s.gsub('\*', '.*?')
             regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
             if user.hostname =~ regx
-              user.set_admin()
+              user.set_admin
               Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
               Server.users.each do |u|
                 if u.is_admin? || u.is_operator?
@@ -110,60 +102,59 @@ module Standard
           end
         end
       end
-      unless oper_nick == nil
-        Server.opers.each do |oper|
-          if oper.nick == oper_nick && oper.hash == hash.to_s
-            if oper.host == nil || oper.host == "" || oper.host == '*'
-              user.set_operator()
-              Network.send(user, Numeric.RPL_YOUAREOPER(user))
-              Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
-                  Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
-                end
+      return if oper_nick.nil?
+      Server.opers.each do |oper|
+        if oper.nick == oper_nick && oper.hash == hash.to_s
+          if oper.host.nil? || oper.host == '' || oper.host == '*'
+            user.set_operator
+            Network.send(user, Numeric.RPL_YOUAREOPER(user))
+            Server.users.each do |u|
+              if u.is_admin? || u.is_operator?
+                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
               end
-              Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
-              update_channel_prefix(user, 'z')
-              return
             end
-            hostmask = oper.host.to_s.gsub('\*', '.*?')
-            regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
-            if user.hostname =~ regx
-              user.set_operator()
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
-              Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
-                  Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
-                end
+            Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
+            update_channel_prefix(user, 'z')
+            return
+          end
+          hostmask = oper.host.to_s.gsub('\*', '.*?')
+          regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
+          if user.hostname =~ regx
+            user.set_operator
+            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            Server.users.each do |u|
+              if u.is_admin? || u.is_operator?
+                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
               end
-              Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
-              update_channel_prefix(user, 'z')
-              return
-            else
-              Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
-                  Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
-                end
-              end
-              Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
-              Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
-              return
             end
+            Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} is now an IRC Operator.")
+            update_channel_prefix(user, 'z')
+            return
           else
             Server.users.each do |u|
               if u.is_admin? || u.is_operator?
-                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
+                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
               end
             end
-            Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
+            Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
             Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+            return
           end
+        else
+          Server.users.each do |u|
+            if u.is_admin? || u.is_operator?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
+            end
+          end
+          Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
+          Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
         end
       end
     end
 
     def update_channel_prefix(user, mode)
       # Add oper prefix to each channel the user is in
-      user_channels = user.get_channels_array()
+      user_channels = user.get_channels_array
       user_channels.each do |channel|
         user.add_channel_mode(channel, mode)
         chan = Server.channel_map[channel.to_s.upcase]

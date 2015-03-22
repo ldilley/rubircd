@@ -17,10 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Shows a list of nicknames on a specified channel
+  # If the channel is secret (+s), you must be an administrator, an IRC operator,
+  # or be in the channel to obtain the list
   class Names
-    def initialize()
-      @command_name = "names"
-      @command_proc = Proc.new() { |user, args| on_names(user, args) }
+    def initialize
+      @command_name = 'names'
+      @command_proc = proc { |user, args| on_names(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +34,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel
     def on_names(user, args)
@@ -43,12 +44,12 @@ module Standard
         args = args[0]
       end
       if args.length < 1
-        Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, "*"))
+        Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, '*'))
         return
       end
       userlist = []
       channel = Server.channel_map[args.to_s.upcase]
-      unless channel == nil
+      unless channel.nil?
         channel.users.each do |u|
           next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
           if user.capabilities[:namesx] && user.capabilities[:uhnames] # NAMESX and UHNAMES/userhost-in-names extensions
@@ -62,7 +63,7 @@ module Standard
           end
         end
       end
-      userlist = userlist[0..-1].join(" ")
+      userlist = userlist[0..-1].join(' ')
       Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args, userlist))
       Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args))
     end

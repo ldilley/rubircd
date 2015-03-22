@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Lists server capabilities for client extensions such as NAMESX, TLS, and UHNAMES
+  # If sending multiple capabilities, the list must be preceded by a ':' and all capabilities
+  # separated by a space
   class Cap
-    def initialize()
-      @command_name = "cap"
-      @command_proc = Proc.new() { |user, args| on_cap(user, args) }
+    def initialize
+      @command_name = 'cap'
+      @command_proc = proc { |user, args| on_cap(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,15 +34,13 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = subcommand
     # args[1..-1] = capability or space-separated capabilities
     def on_cap(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "CAP"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'CAP'))
         return
       end
       args = args.join.split
@@ -49,30 +50,24 @@ module Standard
         end
       end
       case args[0].to_s.upcase
-        when "CLEAR"
-          # ToDo: Add "-multi-prefix -userhost-in-names -tls" when CLEAR is issued
-          Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
-        when "END"
-          unless user.is_registered?
-            user.set_negotiating_cap(false)
-          end
-        when "LIST"
-          Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
-        when "LS"
-          # ToDo: Add "multi-prefix userhost-in-names tls" once NAMESX, UHNAMES, and STARTTLS are supported
-          unless user.is_registered?
-            user.set_negotiating_cap(true)
-          end
-          Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
-        when "REQ"
-          # Note: Do not change session capabilities until last ACK is sent per IRC CAP draft
-          unless user.is_registered?
-            user.set_negotiating_cap(true)
-          end
-          # All REQs are bad for now until support for capabilities are added...
-          Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK: #{args[1..-1].join(" ")}")
-        else
-          Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
+      when 'CLEAR'
+        # TODO: Add "-multi-prefix -userhost-in-names -tls" when CLEAR is issued
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
+      when 'END'
+        user.set_negotiating_cap(false) unless user.is_registered?
+      when 'LIST'
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
+      when 'LS'
+        # TODO: Add "multi-prefix userhost-in-names tls" once NAMESX, UHNAMES, and STARTTLS are supported
+        user.set_negotiating_cap(true) unless user.is_registered?
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
+      when 'REQ'
+        # Note: Do not change session capabilities until last ACK is sent per IRC CAP draft
+        user.set_negotiating_cap(true) unless user.is_registered?
+        # All REQs are bad for now until support for capabilities are added...
+        Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK: #{args[1..-1].join(' ')}")
+      else
+        Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
       end
     end
   end

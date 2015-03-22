@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,17 +17,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Forces a given nick to quit the server with an optional quit message
+  # This command is limited to administrators and services
   class Fquit
-    def initialize()
-      @command_name = "fquit"
-      @command_proc = Proc.new() { |user, args| on_fquit(user, args) }
+    def initialize
+      @command_name = 'fquit'
+      @command_proc = proc { |user, args| on_fquit(user, args) }
     end
 
     def plugin_init(caller)
-      Mod.require_dependency("QUIT")
-      req_mod = Mod.find("QUIT")
-      if req_mod == nil
-        Log.write(3, "Refusing to load FQUIT module. Unable to load required module: QUIT")
+      Mod.require_dependency('QUIT')
+      req_mod = Mod.find('QUIT')
+      if req_mod.nil?
+        Log.write(3, 'Refusing to load FQUIT module. Unable to load required module: QUIT')
         return
       end
       caller.register_command(@command_name, @command_proc)
@@ -37,9 +39,7 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = nick
     # args[1] = optional quit message
@@ -50,33 +50,32 @@ module Optional
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "FQUIT"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'FQUIT'))
         return
       end
       target_user = Server.get_user_by_nick(args[0])
-      if target_user == nil
+      if target_user.nil?
         Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
         return
       end
       Server.users.each do |u|
-        if u.is_admin? || u.is_operator?
-          if args.length > 1
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FQUIT for #{args[0]} with message: #{args[1]}")
-          else
-            Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FQUIT for #{args[0]}")
-          end
+        next unless u.is_admin? || u.is_operator?
+        if args.length > 1
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FQUIT for #{args[0]} with message: #{args[1]}")
+        else
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FQUIT for #{args[0]}")
         end
       end
       if args.length > 1
         Log.write(2, "FQUIT issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname} with message: #{args[1]}")
       else
-        args[1] = "" # set to empty string since on_quit() does not work with nils as the quit message
+        args[1] = '' # set to empty string since on_quit() does not work with nils as the quit message
         Log.write(2, "FQUIT issued by #{user.nick}!#{user.ident}@#{user.hostname} for #{target_user.nick}!#{target_user.ident}@#{target_user.hostname}")
       end
-      quit_mod = Mod.find("QUIT")
-      if quit_mod == nil
+      quit_mod = Mod.find('QUIT')
+      if quit_mod.nil?
         Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: FQUIT requires QUIT module, but it is not loaded.")
-        Log.write(3, "FQUIT requires QUIT module, but it is not loaded.")
+        Log.write(3, 'FQUIT requires QUIT module, but it is not loaded.')
       else
         quit_mod.on_quit(target_user, args[1])
       end

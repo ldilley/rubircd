@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Lists server capabilities during the handshake phase of server linking
   class Capab
-    def initialize()
-      @command_name = "capab"
-      @command_proc = Proc.new() { |user, args| on_capab(user, args) }
+    def initialize
+      @command_name = 'capab'
+      @command_proc = proc { |user, args| on_capab(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,14 +32,12 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0 ... ?] = stuff from Limits class
-    def on_capab(user, args)
-      # ToDo: Handshaking stuff for server linking
-      #Network.send(server, "CAPAB ...")
+    def on_capab(_user, _args) # args are unused for now
+      # TODO: Handshaking stuff for server linking
+      # Network.send(server, "CAPAB ...")
     end
   end
 end

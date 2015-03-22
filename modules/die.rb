@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Kills the server if the correct password is provided
+  # This command can only be used by administrators
   class Die
-    def initialize()
-      @command_name = "die"
-      @command_proc = Proc.new() { |user, args| on_die(user, args) }
+    def initialize
+      @command_name = 'die'
+      @command_proc = proc { |user, args| on_die(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = password
     def on_die(user, args)
@@ -42,7 +42,7 @@ module Standard
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "DIE"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'DIE'))
         return
       end
       hash = Digest::SHA2.new(256) << args[0].strip
@@ -52,7 +52,7 @@ module Standard
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued DIE.")
           end
         end
-        # ToDo: Cleanly exit (write any klines, etc.)
+        # TODO: Cleanly exit (write any klines, etc.)
         Log.write(2, "DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         exit!
       else

@@ -111,7 +111,8 @@ class Network
     end
     loop do
       begin
-        if ios = select(fds, [], [], timeout)
+        ios = select(fds, [], [], timeout)
+        unless ios.nil?
           ios[0].each do |client|
             if client == plain_server
               plain_client = plain_server.accept()
@@ -343,7 +344,7 @@ class Network
       Network.close(user, "Server too busy", false)
     end
     unless Server.zline_mod == nil
-      Server.zline_mod.list_zlines().each do |zline|
+      Server.zline_mod.list_zlines.each do |zline|
         if zline.target.casecmp(client_ip) == 0
           Network.send(user, "ERROR :Closing link: #{client_ip} [Z-lined (#{zline.reason})]")
           Server.users.each do |u|
