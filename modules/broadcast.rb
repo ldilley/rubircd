@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Sends a broadcast message to all users connected to the network
+  # This is useful to advise users of upcoming server maintenance and other events
+  # This command is limited to administrators and services
   class Broadcast
-    def initialize()
-      @command_name = "broadcast"
-      @command_proc = Proc.new() { |user, args| on_broadcast(user, args) }
+    def initialize
+      @command_name = 'broadcast'
+      @command_proc = proc { |user, args| on_broadcast(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,18 +34,16 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = message
     def on_broadcast(user, args)
-      unless user.is_admin?
+      unless user.is_admin? || user.is_service?
         Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "BROADCAST"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'BROADCAST'))
         return
       end
       Server.users.each do |u|

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Sends a message to all channel operators in a specified channel
   class Wallchops
-    def initialize()
-      @command_name = "wallchops"
-      @command_proc = Proc.new() { |user, args| on_wallchops(user, args) }
+    def initialize
+      @command_name = 'wallchops'
+      @command_proc = proc { |user, args| on_wallchops(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,16 +32,14 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel
     # args[1] = message
     def on_wallchops(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, "WALLCHOPS"))
+        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, 'WALLCHOPS'))
         return
       end
       if args.length < 2
@@ -55,16 +54,18 @@ module Optional
         return
       end
       chan = Server.channel_map[args[0].to_s.upcase]
-      unless chan.nil?
-        if user.is_on_channel?(args[0]) || !chan.modes.include?('n')
-          chan.users.each do |u|
-            if u.is_chanop?(args[0]) && u.nick.casecmp(user.nick) != 0
-              Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE @#{args[0]} :#{args[1]}")
-            end
+      if chan.nil?
+        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        return
+      end
+      if user.is_on_channel?(args[0]) || !chan.modes.include?('n')
+        chan.users.each do |u|
+          if u.is_chanop?(args[0]) && u.nick.casecmp(user.nick) != 0
+            Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE @#{args[0]} :#{args[1]}")
           end
-        else
-          Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, args[0], "no external messages"))
         end
+      else
+        Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, args[0], 'no external messages'))
       end
     end
   end

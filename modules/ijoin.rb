@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
+  # Join a channel as an invisible user
+  # You are undetectable by regular users and operators
+  # This command is limited to administrators
+  # Only other administrators can see users who use IJOIN to join channels
   class Ijoin
-    def initialize()
-      @command_name = "ijoin"
-      @command_proc = Proc.new() { |user, args| on_ijoin(user, args) }
+    def initialize
+      @command_name = 'ijoin'
+      @command_proc = proc { |user, args| on_ijoin(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +35,7 @@ module Optional
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel
     def on_ijoin(user, args)
@@ -42,7 +44,7 @@ module Optional
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "IJOIN"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'IJOIN'))
         return
       end
       unless Channel.is_valid_channel_name?(args[0])
@@ -54,13 +56,13 @@ module Optional
         return
       end
       # Allow administrators to bypass channel cap
-      #if user.get_channels_length() >= Limits::MAXCHANNELS
-      #  Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, args[0]))
-      #  return
-      #end
+      # if user.get_channels_length() >= Limits::MAXCHANNELS
+      #   Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, args[0]))
+      #   return
+      # end
       channel_existed = false
       chan = Server.channel_map[args[0].to_s.upcase]
-      if chan == nil
+      if chan.nil?
         channel_object = Channel.new(args[0], user.nick)
         Server.add_channel(channel_object)
         chan = Server.channel_map[args[0].to_s.upcase]
@@ -81,13 +83,11 @@ module Optional
         end
       end
       unless channel_existed
-        # ToDo: Make user chanop if they are the first user on the channel and channel is not +r
+        # TODO: Make user chanop if they are the first user on the channel and channel is not +r
         Network.send(user, ":#{Options.server_name} MODE #{args[1]} +nt")
       end
-      names_cmd = Command.command_map["NAMES"]
-      unless names_cmd == nil
-        names_cmd.call(user, args[0])
-      end
+      names_cmd = Command.command_map['NAMES']
+      names_cmd.call(user, args[0]) unless names_cmd.nil?
       Server.users.each do |u|
         if u.is_admin? || u.is_operator?
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued IJOIN for: #{args[0]}")

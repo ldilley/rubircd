@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Removes a user from the network with optional reason
+  # Use is limited to administrators and IRC operators
   class Kill
-    def initialize()
-      @command_name = "kill"
-      @command_proc = Proc.new() { |user, args| on_kill(user, args) }
+    def initialize
+      @command_name = 'kill'
+      @command_proc = proc { |user, args| on_kill(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = target nick
     # args[1] = message
@@ -44,7 +44,7 @@ module Standard
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KILL"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KILL'))
         return
       end
       if args.length == 2
@@ -52,15 +52,14 @@ module Standard
           args[1] = args[1][1..-1] # remove leading ':'
         end
       else
-        args[1] = "No reason given"
+        args[1] = 'No reason given'
       end
       kill_target = nil
-      Server.users.each do |u|
-        if u.nick.casecmp(args[0]) == 0
-          kill_target = u
-        end
-      end
-      unless kill_target == nil
+      Server.users.each { |u| kill_target = u if u.nick.casecmp(args[0]) == 0 }
+      if kill_target.nil?
+        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        return
+      else
         Server.users.each do |u|
           if u.umodes.include?('s')
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued a KILL for #{kill_target.nick}: #{args[1]}")
@@ -77,8 +76,6 @@ module Standard
         Network.send(kill_target, "ERROR :Closing link: #{kill_target.hostname} [Killed (#{user.nick} (#{args[1]}))]")
         Log.write(2, "#{kill_target.nick}!#{kill_target.ident}@#{kill_target.hostname} was killed by #{user.nick}!#{user.ident}@#{user.hostname}: #{args[1]}")
         Network.close(kill_target, "Killed (#{user.nick} (#{args[1]}))", false)
-      else
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
       end
     end
   end

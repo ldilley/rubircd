@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Kicks a target nick or group of comma-separated nicks from the specified channel
+  # with optional reason
   class Kick
-    def initialize()
-      @command_name = "kick"
-      @command_proc = Proc.new() { |user, args| on_kick(user, args) }
+    def initialize
+      @command_name = 'kick'
+      @command_proc = proc { |user, args| on_kick(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = channel
     # args[1] = user or comma-separated users
@@ -41,11 +41,11 @@ module Standard
     def on_kick(user, args)
       args = args.join.split(' ', 3)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KICK"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KICK'))
         return
       end
       chan = Server.channel_map[args[0].to_s.upcase]
-      if chan == nil
+      if chan.nil?
         Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
         return
       end
@@ -63,7 +63,7 @@ module Standard
           args[2] = args[2][1..-1] # remove leading ':'
         end
         if args[2].length > Limits::KICKLEN
-          args[2] = args[2][0..Limits::KICKLEN-1]
+          args[2] = args[2][0..Limits::KICKLEN - 1]
         end
       end
       good_nicks = []
@@ -77,29 +77,28 @@ module Standard
       end
       good_nicks.each do |n|
         Server.users.each do |u|
-          if u.nick.casecmp(n) == 0
-            if !u.is_on_channel?(chan.name)
-              Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
-            elsif (u.is_admin? && !user.is_admin?) || u.is_service?
-              Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
-              if u.is_admin?
-                Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
-              end
-            elsif kick_count >= Limits::MODES
-              Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
-              next unless u == nil
+          next unless u.nick.casecmp(n) == 0
+          if !u.is_on_channel?(chan.name)
+            Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
+          elsif (u.is_admin? && !user.is_admin?) || u.is_service?
+            Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
+            if u.is_admin?
+              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
+            end
+          elsif kick_count >= Limits::MODES
+            Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+            next unless u.nil?
+          else
+            if !args[2].nil?
+              chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{args[2]}") }
             else
-              if args[2] != nil
-                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick} :#{args[2]}") }
-              else
-                chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
-              end
-              kick_count += 1
-              chan.remove_user(u)
-              u.remove_channel(chan.name)
-              unless chan.users.length > 0 || chan.is_registered?
-                Server.remove_channel(chan)
-              end
+              chan.users.each { |cu| Network.send(cu, ":#{user.nick}!#{user.ident}@#{user.hostname} KICK #{chan.name} #{u.nick}") }
+            end
+            kick_count += 1
+            chan.remove_user(u)
+            u.remove_channel(chan.name)
+            unless chan.users.length > 0 || chan.is_registered?
+              Server.remove_channel(chan)
             end
           end
         end

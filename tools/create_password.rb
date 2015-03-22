@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -20,13 +20,13 @@ require 'digest/sha2'
 
 def make_password(plain_text)
   hash = Digest::SHA2.new(256) << plain_text
-  return hash.to_s
+  hash.to_s
 end
 
 if ARGV.length < 1
-  puts("Not enough arguments. Expected 1 plain-text argument.")
+  puts 'Not enough arguments. Expected 1 plain-text argument.'
 elsif ARGV.length > 1
-  puts("Too many arguments. Expected 1 plain-text argument.")
+  puts 'Too many arguments. Expected 1 plain-text argument.'
 else
   puts(make_password(ARGV[0].to_s))
 end

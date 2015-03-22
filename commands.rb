@@ -127,7 +127,7 @@ class Command
       end
     end  
     begin
-      new_module = eval(File.read("modules/#{mod_name}.rb"))
+      new_module = instance_eval(File.read("modules/#{mod_name}.rb"))
       new_module.plugin_init(Command)
     rescue Errno::ENOENT, LoadError, NameError, SyntaxError => e
       if user == nil # called during startup for module autoload, so don't send message down the socket

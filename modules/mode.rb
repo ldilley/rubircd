@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Displays the modes set on the specified channel, displays the umodes set
+  # on yourself, sets the modes for the channel, or sets the umodes for yourself
   class Mode
-    def initialize()
-      @command_name = "mode"
-      @command_proc = Proc.new() { |user, args| on_mode(user, args) }
+    def initialize
+      @command_name = 'mode'
+      @command_proc = proc { |user, args| on_mode(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = target channel or nick
     # args[1] = mode(s)
@@ -45,7 +45,7 @@ module Standard
       #       Handle ban additional and removal
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODE"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'MODE'))
         return
       end
       target = args[0]

@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Lists channels available on the network along with the number of users,
+  # current mode(s), and the topic for each channel
   class List
-    def initialize()
-      @command_name = "list"
-      @command_proc = Proc.new() { |user, args| on_list(user, args) }
+    def initialize
+      @command_name = 'list'
+      @command_proc = proc { |user, args| on_list(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,9 +33,7 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0..-1] = optional space-separated channels
     def on_list(user, args)
@@ -43,26 +43,25 @@ module Standard
         chan = nil
         args.each do |a|
           chan = Server.channel_map[a.to_s.upcase]
-          unless chan == nil
-            if chan.modes.include?('s') && user.is_on_channel?(chan.name) == false # do not list secret channels unless user is a member
-              next unless chan == nil
-            elsif user.is_admin?
-              Network.send(user, Numeric.RPL_LIST(user.nick, chan, true))
-            else
-              numeric_output = Numeric.RPL_LIST(user.nick, chan, false) # need to check for nils before sending
-              Network.send(user, numeric_output) unless numeric_out == nil
-            end
+          next if chan.nil?
+          if chan.modes.include?('s') && user.is_on_channel?(chan.name) == false # do not list secret channels unless user is a member
+            next unless chan.nil?
+          elsif user.is_admin?
+            Network.send(user, Numeric.RPL_LIST(user.nick, chan, true))
+          else
+            numeric_output = Numeric.RPL_LIST(user.nick, chan, false) # need to check for nils before sending
+            Network.send(user, numeric_output) unless numeric_out.nil?
           end
         end
       else
         Server.channel_map.values.each do |c|
           if c.modes.include?('s') && user.is_on_channel?(c.name) == false # do not list secret channels unless user is a member
-            next unless c == nil
+            next unless c.nil?
           elsif user.is_admin?
             Network.send(user, Numeric.RPL_LIST(user.nick, c, true))
           else
             numeric_output = Numeric.RPL_LIST(user.nick, c, false) # need to check for nils before sending
-            Network.send(user, numeric_output) unless numeric_output == nil
+            Network.send(user, numeric_output) unless numeric_output.nil?
           end
         end
       end

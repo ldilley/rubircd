@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,10 +17,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Standard
+  # Sets the user away (AFK) if a message is provided
+  # Otherwise, marks the user as available
   class Away
-    def initialize()
-      @command_name = "away"
-      @command_proc = Proc.new() { |user, args| on_away(user, args) }
+    def initialize
+      @command_name = 'away'
+      @command_proc = proc { |user, args| on_away(user, args) }
     end
 
     def plugin_init(caller)
@@ -31,21 +33,19 @@ module Standard
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
     # args[0] = message
     def on_away(user, args)
       if args.length < 1
-        user.set_away("")
+        user.set_away('')
         Network.send(user, Numeric.RPL_UNAWAY(user.nick))
       else
         if args[0][0] == ':'
           args[0] = args[0][1..-1] # remove leading ':'
         end
         if args[0].length > Limits::AWAYLEN
-          args[0] = args[0][0..Limits::AWAYLEN-1]
+          args[0] = args[0][0..Limits::AWAYLEN - 1]
         end
         user.set_away(args[0])
         Network.send(user, Numeric.RPL_NOWAWAY(user.nick))

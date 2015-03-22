@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,13 +19,13 @@
 require 'socket'
 
 # Configurables
-server = "localhost"
+server = 'localhost'
 port = 6667
-base_nick = "tester"
+base_nick = 'tester'
 counter = 0
 
 loop do
-  t = Thread.new {
+  t = Thread.new do
     connection = TCPSocket.open(server, port)
     puts(connection.gets("\r\n").chomp("\r\n"))
     puts(connection.gets("\r\n").chomp("\r\n"))
@@ -41,6 +41,6 @@ loop do
     end
     counter += 1
     sleep 1
-  }
+  end
   t.join
 end

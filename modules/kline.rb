@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,29 +21,37 @@ require 'utility'
 require 'xline'
 
 module Standard
+  # Removes a local ban if only user@host is given and exists
+  # Otherwise, three arguments are required to add a new local ban
+  # If the duration is 0 (zero), then the ban never expires
+  # Use is limited to administrators and IRC operators
   class Kline
-    def initialize()
-      @command_name = "kline"
-      @command_proc = Proc.new() { |user, args| on_kline(user, args) }
+    def initialize
+      @command_name = 'kline'
+      @command_proc = proc { |user, args| on_kline(user, args) }
     end
 
     def plugin_init(caller)
       caller.register_command(@command_name, @command_proc)
-      read_config()
-      Server.init_kline()
+      read_config
+      Server.init_kline
     end
 
     def plugin_finish(caller)
       caller.unregister_command(@command_name)
     end
 
-    def command_name
-      @command_name
-    end
+    attr_reader :command_name
 
-    @@kline_data = []
-    if Options.io_type.to_s == "thread"
-      @@kline_data_lock = Mutex.new
+    @kline_data = []
+    @kline_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
+
+    def list_klines
+      if Options.io_type.to_s == 'thread'
+        @kline_data_lock.synchronize { @kline_data }
+      else
+        @kline_data
+      end
     end
 
     # args[0] = ident@host
@@ -56,47 +64,46 @@ module Standard
         return
       end
       if args.length < 1 || args.length == 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "KLINE"))
+        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KLINE'))
         return
       end
       if args.length == 1 # attempt to remove the kline
         kline_found = false
-        if @@kline_data.length > 0
-          @@kline_data.each do |k|
-            if args[0].casecmp(k.target) == 0
-              if Options.io_type.to_s == "thread"
-                @@kline_data_lock.synchronize { @@kline_data.delete(k) }
-              else
-                @@kline_data.delete(k)
-              end
-              kline_found = true
+        if @kline_data.length > 0
+          @kline_data.each do |k|
+            next unless args[0].casecmp(k.target) == 0
+            if Options.io_type.to_s == 'thread'
+              @kline_data_lock.synchronize { @kline_data.delete(k) }
+            else
+              @kline_data.delete(k)
             end
+            kline_found = true
           end
         end
         begin
           marked_for_deletion = false
-          kline_entries = ""
-          kf = File.open("cfg/klines.yml", 'r')
+          kline_entries = ''
+          kf = File.open('cfg/klines.yml', 'r')
           YAML.load_documents(kf) do |doc|
-            unless doc == nil
+            unless doc.nil?
               doc.each do |key, value|
-                if key == "address" && value.casecmp(args[0]) == 0
+                if key == 'address' && value.casecmp(args[0]) == 0
                   marked_for_deletion = true
                   break
                 end
               end
             end
             unless marked_for_deletion
-              kline_entries += doc.to_yaml()
+              kline_entries += doc.to_yaml
               marked_for_deletion = false
             end
           end
-          kf.close()
-          kf = File.open("cfg/klines.yml", 'w')
+          kf.close
+          kf = File.open('cfg/klines.yml', 'w')
           kf.write(kline_entries)
-          kf.close()
+          kf.close
         rescue => e
-          Log.write(3, "Unable to modify klines.yml file!")
+          Log.write(3, 'Unable to modify klines.yml file!')
           Log.write(3, e)
         end
         if kline_found
@@ -110,92 +117,87 @@ module Standard
         end
         return
       end
-      if args.length >= 3 # attempt to add the k-line
-        if args[2][0] == ':'
-          args[2] = args[2][1..-1] # remove leading ':'
-        end
-        # Verify this is not a duplicate entry
-        if @@kline_data.length > 0
-          @@kline_data.each do |k|
-            if args[0].casecmp(k.target) == 0
-              Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: There is an existing k-line matching #{args[0]}. For a list, use /STATS k.")
-              return
-            end
+      return unless args.length >= 3
+      # Attempt to add the k-line
+      if args[2][0] == ':'
+        args[2] = args[2][1..-1] # remove leading ':'
+      end
+      # Verify this is not a duplicate entry
+      if @kline_data.length > 0
+        @kline_data.each do |k|
+          if args[0].casecmp(k.target) == 0
+            Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: There is an existing k-line matching #{args[0]}. For a list, use /STATS k.")
+            return
           end
         end
-        # Validate ident, host, and duration
-        tokens = args[0].split('@', 2) # 0 = ident and 1 = host
-        unless tokens[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
-          if tokens[0] == nil || tokens[0] == ""
-            Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line. It was empty!")
-          else
-            Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line: #{tokens[0]}")
-          end
-          return
-        end
-        unless tokens[1] == '*' || Utility.is_valid_hostname?(tokens[1])
-          if tokens[1] == nil || tokens[1] == ""
-            Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid host in k-line. It was empty!")
-          else
-            Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid host in k-line: #{tokens[1]}")
-          end
-          return
-        end
-        unless args[1] =~ /\d/ && args[1].to_i >= 0
-          Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid duration in k-line: #{args[1]}")
-          return
-        end
-        entry = Xline.new(args[0], nil, args[1], user.nick, args[2])
-        if Options.io_type.to_s == "thread"
-          @@kline_data_lock.synchronize { @@kline_data.push(entry) }
+      end
+      # Validate ident, host, and duration
+      tokens = args[0].split('@', 2) # 0 = ident and 1 = host
+      unless tokens[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
+        if tokens[0].nil? || tokens[0] == ''
+          Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line. It was empty!")
         else
-          @@kline_data << entry
+          Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid username in k-line: #{tokens[0]}")
         end
-        begin
-          kline_file = File.open("cfg/klines.yml", 'a')
-          kline_file.write({ "address" => entry.target, "create_time" => entry.create_time, "duration" => entry.duration, "creator" => entry.creator, "reason" => entry.reason }.to_yaml())
-          kline_file.close()
-        rescue => e
-          Log.write(3, "Unable to write to klines.yml file!")
-          Log.write(3, e)
-        end
-        Server.users.each do |u|
-          if u.is_admin? || u.is_operator?
-            if args[1].casecmp("0") == 0
-              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
-            else
-              Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
-            end
-          end
-        end
-        if args[1].casecmp("0") == 0
-          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
+        return
+      end
+      unless tokens[1] == '*' || Utility.is_valid_hostname?(tokens[1])
+        if tokens[1].nil? || tokens[1] == ''
+          Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid host in k-line. It was empty!")
         else
-          Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
+          Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid host in k-line: #{tokens[1]}")
         end
+        return
+      end
+      unless args[1] =~ /\d/ && args[1].to_i >= 0
+        Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid duration in k-line: #{args[1]}")
+        return
+      end
+      entry = Xline.new(args[0], nil, args[1], user.nick, args[2])
+      if Options.io_type.to_s == 'thread'
+        @kline_data_lock.synchronize { @kline_data.push(entry) }
+      else
+        @kline_data << entry
+      end
+      begin
+        kline_file = File.open('cfg/klines.yml', 'a')
+        kline_file.write({ 'address' => entry.target, 'create_time' => entry.create_time, 'duration' => entry.duration, 'creator' => entry.creator, 'reason' => entry.reason }.to_yaml)
+        kline_file.close
+      rescue => e
+        Log.write(3, 'Unable to write to klines.yml file!')
+        Log.write(3, e)
+      end
+      Server.users.each do |u|
+        next unless u.is_admin? || u.is_operator?
+        if args[1].casecmp('0') == 0
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
+        else
+          Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
+        end
+      end
+      if args[1].casecmp('0') == 0
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]}: #{args[2]}")
+      else
+        Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has issued a k-line for #{args[0]} (#{args[1]} hours): #{args[2]}")
       end
     end
 
-    def list_klines()
-      return @@kline_data
-    end
-
-    def read_config()
+    def read_config
       begin
-        kline_file = File.open("cfg/klines.yml", 'r')
+        kline_file = File.open('cfg/klines.yml', 'r')
       rescue => e
-        Log.write(3, "Unable to open klines.yml file!")
+        Log.write(3, 'Unable to open klines.yml file!')
         Log.write(3, e)
         return
       end
       begin
         YAML.load_documents(kline_file) do |doc|
-          kline_fields = Array.new
-          unless doc == nil
+          kline_fields = []
+          unless doc.nil?
             doc.each do |key, value|
-              if value == nil || value == ""
+              if value.nil? || value == ''
                 Log.write(4, "Invalid #{key} (null value) in klines.yml file!")
-                # ToDo: Make this more resilient.
+                # TODO: Make this more resilient.
                 exit! # bail here and make the administrator repair the file since this will cause problems with STATS k
               end
               kline_fields << value
@@ -208,19 +210,19 @@ module Standard
           # 3 = creator
           # 4 = reason
           entry = Xline.new(kline_fields[0], kline_fields[1], kline_fields[2], kline_fields[3], kline_fields[4])
-          if Options.io_type.to_s == "thread"
-            @@kline_data_lock.synchronize { @@kline_data.push(entry) }
+          if Options.io_type.to_s == 'thread'
+            @kline_data_lock.synchronize { @kline_data.push(entry) }
           else
-            @@kline_data << entry
+            @kline_data << entry
           end
         end
       rescue => e
         Log.write(3, "klines.yml file seems corrupt: #{e}")
         return
       ensure
-        Log.write(2, "#{@@kline_data.length} k-lines loaded.")
-        kline_file.close()
-      end      
+        Log.write(2, "#{@kline_data.length} k-lines loaded.")
+        kline_file.close
+      end
     end
   end
 end

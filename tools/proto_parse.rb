@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,19 +19,19 @@
 require 'socket'
 
 # Configurables
-server_name = "localhost"
-network_name = "RubIRCd"
+server_name = 'localhost'
+network_name = 'RubIRCd'
 port = 6667
 
 server = TCPServer.open(port)
 client_count = 0
-users = Array.new
-loop {
+users = []
+loop do
   Thread.start(server.accept) do |client|
-    client_count = client_count+1
+    client_count += 1
     done = 0
     client.puts(":#{server_name} NOTICE Auth :*** Looking up your hostname...")
-    sock_domain, client_port, client_hostname, client_ip = client.peeraddr
+    *_, client_hostname, _ = client.peeraddr
     client.puts(":#{server_name} NOTICE Auth :*** Found your hostname (#{client_hostname})")
     # client sends "NICK <nick>"
     incoming = client.gets("\r\n").chomp("\r\n")
@@ -47,14 +47,14 @@ loop {
     puts(incoming.split)
     client.puts(":#{server_name} 001 #{nick} :Welcome to the #{network_name} IRC Network #{nick}!")
     users.push(nick)
-    while done == 0 do
+    while done == 0
       message = client.gets("\r\n").chomp("\r\n")
       client.puts(message)
       puts(message)
       if message == 'QUIT'
         done = 1
-        client.close()
-        client_count = client_count-1
+        client.close
+        client_count -= 1
         users.delete(nick)
       elsif message == 'PING'
         client.puts("PONG #{server_name}")
@@ -62,11 +62,11 @@ loop {
         client.puts(Time.now.ctime)
       elsif message == 'WHO'
         client.puts("Current connections: #{client_count}")
-        client.puts("Users online: ")
+        client.puts('Users online: ')
         users.each { |x| client.puts(x) }
       else
-        client.puts("Invalid command")
+        client.puts('Invalid command')
       end
     end
   end
-}
+end
