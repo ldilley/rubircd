@@ -26,6 +26,8 @@ module Standard
   # (zero), then the ban never expires. Use is limited to administrators and IRC operators.
   class Zline
     def initialize
+      @zline_data = []
+      @zline_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
       @command_name = 'zline'
       @command_proc = proc { |user, args| on_zline(user, args) }
     end
@@ -41,9 +43,6 @@ module Standard
     end
 
     attr_reader :command_name
-
-    @zline_data = []
-    @zline_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
 
     def list_zlines
       if Options.io_type.to_s == 'thread'
