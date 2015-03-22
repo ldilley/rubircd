@@ -27,6 +27,8 @@ module Standard
   # Use is limited to administrators and IRC operators
   class Kline
     def initialize
+      @kline_data = []
+      @kline_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
       @command_name = 'kline'
       @command_proc = proc { |user, args| on_kline(user, args) }
     end
@@ -42,9 +44,6 @@ module Standard
     end
 
     attr_reader :command_name
-
-    @kline_data = []
-    @kline_data_lock = Mutex.new if Options.io_type.to_s == 'thread'
 
     def list_klines
       if Options.io_type.to_s == 'thread'

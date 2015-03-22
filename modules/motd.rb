@@ -45,8 +45,8 @@ module Standard
             if line.length > Limits::MOTDLINELEN
               line = line[0..Limits::MOTDLINELEN - 1]
             end
-            line = line.to_s.delete('\n')
-            line = line.delete('\r')
+            line = line.to_s.delete("\n")
+            line = line.delete("\r")
             Network.send(user, Numeric.RPL_MOTD(user.nick, line))
           end
           Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
