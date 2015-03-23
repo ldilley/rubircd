@@ -40,7 +40,7 @@ module Standard
     def on_invite(user, args)
       args = args.join.split(' ', 2)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'INVITE'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'INVITE'))
         return
       end
       # TODO: Check for chanop status once a place for users' channel modes is figured out and a place to write invites
@@ -49,20 +49,20 @@ module Standard
         target_user = u if u.nick.casecmp(args[0]) == 0
       end
       if target_user.nil?
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
       unless user.is_on_channel?(args[1])
-        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[1]))
+        Network.send(user, Numeric.err_notonchannel(user.nick, args[1]))
         return
       end
       if target_user.is_on_channel?(args[1])
-        Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, args[0], args[1]))
+        Network.send(user, Numeric.err_useronchannel(user.nick, args[0], args[1]))
         return
       end
-      Network.send(user, Numeric.RPL_INVITING(user.nick, args[0], args[1]))
+      Network.send(user, Numeric.rpl_inviting(user.nick, args[0], args[1]))
       if target_user.away_message.length > 0
-        Network.send(user, Numeric.RPL_AWAY(user.nick, target_user))
+        Network.send(user, Numeric.rpl_away(user.nick, target_user))
       end
       target_user.add_invite(args[1])
       Network.send(target_user, ":#{user.nick}!#{user.ident}@#{user.hostname} INVITE #{args[0]} :#{args[1]}")

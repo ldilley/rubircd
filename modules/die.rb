@@ -38,11 +38,11 @@ module Standard
     # args[0] = password
     def on_die(user, args)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'DIE'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'DIE'))
         return
       end
       hash = Digest::SHA2.new(256) << args[0].strip
@@ -56,7 +56,7 @@ module Standard
         Log.write(2, "DIE issued by #{user.nick}!#{user.ident}@#{user.hostname}.")
         exit!
       else
-        Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
+        Network.send(user, Numeric.err_passwdmismatch(user.nick))
       end
     end
   end

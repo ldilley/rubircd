@@ -20,6 +20,7 @@ require 'options'
 
 module Standard
   # Returns the history for a given nick
+  # Nick history is created each time a user changes their nickname from the target nick
   class Whowas
     def initialize
       @whowas_data = []
@@ -43,20 +44,20 @@ module Standard
     def on_whowas(user, args)
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'WHOWAS'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'WHOWAS'))
         return
       end
       nick_found = false
       @whowas_data.each do |entry|
         next unless entry.nick.casecmp(args[0]) == 0
-        Network.send(user, Numeric.RPL_WHOWASUSER(user.nick, entry))
-        Network.send(user, Numeric.RPL_WHOISSERVER(user.nick, entry, false))
+        Network.send(user, Numeric.rpl_whowasuser(user.nick, entry))
+        Network.send(user, Numeric.rpl_whoisserver(user.nick, entry, false))
         nick_found = true
       end
       unless nick_found
-        Network.send(user, Numeric.ERR_WASNOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_wasnosuchnick(user.nick, args[0]))
       end
-      Network.send(user, Numeric.RPL_ENDOFWHOWAS(user.nick))
+      Network.send(user, Numeric.rpl_endofwhowas(user.nick))
     end
 
     def add_entry(user, signoff_time)

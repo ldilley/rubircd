@@ -41,11 +41,11 @@ module Standard
     # args[0] = message
     def on_wallops(user, args)
       unless user.is_operator? || user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'WALLOPS'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'WALLOPS'))
         return
       end
       Server.users.each do |u|

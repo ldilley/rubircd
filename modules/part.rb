@@ -39,7 +39,7 @@ module Standard
     def on_part(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'PART'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'PART'))
         return
       end
       if args.length > 1
@@ -49,7 +49,7 @@ module Standard
       channels = args[0].split(',')
       channels.each do |channel|
         user_on_channel = false
-        if Channel.is_valid_channel_name?(channel)
+        if Channel.valid_channel_name?(channel)
           user_channels = user.get_channels_array
           user_channels.each do |c|
             next unless c.casecmp(channel) == 0
@@ -80,10 +80,10 @@ module Standard
             user.remove_channel(channel)
           end
           unless user_on_channel
-            Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, channel))
+            Network.send(user, Numeric.err_notonchannel(user.nick, channel))
           end
         else
-          Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+          Network.send(user, Numeric.err_nosuchchannel(user.nick, channel))
         end
       end
     end

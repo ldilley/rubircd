@@ -39,7 +39,7 @@ module Standard
     # args[1] = topic
     def on_topic(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'TOPIC'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'TOPIC'))
         return
       end
       args = args.join.split(' ', 2)
@@ -52,18 +52,18 @@ module Standard
         unless chan.nil?
           # TODO: Add if check for channel modes +p and +s
           if chan.topic.length == 0
-            Network.send(user, Numeric.RPL_NOTOPIC(user.nick, args[0]))
+            Network.send(user, Numeric.rpl_notopic(user.nick, args[0]))
             return
           else
-            Network.send(user, Numeric.RPL_TOPIC(user.nick, args[0], chan.topic))
+            Network.send(user, Numeric.rpl_topic(user.nick, args[0], chan.topic))
             unless chan.topic.length == 0
-              Network.send(user, Numeric.RPL_TOPICTIME(user.nick, chan))
+              Network.send(user, Numeric.rpl_topictime(user.nick, chan))
             end
             return
           end
           # TODO: else send numeric here if +p and/or +s are set
         end
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
@@ -74,8 +74,8 @@ module Standard
           user_on_channel = true
           chan = Server.channel_map[args[0].to_s.upcase]
           next if chan.nil?
-          if chan.has_mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
-            Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
+          if chan.mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
+            Network.send(user, Numeric.err_chanoprivsneeded(user.nick, chan.name))
             return
           end
           if args[1].nil? || args[1].length == 0
@@ -86,10 +86,10 @@ module Standard
           chan.users.each { |u| Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} TOPIC #{args[0]} :#{args[1]}") }
         end
         unless user_on_channel
-          Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+          Network.send(user, Numeric.err_notonchannel(user.nick, args[0]))
         end
       else
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
       end
     end
   end

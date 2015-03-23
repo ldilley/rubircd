@@ -37,13 +37,13 @@ module Standard
     # args[0] = optional server name
     def on_admin(user, args)
       if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
-        Network.send(user, Numeric.RPL_ADMINME(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ADMINLOC1(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ADMINLOC2(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ADMINEMAIL(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_adminme(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_adminloc1(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_adminloc2(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_adminemail(user.nick, Options.server_name))
       # TODO: elsif to handle arbitrary servers when others are linked
       else
-        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchserver(user.nick, args[0]))
       end
     end
   end

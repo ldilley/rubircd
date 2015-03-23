@@ -38,12 +38,12 @@ module Standard
     # args[0] = optional server
     def on_version(user, args)
       if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
-        Network.send(user, Numeric.RPL_VERSION(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
-        Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_version(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_isupport1(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_isupport2(user.nick, Options.server_name))
       # elsif to handle arbitrary servers when others are linked
       else
-        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchserver(user.nick, args[0]))
       end
     end
   end

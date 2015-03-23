@@ -41,7 +41,7 @@ module Standard
     # args[1] = optional 'o' to check for administrators and operators
     def on_who(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'WHO'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'WHO'))
         return
       end
       args = args.join.split(' ', 2)
@@ -54,20 +54,20 @@ module Standard
             channel.users.each do |u|
               next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
               if u.is_admin? || u.is_operator?
-                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
+                Network.send(user, Numeric.rpl_whoreply(user.nick, args[0], u, 0))
               end
             end
           else
             # Target here is the channel
             channel.users.each do |u|
               next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
-              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, args[0], u, 0))
+              Network.send(user, Numeric.rpl_whoreply(user.nick, args[0], u, 0))
             end
           end
-          Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, args[0]))
+          Network.send(user, Numeric.rpl_endofwho(user.nick, args[0]))
           return
         else
-          Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+          Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
           return
         end
       else
@@ -106,13 +106,13 @@ module Standard
                   unless channel.nil?
                     next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
                   end
-                  Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+                  Network.send(user, Numeric.rpl_whoreply(user.nick, my_channel, u, 0))
                   same_channel = true
                   break
                 end
               end
               unless same_channel
-                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, '*', u, 0))
+                Network.send(user, Numeric.rpl_whoreply(user.nick, '*', u, 0))
               end
             end
           else
@@ -125,17 +125,17 @@ module Standard
                 unless channel.nil?
                   next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
                 end
-                Network.send(user, Numeric.RPL_WHOREPLY(user.nick, my_channel, u, 0))
+                Network.send(user, Numeric.rpl_whoreply(user.nick, my_channel, u, 0))
                 same_channel = true
                 break
               end
             end
             unless same_channel
-              Network.send(user, Numeric.RPL_WHOREPLY(user.nick, '*', u, 0))
+              Network.send(user, Numeric.rpl_whoreply(user.nick, '*', u, 0))
             end
           end
         end
-        Network.send(user, Numeric.RPL_ENDOFWHO(user.nick, args[0]))
+        Network.send(user, Numeric.rpl_endofwho(user.nick, args[0]))
       end
     end
   end

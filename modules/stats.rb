@@ -41,11 +41,11 @@ module Standard
     def on_stats(user, args)
       args = args.join.split(' ', 2)
       unless user.is_operator? || user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'STATS'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'STATS'))
         return
       end
       # TODO: Handle optional server argument after linking is in a working state
@@ -56,10 +56,10 @@ module Standard
       end
       case args[0]
       when 'c' # command statistics
-        Command.command_counter_map.each { |key, value| Network.send(user, Numeric.RPL_STATSCOMMANDS(user.nick, key, value.command_count, value.command_recv_bytes)) }
+        Command.command_counter_map.each { |key, value| Network.send(user, Numeric.rpl_statscommands(user.nick, key, value.command_count, value.command_recv_bytes)) }
       when 'd' # data transferred
-        Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%i bytes received', Server.data_recv)))
-        Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%i bytes sent', Server.data_sent)))
+        Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%i bytes received', Server.data_recv)))
+        Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%i bytes sent', Server.data_sent)))
       when 'g' # glines
         # TODO: Coming in 0.3a
         # Uses numeric 223 (RPL_STATSGLINE)
@@ -67,55 +67,55 @@ module Standard
         oper_count = 0
         Server.users.each do |u|
           if u.is_admin? || u.is_operator? || u.is_service?
-            Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%s (%s) Idle: %i seconds', u.nick, u.hostname, (::Time.now.to_i - u.last_activity))))
+            Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%s (%s) Idle: %i seconds', u.nick, u.hostname, (::Time.now.to_i - u.last_activity))))
             oper_count += 1
           end
         end
-        Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%i opers online', oper_count)))
+        Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%i opers online', oper_count)))
       when 'k' # klines
         unless Server.kline_mod.nil?
-          Server.kline_mod.list_klines.each { |kline| Network.send(user, Numeric.RPL_STATSKLINE(user.nick, kline.target, kline.create_time, kline.duration, kline.creator, kline.reason)) }
+          Server.kline_mod.list_klines.each { |kline| Network.send(user, Numeric.rpl_statskline(user.nick, kline.target, kline.create_time, kline.duration, kline.creator, kline.reason)) }
         end
       when 'l' # current client links
-        Server.users.each { |u| Network.send(user, Numeric.RPL_STATSLINKINFO(user.nick, u)) }
+        Server.users.each { |u| Network.send(user, Numeric.rpl_statslinkinfo(user.nick, u)) }
       when 'm' # memory usage for certain data structures
       when 'o' # configured opers and admins
-        Server.opers.each { |oper| Network.send(user, Numeric.RPL_STATSOLINE(user.nick, oper.host, oper.nick, 'Operator')) }
-        Server.admins.each { |admin| Network.send(user, Numeric.RPL_STATSOLINE(user.nick, admin.host, admin.nick, 'Administrator')) }
+        Server.opers.each { |oper| Network.send(user, Numeric.rpl_statsoline(user.nick, oper.host, oper.nick, 'Operator')) }
+        Server.admins.each { |admin| Network.send(user, Numeric.rpl_statsoline(user.nick, admin.host, admin.nick, 'Administrator')) }
       when 'p' # configured server ports
         if !Options.listen_host.nil?
-          Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%s:%i (plain)', Options.listen_host, Options.listen_port)))
+          Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%s:%i (plain)', Options.listen_host, Options.listen_port)))
           unless Options.ssl_port.nil?
-            Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('%s:%i (SSL)', Options.listen_host, Options.ssl_port)))
+            Network.send(user, Numeric.rpl_statsdebug(user.nick, format('%s:%i (SSL)', Options.listen_host, Options.ssl_port)))
           end
         else
-          Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('0.0.0.0:%i (plain)', Options.listen_port)))
+          Network.send(user, Numeric.rpl_statsdebug(user.nick, format('0.0.0.0:%i (plain)', Options.listen_port)))
           if Network.ipv6_enabled
-            Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format(':::%i (plain)', Options.listen_port)))
+            Network.send(user, Numeric.rpl_statsdebug(user.nick, format(':::%i (plain)', Options.listen_port)))
           end
           unless Options.ssl_port.nil?
-            Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format('0.0.0.0:%i (SSL)', Options.ssl_port)))
+            Network.send(user, Numeric.rpl_statsdebug(user.nick, format('0.0.0.0:%i (SSL)', Options.ssl_port)))
             if Network.ipv6_enabled
-              Network.send(user, Numeric.RPL_STATSDEBUG(user.nick, format(':::%i (SSL)', Options.ssl_port)))
+              Network.send(user, Numeric.rpl_statsdebug(user.nick, format(':::%i (SSL)', Options.ssl_port)))
             end
           end
         end
       when 'q' # reserved nicks (qlines)
         unless Server.qline_mod.nil?
-          Server.qline_mod.list_qlines.each { |qline| Network.send(user, Numeric.RPL_STATSQLINE(user.nick, qline.target, qline.create_time, qline.duration, qline.creator, qline.reason)) }
+          Server.qline_mod.list_qlines.each { |qline| Network.send(user, Numeric.rpl_statsqline(user.nick, qline.target, qline.create_time, qline.duration, qline.creator, qline.reason)) }
         end
       when 's' # configured server links
         # TODO: Coming in 0.3a
         # Uses numerics 213 (RPL_STATSCLINE) and 244 (RPL_STATSHLINE)
       when 'u' # uptime
         days, hours, minutes, seconds = Utility.calculate_elapsed_time(Server.start_timestamp)
-        Network.send(user, Numeric.RPL_STATSUPTIME(user.nick, days, hours, minutes, seconds))
+        Network.send(user, Numeric.rpl_statsuptime(user.nick, days, hours, minutes, seconds))
       when 'z' # zlines
         unless Server.zline_mod.nil?
-          Server.zline_mod.list_zlines.each { |zline| Network.send(user, Numeric.RPL_STATSZLINE(user.nick, zline.target, zline.create_time, zline.duration, zline.creator, zline.reason)) }
+          Server.zline_mod.list_zlines.each { |zline| Network.send(user, Numeric.rpl_statszline(user.nick, zline.target, zline.create_time, zline.duration, zline.creator, zline.reason)) }
         end
       end
-      Network.send(user, Numeric.RPL_ENDOFSTATS(user.nick, args[0]))
+      Network.send(user, Numeric.rpl_endofstats(user.nick, args[0]))
     end
   end
 end

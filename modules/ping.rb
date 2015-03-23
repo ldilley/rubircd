@@ -38,7 +38,7 @@ module Standard
     # args[0] = message
     def on_ping(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
+        Network.send(user, Numeric.err_noorigin(user.nick))
         return
       end
       Network.send(user, ":#{Options.server_name} PONG #{Options.server_name} :#{args[0]}")

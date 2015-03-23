@@ -38,11 +38,11 @@ module Standard
     # args[0] = password
     def on_pass(user, args)
       if user.is_registered?
-        Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
+        Network.send(user, Numeric.err_alreadyregistered(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'PASS'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'PASS'))
         return
       end
       hash = Digest::SHA2.new(256) << args[0].strip

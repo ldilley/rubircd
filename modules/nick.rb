@@ -38,26 +38,26 @@ module Standard
     def on_nick(user, args)
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NONICKNAMEGIVEN(user.nick))
+        Network.send(user, Numeric.err_nonicknamegiven(user.nick))
         return
       end
       if args.length > 1
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0..-1].join(' '), 'Nicknames cannot contain spaces.'))
+        Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0..-1].join(' '), 'Nicknames cannot contain spaces.'))
         return
       end
       # Remove leading ':' (fix for Pidgin and possibly other clients)
       args[0] = args[0][1..-1].strip if args[0][0] == ':'
       if args[0].length < 1 || args[0].length > Limits::NICKLEN
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], 'Nickname does not meet length requirements.'))
+        Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0], 'Nickname does not meet length requirements.'))
         return
       end
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         Server.users.each do |u|
           next unless u.nick.casecmp(args[0]) == 0 && user != u
           if user.is_registered?
-            Network.send(user, Numeric.ERR_NICKNAMEINUSE(user.nick, args[0]))
+            Network.send(user, Numeric.err_nicknameinuse(user.nick, args[0]))
           else
-            Network.send(user, Numeric.ERR_NICKNAMEINUSE('*', args[0]))
+            Network.send(user, Numeric.err_nicknameinuse('*', args[0]))
           end
           return
         end
@@ -65,9 +65,9 @@ module Standard
           Server.qline_mod.list_qlines.each do |reserved_nick|
             next unless reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
             if user.is_registered?
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], reserved_nick.reason))
+              Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0], reserved_nick.reason))
             else
-              Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME('*', args[0], reserved_nick.reason))
+              Network.send(user, Numeric.err_erroneousnickname('*', args[0], reserved_nick.reason))
             end
             return
           end
@@ -94,7 +94,7 @@ module Standard
         end
         user.change_nick(args[0])
       else
-        Network.send(user, Numeric.ERR_ERRONEOUSNICKNAME(user.nick, args[0], 'Nickname contains invalid characters.'))
+        Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0], 'Nickname contains invalid characters.'))
       end
     end
   end

@@ -38,22 +38,22 @@ module Standard
     def on_motd(user, args)
       if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
         if Server.motd.length == 0
-          Network.send(user, Numeric.ERR_NOMOTD(user.nick))
+          Network.send(user, Numeric.err_nomotd(user.nick))
         else
-          Network.send(user, Numeric.RPL_MOTDSTART(user.nick))
+          Network.send(user, Numeric.rpl_motdstart(user.nick))
           Server.motd.each do |line|
             if line.length > Limits::MOTDLINELEN
               line = line[0..Limits::MOTDLINELEN - 1]
             end
             line = line.to_s.delete("\n")
             line = line.delete("\r")
-            Network.send(user, Numeric.RPL_MOTD(user.nick, line))
+            Network.send(user, Numeric.rpl_motd(user.nick, line))
           end
-          Network.send(user, Numeric.RPL_ENDOFMOTD(user.nick))
+          Network.send(user, Numeric.rpl_endofmotd(user.nick))
         end
       # elsif to handle arbitrary servers when others are linked
       else
-        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchserver(user.nick, args[0]))
       end
     end
   end

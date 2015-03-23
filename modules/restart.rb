@@ -39,11 +39,11 @@ module Standard
     # args[0] = password
     def on_restart(user, args)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'RESTART'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'RESTART'))
         return
       end
       hash = Digest::SHA2.new(256) << args[0].strip
@@ -69,7 +69,7 @@ module Standard
           end
         end
       else
-        Network.send(user, Numeric.ERR_PASSWDMISMATCH(user.nick))
+        Network.send(user, Numeric.err_passwdmismatch(user.nick))
       end
     end
   end

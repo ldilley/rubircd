@@ -40,10 +40,10 @@ module Standard
         args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
       end
       if args.length < 1 || args[0].strip.casecmp(Options.server_name) == 0 || args[0].strip.empty?
-        Network.send(user, Numeric.RPL_TIME(user.nick, Options.server_name))
+        Network.send(user, Numeric.rpl_time(user.nick, Options.server_name))
       # elsif to handle arbitrary servers when others are linked
       else
-        Network.send(user, Numeric.ERR_NOSUCHSERVER(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchserver(user.nick, args[0]))
       end
     end
   end

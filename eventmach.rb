@@ -30,9 +30,10 @@ rescue Gem::LoadError
   exit!
 end
 
+# Handles plain-text connections
 module PlainServer
   def post_init
-    Server.increment_clients()
+    Server.increment_clients
     # TODO: A lot...
   end
 
@@ -46,10 +47,11 @@ module PlainServer
   end
 end
 
+# Handles SSL connections
 module SecureServer
   def post_init
     start_tls :private_key_file => 'cfg/key.pem', :cert_chain_file => 'cfg/cert.pem', :verify_peer => false
-    Server.increment_clients()
+    Server.increment_clients
     # TODO: A lot...
   end
 
@@ -58,8 +60,14 @@ module SecureServer
   end
 end
 
+# Handles event-driven I/O for network communication
+# using EventMachine
+# This class should offer better performance than
+# native select() since it provides access to epoll
+# and kqueue where available
+# This class is currently just a stub
 class EventMach
-  def self.start()
+  def self.start
     if RUBY_PLATFORM == 'java' && !Options.ssl_port.nil?
       puts 'EventMachine does not support SSL/TLS when using JRuby!'
       Log.write(4, 'EventMachine does not support SSL/TLS when using JRuby!')
@@ -68,16 +76,16 @@ class EventMach
     EventMachine.epoll
     # Check if kqueue is available on this platform
     EventMachine.kqueue = true if EM.kqueue?
-    EventMachine::run {
+    EventMachine.run do
       begin
         if Options.listen_host.nil?
           listen_host = '0.0.0.0'
         else
           listen_host = Options.listen_host
         end
-        EventMachine::start_server(listen_host, Options.listen_port, PlainServer)
+        EventMachine.start_server(listen_host, Options.listen_port, PlainServer)
         unless Options.ssl_port.nil?
-          EventMachine::start_server(listen_host, Options.ssl_port, SecureServer)
+          EventMachine.start_server(listen_host, Options.ssl_port, SecureServer)
         end
       rescue => e
         puts 'Unable to listen on socket.'
@@ -86,6 +94,6 @@ class EventMach
         Log.write(4, e)
         exit!
       end
-    }
+    end
   end
 end

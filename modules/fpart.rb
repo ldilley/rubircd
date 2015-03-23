@@ -41,24 +41,24 @@ module Optional
     def on_fpart(user, args)
       args = args.join.split(' ', 3)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'FPART'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'FPART'))
         return
       end
-      unless Channel.is_valid_channel_name?(args[1])
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[1]))
+      unless Channel.valid_channel_name?(args[1])
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[1]))
         return
       end
       target_user = Server.get_user_by_nick(args[0])
       if target_user.nil?
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
       unless target_user.is_on_channel?(args[1])
-        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[1]))
+        Network.send(user, Numeric.err_notonchannel(user.nick, args[1]))
         return
       end
       chan = Server.channel_map[args[1].to_s.upcase]

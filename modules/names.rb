@@ -44,7 +44,7 @@ module Standard
         args = args[0]
       end
       if args.length < 1
-        Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, '*'))
+        Network.send(user, Numeric.rpl_endofnames(user.nick, '*'))
         return
       end
       userlist = []
@@ -64,8 +64,8 @@ module Standard
         end
       end
       userlist = userlist[0..-1].join(' ')
-      Network.send(user, Numeric.RPL_NAMREPLY(user.nick, args, userlist))
-      Network.send(user, Numeric.RPL_ENDOFNAMES(user.nick, args))
+      Network.send(user, Numeric.rpl_namreply(user.nick, args, userlist))
+      Network.send(user, Numeric.rpl_endofnames(user.nick, args))
     end
   end
 end

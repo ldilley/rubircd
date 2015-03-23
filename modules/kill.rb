@@ -40,11 +40,11 @@ module Standard
     def on_kill(user, args)
       args = args.join.split(' ', 2)
       unless user.is_operator? || user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KILL'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'KILL'))
         return
       end
       if args.length == 2
@@ -55,7 +55,7 @@ module Standard
       kill_target = nil
       Server.users.each { |u| kill_target = u if u.nick.casecmp(args[0]) == 0 }
       if kill_target.nil?
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       else
         Server.users.each do |u|
@@ -64,7 +64,7 @@ module Standard
           end
         end
         if (kill_target.is_admin? && !user.is_admin?) || kill_target.is_service?
-          Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, kill_target.nick))
+          Network.send(user, Numeric.err_attackdeny(user.nick, kill_target.nick))
           if kill_target.is_admin?
             Network.send(kill_target, ":#{Options.server_name} NOTICE #{kill_target.nick} :#{user.nick} attempted to kill you!")
           end
