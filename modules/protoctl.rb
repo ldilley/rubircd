@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 module Optional
-  # Legacy client extensions (NAMESX and UHNAMES)
+  # Handles legacy client extensions like NAMESX and UHNAMES
   # Newer clients should be using CAP to enable similar features
   class Protoctl
     def initialize
@@ -39,7 +39,7 @@ module Optional
     def on_protoctl(user, args)
       args = args.join.split
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'PROTOCTL'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'PROTOCTL'))
         return
       end
       args.each do |arg|

@@ -40,24 +40,24 @@ module Optional
     # args[0] = channel
     def on_ijoin(user, args)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'IJOIN'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'IJOIN'))
         return
       end
-      unless Channel.is_valid_channel_name?(args[0])
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+      unless Channel.valid_channel_name?(args[0])
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
       if user.is_on_channel?(args[0])
-        Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, user.nick, args[0]))
+        Network.send(user, Numeric.err_useronchannel(user.nick, user.nick, args[0]))
         return
       end
       # Allow administrators to bypass channel cap
       # if user.get_channels_length() >= Limits::MAXCHANNELS
-      #   Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, args[0]))
+      #   Network.send(user, Numeric.err_toomanychannels(user.nick, args[0]))
       #   return
       # end
       channel_existed = false

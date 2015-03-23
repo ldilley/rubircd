@@ -41,20 +41,20 @@ module Standard
     def on_kick(user, args)
       args = args.join.split(' ', 3)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KICK'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'KICK'))
         return
       end
       chan = Server.channel_map[args[0].to_s.upcase]
       if chan.nil?
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
       unless user.is_on_channel?(chan.name)
-        Network.send(user, Numeric.ERR_NOTONCHANNEL(user.nick, args[0]))
+        Network.send(user, Numeric.err_notonchannel(user.nick, args[0]))
         return
       end
       if !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
-        Network.send(user, Numeric.ERR_CHANOPRIVSNEEDED(user.nick, chan.name))
+        Network.send(user, Numeric.err_chanoprivsneeded(user.nick, chan.name))
         return
       end
       nicks = args[1].split(',')
@@ -68,21 +68,21 @@ module Standard
         if Server.users.any? { |u| u.nick.casecmp(n) == 0 }
           good_nicks << n
         else
-          Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, n))
+          Network.send(user, Numeric.err_nosuchnick(user.nick, n))
         end
       end
       good_nicks.each do |n|
         Server.users.each do |u|
           next unless u.nick.casecmp(n) == 0
           if !u.is_on_channel?(chan.name)
-            Network.send(user, Numeric.ERR_USERNOTINCHANNEL(user.nick, u.nick, chan.name))
+            Network.send(user, Numeric.err_usernotinchannel(user.nick, u.nick, chan.name))
           elsif (u.is_admin? && !user.is_admin?) || u.is_service?
-            Network.send(user, Numeric.ERR_ATTACKDENY(user.nick, u.nick))
+            Network.send(user, Numeric.err_attackdeny(user.nick, u.nick))
             if u.is_admin?
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
             end
           elsif kick_count >= Limits::MODES
-            Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, u.nick))
+            Network.send(user, Numeric.err_toomanytargets(user.nick, u.nick))
             next unless u.nil?
           else
             if !args[2].nil?
@@ -93,7 +93,7 @@ module Standard
             kick_count += 1
             chan.remove_user(u)
             u.remove_channel(chan.name)
-            unless chan.users.length > 0 || chan.is_registered?
+            unless chan.users.length > 0 || chan.registered
               Server.remove_channel(chan)
             end
           end

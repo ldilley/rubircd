@@ -37,7 +37,7 @@ module Standard
     # args[0..-1] = nick or space-separated nicks
     def on_userhost(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USERHOST'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'USERHOST'))
         return
       end
       args = args.join.split
@@ -53,7 +53,7 @@ module Standard
           end
         end
       end
-      Network.send(user, Numeric.RPL_USERHOST(user.nick, userhost_list))
+      Network.send(user, Numeric.rpl_userhost(user.nick, userhost_list))
     end
   end
 end

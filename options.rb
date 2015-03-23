@@ -218,7 +218,7 @@ class Options
       exit!
     end
 
-    if @@auto_join != nil && !Channel.is_valid_channel_name?(@@auto_join)
+    if @@auto_join != nil && !Channel.valid_channel_name?(@@auto_join)
       error_text = "\nauto_join value is not a valid channel name."
       return Exception.new(error_text.lstrip) if called_from_rehash
       puts(error_text)

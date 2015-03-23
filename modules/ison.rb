@@ -37,7 +37,7 @@ module Standard
     # args[0..-1] = nick or space-separated nicks
     def on_ison(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'ISON'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'ISON'))
         return
       end
       args = args.join.split
@@ -48,7 +48,7 @@ module Standard
           good_nicks << u.nick if u.nick.casecmp(n) == 0
         end
       end
-      Network.send(user, Numeric.RPL_ISON(user.nick, good_nicks))
+      Network.send(user, Numeric.rpl_ison(user.nick, good_nicks))
     end
   end
 end

@@ -41,10 +41,10 @@ module Optional
       hash.each do |key, value|
         # Recursion needed for nested hashes when using the JVM (JRuby)
         if value.is_a?(Hash)
-          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, format('%s:', key)))
+          Network.send(user, Numeric.rpl_debugmsg(user.nick, format('%s:', key)))
           iter_hash(user, value)
         else
-          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, format('%s = %s', key, value)))
+          Network.send(user, Numeric.rpl_debugmsg(user.nick, format('%s = %s', key, value)))
         end
       end
     end
@@ -52,11 +52,11 @@ module Optional
     # args[0] = subcommand
     def on_memory(user, args)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'MEMORY'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'MEMORY'))
         return
       end
 
@@ -64,32 +64,32 @@ module Optional
       when /^gcoff$/i # disables garbage collection
         GC.disable
         @gc_enabled = false
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Garbage collection disabled.'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Garbage collection disabled.'))
         Log.write(0, 'Garbage collection disabled.')
       when /^gcon$/i  # enables garbage collection
         GC.enable
         @gc_enabled = true
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Garbage collection enabled.'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Garbage collection enabled.'))
         Log.write(0, 'Garbage collection enabled.')
       when /^gcrun$/i # run garbage collector
         if @gc_enabled
           GC.start
-          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Garbage collection requested.'))
+          Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Garbage collection requested.'))
           Log.write(0, 'Garbage collection requested.')
         else
-          Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Garbage collection is currently disabled.'))
+          Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Garbage collection is currently disabled.'))
         end
       when /^stats$/i # memory statistics
         iter_hash(user, GC.stat)
       else
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Invalid command'))
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'Valid commands:'))
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'gcoff - Disables garbage collection'))
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'gcon  - Enables garbage collection'))
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'gcrun - Request garbage collection'))
-        Network.send(user, Numeric.RPL_DEBUGMSG(user.nick, 'stats - Displays memory statistics'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Invalid command'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'Valid commands:'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'gcoff - Disables garbage collection'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'gcon  - Enables garbage collection'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'gcrun - Request garbage collection'))
+        Network.send(user, Numeric.rpl_debugmsg(user.nick, 'stats - Displays memory statistics'))
       end
-      Network.send(user, Numeric.RPL_ENDOFDEBUGMSG(user.nick))
+      Network.send(user, Numeric.rpl_endofdebugmsg(user.nick))
     end
   end
 end

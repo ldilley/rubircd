@@ -40,7 +40,7 @@ module Standard
     def on_oper(user, args)
       args = args.join.split(' ', 2)
       if args.length < 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'OPER'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'OPER'))
         return
       end
       admin_nick = nil
@@ -48,7 +48,7 @@ module Standard
       Server.admins.each { |admin| admin_nick = admin.nick if admin.nick.casecmp(args[0]) == 0 }
       Server.opers.each { |oper| oper_nick = oper.nick if oper.nick.casecmp(args[0]) == 0 }
       if admin_nick.nil? && oper_nick.nil?
-        Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+        Network.send(user, Numeric.err_nooperhost(user.nick))
         return
       end
       hash = Digest::SHA2.new(256) << args[1].strip
@@ -57,7 +57,7 @@ module Standard
           if admin.nick == admin_nick && admin.hash == hash.to_s
             if admin.host.nil? || admin.host == '' || admin.host == '*'
               user.set_admin
-              Network.send(user, Numeric.RPL_YOUAREOPER(user))
+              Network.send(user, Numeric.rpl_youareoper(user))
               Server.users.each do |u|
                 if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
@@ -71,7 +71,7 @@ module Standard
             regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
             if user.hostname =~ regx
               user.set_admin
-              Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+              Network.send(user, Numeric.rpl_youareoper(user.nick))
               Server.users.each do |u|
                 if u.is_admin? || u.is_operator?
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
@@ -87,7 +87,7 @@ module Standard
                 end
               end
               Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
-              Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+              Network.send(user, Numeric.err_nooperhost(user.nick))
               return
             end
           else
@@ -97,7 +97,7 @@ module Standard
               end
             end
             Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
-            Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+            Network.send(user, Numeric.err_nooperhost(user.nick))
             return
           end
         end
@@ -107,7 +107,7 @@ module Standard
         if oper.nick == oper_nick && oper.hash == hash.to_s
           if oper.host.nil? || oper.host == '' || oper.host == '*'
             user.set_operator
-            Network.send(user, Numeric.RPL_YOUAREOPER(user))
+            Network.send(user, Numeric.rpl_youareoper(user))
             Server.users.each do |u|
               if u.is_admin? || u.is_operator?
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
@@ -121,7 +121,7 @@ module Standard
           regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
           if user.hostname =~ regx
             user.set_operator
-            Network.send(user, Numeric.RPL_YOUAREOPER(user.nick))
+            Network.send(user, Numeric.rpl_youareoper(user.nick))
             Server.users.each do |u|
               if u.is_admin? || u.is_operator?
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
@@ -137,7 +137,7 @@ module Standard
               end
             end
             Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Host mismatch")
-            Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+            Network.send(user, Numeric.err_nooperhost(user.nick))
             return
           end
         else
@@ -147,7 +147,7 @@ module Standard
             end
           end
           Log.write(1, "#{user.nick}!#{user.ident}@#{user.hostname} failed an OPER attempt: Password mismatch")
-          Network.send(user, Numeric.ERR_NOOPERHOST(user.nick))
+          Network.send(user, Numeric.err_nooperhost(user.nick))
         end
       end
     end

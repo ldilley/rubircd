@@ -40,7 +40,7 @@ module Standard
     # args[1..-1] = capability or space-separated capabilities
     def on_cap(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'CAP'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'CAP'))
         return
       end
       args = args.join.split
@@ -65,7 +65,7 @@ module Standard
         # All REQs are bad for now until support for capabilities are added...
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK: #{args[1..-1].join(' ')}")
       else
-        Network.send(user, Numeric.ERR_INVALIDCAPCMD(user.nick, args[0]))
+        Network.send(user, Numeric.err_invalidcapcmd(user.nick, args[0]))
       end
     end
   end

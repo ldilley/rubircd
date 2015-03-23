@@ -28,7 +28,7 @@ class Command
   def self.parse(user, input)
     handler = @@command_map[input[0].to_s.upcase]
     if handler == nil
-      Network.send(user, Numeric.ERR_UNKNOWNCOMMAND(user.nick, input[0]))
+      Network.send(user, Numeric.err_unknowncommand(user.nick, input[0]))
       return
     end
     unless input == nil
@@ -83,18 +83,18 @@ class Command
   # args[0] = optional server (ToDo: Add ability to specify server to get its modules)
   def self.handle_modlist(user, args)
     unless user.is_admin?
-      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      Network.send(user, Numeric.err_noprivileges(user.nick))
       return
     end
     if Mod.modules == nil
       Mod.modules = {}
     end
     if Mod.modules.length < 1
-      Network.send(user, Numeric.RPL_ENDOFMODLIST(user.nick))
+      Network.send(user, Numeric.rpl_endofmodlist(user.nick))
       return
     end
-    Mod.modules.each { |key, mod| Network.send(user, Numeric.RPL_MODLIST(user.nick, mod.command_name, mod)) }
-    Network.send(user, Numeric.RPL_ENDOFMODLIST(user.nick))
+    Mod.modules.each { |key, mod| Network.send(user, Numeric.rpl_modlist(user.nick, mod.command_name, mod)) }
+    Network.send(user, Numeric.rpl_endofmodlist(user.nick))
   end
 
   # MODLOAD
@@ -102,7 +102,7 @@ class Command
   def self.handle_modload(user, args)
     unless user == nil || user == ""
       unless user.is_admin? 
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
     end
@@ -110,7 +110,7 @@ class Command
       return
     end
     if args.length < 1
-      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODLOAD"))
+      Network.send(user, Numeric.err_needmoreparams(user.nick, "MODLOAD"))
       return
     end
     if Mod.modules == nil
@@ -135,7 +135,7 @@ class Command
       elsif user == ""
         # No action required for attempting to load a dependency or performing an ad hoc load
       else
-        Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, e))
+        Network.send(user, Numeric.err_cantloadmodule(user.nick, mod_name, e))
         Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to load module: #{mod_name}")
       end
       Log.write(4, "Failed to load module: #{mod_name}: #{e}")
@@ -146,13 +146,13 @@ class Command
       mod_exists = Mod.modules[mod_name.to_s.upcase]
       unless mod_exists == nil
         unless user == nil || user == ""
-          Network.send(user, Numeric.ERR_CANTLOADMODULE(user.nick, mod_name, "Module already loaded @ #{mod_exists}"))
+          Network.send(user, Numeric.err_cantloadmodule(user.nick, mod_name, "Module already loaded @ #{mod_exists}"))
           return
         end
       end
       Mod.add(new_module)
       unless user == nil || user == ""
-        Network.send(user, Numeric.RPL_LOADEDMODULE(user.nick, mod_name, new_module))
+        Network.send(user, Numeric.rpl_loadedmodule(user.nick, mod_name, new_module))
         Server.users.each do |u|
           if u.umodes.include?('s')
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has loaded module: #{mod_name} (#{new_module})")
@@ -168,11 +168,11 @@ class Command
   # args[0] = module
   def self.handle_modreload(user, args)
     unless user.is_admin? 
-      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      Network.send(user, Numeric.err_noprivileges(user.nick))
       return
     end
     if args.length < 1
-      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODRELOAD"))
+      Network.send(user, Numeric.err_needmoreparams(user.nick, "MODRELOAD"))
       return
     end
     Command.handle_modunload(user, args)
@@ -183,11 +183,11 @@ class Command
   # args[0] = module
   def self.handle_modunload(user, args)
     unless user.is_admin? 
-      Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+      Network.send(user, Numeric.err_noprivileges(user.nick))
       return
     end
     if args.length < 1
-      Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, "MODUNLOAD"))
+      Network.send(user, Numeric.err_needmoreparams(user.nick, "MODUNLOAD"))
       return
     end
     if args.is_a?(String)
@@ -196,7 +196,7 @@ class Command
       mod_name = args[0]
     end
     if Mod.modules == nil || Mod.modules.length < 1
-       Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, mod_name, "No modules are currently loaded."))
+       Network.send(user, Numeric.err_cantunloadmodule(user.nick, mod_name, "No modules are currently loaded."))
       return
     end
     mod = Mod.modules[mod_name.to_s.upcase]
@@ -204,13 +204,13 @@ class Command
       begin
         mod.plugin_finish(Command)
       rescue NameError => e
-        Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, args[0], "Invalid class name."))
+        Network.send(user, Numeric.err_cantunloadmodule(user.nick, args[0], "Invalid class name."))
         Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} attempted to unload module: #{mod_name}.")
         Log.write(3, e)
         return
       else
         Mod.modules.delete(mod_name.to_s.upcase)
-        Network.send(user, Numeric.RPL_UNLOADEDMODULE(user.nick, mod_name, "#{mod}"))
+        Network.send(user, Numeric.rpl_unloadedmodule(user.nick, mod_name, "#{mod}"))
         Server.users.each do |u|
           if u.umodes.include?('s')
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has unloaded module: #{mod_name} (#{mod})")
@@ -219,7 +219,7 @@ class Command
         Log.write(2, "#{user.nick}!#{user.ident}@#{user.hostname} has successfully unloaded module: #{mod_name} (#{mod})")
       end
     else
-      Network.send(user, Numeric.ERR_CANTUNLOADMODULE(user.nick, mod_name, "Module does not exist."))
+      Network.send(user, Numeric.err_cantunloadmodule(user.nick, mod_name, "Module does not exist."))
     end
   end
 

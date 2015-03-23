@@ -39,11 +39,11 @@ module Optional
     # args[0] = message
     def on_broadcast(user, args)
       unless user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'BROADCAST'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'BROADCAST'))
         return
       end
       Server.users.each do |u|

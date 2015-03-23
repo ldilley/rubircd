@@ -39,11 +39,11 @@ module Standard
     def on_notice(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, 'NOTICE'))
+        Network.send(user, Numeric.err_norecpient(user.nick, 'NOTICE'))
         return
       end
       if args.length < 2
-        Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
+        Network.send(user, Numeric.err_notexttosend(user.nick))
         return
       end
       args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
@@ -51,13 +51,13 @@ module Standard
       targets = args[0].split(',')
       targets.each do |target|
         if good_targets >= Limits::MAXTARGETS
-          Network.send(user, Numeric.ERR_TOOMANYTARGETS(user.nick, target))
+          Network.send(user, Numeric.err_toomanytargets(user.nick, target))
           next unless target.nil?
         end
-        if Channel.is_valid_channel_name?(target)
+        if Channel.valid_channel_name?(target)
           channel = Server.channel_map[target.to_s.upcase]
           if channel.nil?
-            Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, target))
+            Network.send(user, Numeric.err_nosuchchannel(user.nick, target))
           else
             good_targets += 1
             if user.is_on_channel?(target) || !channel.modes.include?('n')
@@ -67,7 +67,7 @@ module Standard
                 end
               end
             else
-              Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, channel.name, 'no external messages'))
+              Network.send(user, Numeric.err_cannotsendtochan(user.nick, channel.name, 'no external messages'))
             end
           end
         else
@@ -79,7 +79,7 @@ module Standard
             good_targets += 1
           end
           unless good_nick
-            Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, target))
+            Network.send(user, Numeric.err_nosuchnick(user.nick, target))
           end
         end
       end

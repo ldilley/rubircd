@@ -46,16 +46,16 @@ module Optional
     def on_fquit(user, args)
       args = args.join.split(' ', 2)
       unless user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'FQUIT'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'FQUIT'))
         return
       end
       target_user = Server.get_user_by_nick(args[0])
       if target_user.nil?
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
       Server.users.each do |u|

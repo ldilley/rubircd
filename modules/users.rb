@@ -38,8 +38,8 @@ module Standard
     # not return information in the format described by the RFC)
     # DALnet and EFnet return the same numerics
     def on_users(user)
-      Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
-      Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
+      Network.send(user, Numeric.rpl_localusers(user.nick))
+      Network.send(user, Numeric.rpl_globalusers(user.nick))
     end
   end
 end

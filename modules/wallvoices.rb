@@ -39,21 +39,21 @@ module Optional
     def on_wallvoices(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NORECIPIENT(user.nick, 'WALLVOICES'))
+        Network.send(user, Numeric.err_norecipient(user.nick, 'WALLVOICES'))
         return
       end
       if args.length < 2
-        Network.send(user, Numeric.ERR_NOTEXTTOSEND(user.nick))
+        Network.send(user, Numeric.err_notexttosend(user.nick))
         return
       end
       args[1] = args[1][1..-1] if args[1][0] == ':' # remove leading ':'
-      unless Channel.is_valid_channel_name?(args[0])
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+      unless Channel.valid_channel_name?(args[0])
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
       chan = Server.channel_map[args[0].to_s.upcase]
       if chan.nil?
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
       if user.is_on_channel?(args[0]) || !chan.modes.include?('n')
@@ -63,7 +63,7 @@ module Optional
           end
         end
       else
-        Network.send(user, Numeric.ERR_CANNOTSENDTOCHAN(user.nick, args[0], 'no external messages'))
+        Network.send(user, Numeric.err_cannotsendtochan(user.nick, args[0], 'no external messages'))
       end
     end
   end

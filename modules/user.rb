@@ -42,11 +42,11 @@ module Standard
     def on_user(user, args)
       args = args.join.split(' ', 4)
       if args.length < 4
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USER'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'USER'))
         return
       end
       if user.is_registered?
-        Network.send(user, Numeric.ERR_ALREADYREGISTERED(user.nick))
+        Network.send(user, Numeric.err_alreadyregistered(user.nick))
         return
       end
       # We don't care about the 2nd and 3rd fields since they are supposed to be hostname and server (these can be spoofed for users)
@@ -60,7 +60,7 @@ module Standard
         args[3] = args[3][0..Limits::GECOSLEN - 1] if args[3].length > Limits::GECOSLEN
         user.change_gecos(args[3])
       else
-        Network.send(user, Numeric.ERR_INVALIDUSERNAME(user.nick, args[0])) # invalid ident
+        Network.send(user, Numeric.err_invalidusername(user.nick, args[0])) # invalid ident
       end
     end
   end

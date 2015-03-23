@@ -38,7 +38,7 @@ module Standard
     # args[0] = server
     def on_pong(user, args)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NOORIGIN(user.nick))
+        Network.send(user, Numeric.err_noorigin(user.nick))
         return
       end
       args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'

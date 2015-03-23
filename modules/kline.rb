@@ -59,11 +59,11 @@ module Standard
     def on_kline(user, args)
       args = args.join.split(' ', 3)
       unless user.is_operator? || user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1 || args.length == 2
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'KLINE'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'KLINE'))
         return
       end
       if args.length == 1 # attempt to remove the kline

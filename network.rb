@@ -406,7 +406,7 @@ class Network
       # Do not allow access to any other commands until the client is registered
       unless allowed_commands.any? { |c| c.casecmp(input[0].to_s.upcase) == 0 }
         unless Command.command_map[input[0].to_s.upcase] == nil
-          Network.send(user, Numeric.ERR_NOTREGISTERED(input[0].to_s.upcase))
+          Network.send(user, Numeric.err_notregistered(input[0].to_s.upcase))
           redo
         end
         redo
@@ -431,7 +431,7 @@ class Network
         registered = true
       else
         if user.nick != "*" && user.ident != nil && user.gecos != nil && user.is_negotiating_cap?
-          Network.send(user, Numeric.ERR_NOTREGISTERED("CAP")) # user has not closed CAP with END
+          Network.send(user, Numeric.err_notregistered("CAP")) # user has not closed CAP with END
         end
         redo
       end
@@ -518,22 +518,22 @@ class Network
         Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** CONNECT: #{user.nick}!#{user.ident}@#{user.hostname} has connected.")
       end
     end
-    Network.send(user, Numeric.RPL_WELCOME(user.nick))
-    Network.send(user, Numeric.RPL_YOURHOST(user.nick))
-    Network.send(user, Numeric.RPL_CREATED(user.nick))
-    Network.send(user, Numeric.RPL_MYINFO(user.nick))
-    Network.send(user, Numeric.RPL_ISUPPORT1(user.nick, Options.server_name))
-    Network.send(user, Numeric.RPL_ISUPPORT2(user.nick, Options.server_name))
+    Network.send(user, Numeric.rpl_welcome(user.nick))
+    Network.send(user, Numeric.rpl_yourhost(user.nick))
+    Network.send(user, Numeric.rpl_created(user.nick))
+    Network.send(user, Numeric.rpl_myinfo(user.nick))
+    Network.send(user, Numeric.rpl_isupport1(user.nick, Options.server_name))
+    Network.send(user, Numeric.rpl_isupport2(user.nick, Options.server_name))
     # If WALLCHOPS/WALLVOICES module not loaded, don't bother sending a third ISUPPORT
     unless Mod.find("WALLCHOPS").nil? && Mod.find("WALLVOICES").nil?
-      Network.send(user, Numeric.RPL_ISUPPORT3(user.nick, Options.server_name))
+      Network.send(user, Numeric.rpl_isupport3(user.nick, Options.server_name))
     end
-    Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
-    Network.send(user, Numeric.RPL_LUSEROP(user.nick))
-    Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
-    Network.send(user, Numeric.RPL_LUSERME(user.nick))
-    Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
-    Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
+    Network.send(user, Numeric.rpl_luserclient(user.nick))
+    Network.send(user, Numeric.rpl_luserop(user.nick))
+    Network.send(user, Numeric.rpl_luserchannels(user.nick))
+    Network.send(user, Numeric.rpl_luserme(user.nick))
+    Network.send(user, Numeric.rpl_localusers(user.nick))
+    Network.send(user, Numeric.rpl_globalusers(user.nick))
     motd_cmd = Command.command_map["MOTD"]
     unless motd_cmd == nil
       motd_cmd.call(user, "")

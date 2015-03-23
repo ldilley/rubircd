@@ -36,12 +36,12 @@ module Standard
 
     # This command takes no args and is not RFC compliant as a result (behaves the same way on InspIRCd)
     def on_lusers(user)
-      Network.send(user, Numeric.RPL_LUSERCLIENT(user.nick))
-      Network.send(user, Numeric.RPL_LUSEROP(user.nick))
-      Network.send(user, Numeric.RPL_LUSERCHANNELS(user.nick))
-      Network.send(user, Numeric.RPL_LUSERME(user.nick))
-      Network.send(user, Numeric.RPL_LOCALUSERS(user.nick))
-      Network.send(user, Numeric.RPL_GLOBALUSERS(user.nick))
+      Network.send(user, Numeric.rpl_luserclient(user.nick))
+      Network.send(user, Numeric.rpl_luserop(user.nick))
+      Network.send(user, Numeric.rpl_luserchannels(user.nick))
+      Network.send(user, Numeric.rpl_luserme(user.nick))
+      Network.send(user, Numeric.rpl_localusers(user.nick))
+      Network.send(user, Numeric.rpl_globalusers(user.nick))
     end
   end
 end

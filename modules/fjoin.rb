@@ -40,28 +40,28 @@ module Optional
     def on_fjoin(user, args)
       args = args.join.split(' ', 2)
       unless user == Options.server_name || user.is_admin?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 2 && user != Options.server_name
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'FJOIN'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'FJOIN'))
         return
       end
-      if user != Options.server_name && !Channel.is_valid_channel_name?(args[1])
-        Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, args[1]))
+      if user != Options.server_name && !Channel.valid_channel_name?(args[1])
+        Network.send(user, Numeric.err_nosuchchannel(user.nick, args[1]))
         return
       end
       target_user = Server.get_user_by_nick(args[0])
       if target_user.nil? && user != Options.server_name
-        Network.send(user, Numeric.ERR_NOSUCHNICK(user.nick, args[0]))
+        Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
       if user != Options.server_name && target_user.is_on_channel?(args[1])
-        Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, target_user.nick, args[1]))
+        Network.send(user, Numeric.err_useronchannel(user.nick, target_user.nick, args[1]))
         return
       end
       if user != Options.server_name && target_user.get_channels_length >= Limits::MAXCHANNELS
-        Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, args[1]))
+        Network.send(user, Numeric.err_toomanychannels(user.nick, args[1]))
         return
       end
       channel_existed = false

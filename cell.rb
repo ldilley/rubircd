@@ -33,6 +33,11 @@ rescue Gem::LoadError
   exit!
 end
 
+# Handles event-driven I/O for network communication
+# using Celluloid
+# This class should offer better performance than
+# native select() since it provides access to libev
+# implementations of epoll and kqueue where available
 class Cell
   include Celluloid::IO
   finalizer :shutdown
@@ -42,14 +47,13 @@ class Cell
     # Since Celluloid::IO is included, this is a Celluloid::IO::TCPServer
     @plain_server = TCPServer.new(host, plain_port)
     async.plain_acceptor
-    unless Options.ssl_port.nil?
-      ssl_context = OpenSSL::SSL::SSLContext.new
-      ssl_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
-      ssl_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
-      @ssl_server = SSLServer.new(TCPServer.new(host, ssl_port), ssl_context)
-      async.ssl_acceptor
-      @connection_check_thread = Thread.new() { Network.connection_checker() }
-    end
+    return if Options.ssl_port.nil?
+    ssl_context = OpenSSL::SSL::SSLContext.new
+    ssl_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
+    ssl_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
+    @ssl_server = SSLServer.new(TCPServer.new(host, ssl_port), ssl_context)
+    async.ssl_acceptor
+    @connection_check_thread = Thread.new { Network.connection_checker }
   end
 
   def shutdown
@@ -66,21 +70,17 @@ class Cell
   end
 
   def handle_plain_connections(plain_client)
-    Server.increment_clients()
+    Server.increment_clients
     user = Network.register_connection(plain_client, nil)
-    unless Server.kline_mod == nil
-      Network.check_for_kline(user)
-    end
+    Network.check_for_kline(user) unless Server.kline_mod.nil?
     Network.welcome(user)
     Network.main_loop(user)
   end
 
   def handle_ssl_connections(ssl_client)
-    Server.increment_clients()
+    Server.increment_clients
     user = Network.register_connection(ssl_client, nil)
-    unless Server.kline_mod == nil
-      Network.check_for_kline(user)
-    end
+    Network.check_for_kline(user) unless Server.kline_mod.nil?
     Network.welcome(user)
     Network.main_loop(user)
   end

@@ -36,7 +36,7 @@ module Standard
     attr_reader :command_name
 
     def on_summon(user)
-      Network.send(user, Numeric.ERR_SUMMONDISABLED(user.nick))
+      Network.send(user, Numeric.err_summondisabled(user.nick))
     end
   end
 end

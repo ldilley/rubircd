@@ -40,7 +40,7 @@ module Standard
     def on_join(user, args)
       args = args.join.split(' ', 2)
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'JOIN'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'JOIN'))
         return
       end
       channels = args[0].split(',')
@@ -50,17 +50,17 @@ module Standard
       channels.each do |channel|
         user_on_channel = user.is_on_channel?(channel)
         if user_on_channel
-          Network.send(user, Numeric.ERR_USERONCHANNEL(user.nick, user.nick, channel))
+          Network.send(user, Numeric.err_useronchannel(user.nick, user.nick, channel))
           key_index += 1 if !keys.nil? && keys.length > key_index
           next unless channel.nil?
         end
         if user.get_channels_length >= Limits::MAXCHANNELS
-          Network.send(user, Numeric.ERR_TOOMANYCHANNELS(user.nick, channel))
+          Network.send(user, Numeric.err_toomanychannels(user.nick, channel))
           key_index += 1 if !keys.nil? && keys.length > key_index
           next unless channel.nil?
         end
-        unless Channel.is_valid_channel_name?(channel)
-          Network.send(user, Numeric.ERR_NOSUCHCHANNEL(user.nick, channel))
+        unless Channel.valid_channel_name?(channel)
+          Network.send(user, Numeric.err_nosuchchannel(user.nick, channel))
           key_index += 1 if !keys.nil? && keys.length > key_index
           next unless channel.nil?
         end
@@ -70,19 +70,19 @@ module Standard
         unless chan.nil?
           # TODO: Check for bans against user here
           if chan.modes.include?('l') && chan.users.length >= chan.limit.to_i && !user.is_admin?
-            Network.send(user, Numeric.ERR_CHANNELISFULL(user.nick, channel))
+            Network.send(user, Numeric.err_channelisfull(user.nick, channel))
             key_index += 1 if !keys.nil? && keys.length > key_index
             next unless channel.nil?
           end
           if chan.modes.include?('k') && !user.is_admin?
             if keys.nil? || keys[key_index] != chan.key
-              Network.send(user, Numeric.ERR_BADCHANNELKEY(user.nick, channel))
+              Network.send(user, Numeric.err_badchannelkey(user.nick, channel))
               key_index += 1 if !keys.nil? && keys.length > key_index
               next unless channel.nil?
             end
           end
           if chan.modes.include?('i') && !user.invites.any? { |channel_invite| channel_invite.casecmp(channel) == 0 } && !user.is_admin?
-            Network.send(user, Numeric.ERR_INVITEONLYCHAN(user.nick, channel))
+            Network.send(user, Numeric.err_inviteonlychan(user.nick, channel))
             key_index += 1 if !keys.nil? && keys.length > key_index
             next unless channel.nil?
           end

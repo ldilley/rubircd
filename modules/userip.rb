@@ -41,11 +41,11 @@ module Optional
       # Unlike USERHOST, USERIP exposes the actual IP address of the user. As a
       # result, it requires elevated privileges in case host cloaking is enabled.
       unless user.is_operator? || user.is_admin? || user.is_service?
-        Network.send(user, Numeric.ERR_NOPRIVILEGES(user.nick))
+        Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
       if args.length < 1
-        Network.send(user, Numeric.ERR_NEEDMOREPARAMS(user.nick, 'USERIP'))
+        Network.send(user, Numeric.err_needmoreparams(user.nick, 'USERIP'))
         return
       end
       args = args.join.split
@@ -61,7 +61,7 @@ module Optional
           end
         end
       end
-      Network.send(user, Numeric.RPL_USERHOST(user.nick, userip_list))
+      Network.send(user, Numeric.rpl_userhost(user.nick, userip_list))
     end
   end
 end
