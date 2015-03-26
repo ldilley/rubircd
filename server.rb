@@ -159,7 +159,7 @@ class Server
     if Options.io_type.to_s == "thread"
       @@users_lock.synchronize do
         if @@users.delete(user) != nil
-          if user.is_admin? || user.is_operator?
+          if user.admin || user.operator
             Server.oper_count -= 1
           end
           return true
@@ -169,7 +169,7 @@ class Server
       end
     else
       if @@users.delete(user) != nil
-        if user.is_admin? || user.is_operator?
+        if user.admin || user.operator
           Server.oper_count -= 1
         end
         return true

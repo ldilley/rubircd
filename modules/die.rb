@@ -37,7 +37,7 @@ module Standard
 
     # args[0] = password
     def on_die(user, args)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end

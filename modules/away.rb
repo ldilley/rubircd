@@ -38,12 +38,12 @@ module Standard
     # args[0] = message
     def on_away(user, args)
       if args.length < 1
-        user.set_away('')
+        user.away_message = ''
         Network.send(user, Numeric.rpl_unaway(user.nick))
       else
         args[0] = args[0][1..-1] if args[0][0] == ':' # remove leading ':'
         args[0] = args[0][0..Limits::AWAYLEN - 1] if args[0].length > Limits::AWAYLEN
-        user.set_away(args[0])
+        user.away_message = args[0]
         Network.send(user, Numeric.rpl_nowaway(user.nick))
       end
     end

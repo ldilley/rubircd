@@ -54,7 +54,7 @@ module Standard
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
         Server.users.each do |u|
           next unless u.nick.casecmp(args[0]) == 0 && user != u
-          if user.is_registered?
+          if user.registered
             Network.send(user, Numeric.err_nicknameinuse(user.nick, args[0]))
           else
             Network.send(user, Numeric.err_nicknameinuse('*', args[0]))
@@ -64,7 +64,7 @@ module Standard
         unless Server.qline_mod.nil?
           Server.qline_mod.list_qlines.each do |reserved_nick|
             next unless reserved_nick.target.casecmp(args[0]) == 0 && user.nick != reserved_nick.target
-            if user.is_registered?
+            if user.registered
               Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0], reserved_nick.reason))
             else
               Network.send(user, Numeric.err_erroneousnickname('*', args[0], reserved_nick.reason))
@@ -72,9 +72,9 @@ module Standard
             return
           end
         end
-        if user.is_registered? && user.nick != args[0]
-          if user.get_channels_length > 0
-            user_channels = user.get_channels_array
+        if user.registered && user.nick != args[0]
+          if user.channels_length > 0
+            user_channels = user.channels_array
             user_channels.each do |c|
               chan = Server.channel_map[c.to_s.upcase]
               chan.users.each do |u|
@@ -92,7 +92,7 @@ module Standard
             Server.whowas_mod.add_entry(user, ::Time.now.asctime)
           end
         end
-        user.change_nick(args[0])
+        user.nick = args[0]
       else
         Network.send(user, Numeric.err_erroneousnickname(user.nick, args[0], 'Nickname contains invalid characters.'))
       end

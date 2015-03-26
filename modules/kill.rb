@@ -39,7 +39,7 @@ module Standard
     # args[1] = message
     def on_kill(user, args)
       args = args.join.split(' ', 2)
-      unless user.is_operator? || user.is_admin? || user.is_service?
+      unless user.operator || user.admin || user.service
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -63,9 +63,9 @@ module Standard
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued a KILL for #{kill_target.nick}: #{args[1]}")
           end
         end
-        if (kill_target.is_admin? && !user.is_admin?) || kill_target.is_service?
+        if (kill_target.admin && !user.admin) || kill_target.service
           Network.send(user, Numeric.err_attackdeny(user.nick, kill_target.nick))
-          if kill_target.is_admin?
+          if kill_target.admin
             Network.send(kill_target, ":#{Options.server_name} NOTICE #{kill_target.nick} :#{user.nick} attempted to kill you!")
           end
           return

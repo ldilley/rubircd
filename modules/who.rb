@@ -52,15 +52,15 @@ module Standard
           # TODO: Also calculate hops once server linking support is added
           if args[1] == 'o'
             channel.users.each do |u|
-              next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
-              if u.is_admin? || u.is_operator?
+              next if !user.admin && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
+              if u.admin || u.operator
                 Network.send(user, Numeric.rpl_whoreply(user.nick, args[0], u, 0))
               end
             end
           else
             # Target here is the channel
             channel.users.each do |u|
-              next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+              next if !user.admin && channel.invisible_nick_in_channel?(u.nick)
               Network.send(user, Numeric.rpl_whoreply(user.nick, args[0], u, 0))
             end
           end
@@ -96,15 +96,15 @@ module Standard
         userlist.each do |u|
           same_channel = false
           if args[1] == 'o'
-            if u.is_admin? || u.is_operator?
-              user_channels = user.get_channels_array
-              u_channels = u.get_channels_array
+            if u.admin || u.operator
+              user_channels = user.channels_array
+              u_channels = u.channels_array
               user_channels.each do |my_channel|
                 u_channels.each do |c|
                   next unless c.casecmp(my_channel) == 0
                   channel = Server.channel_map[c.upcase]
                   unless channel.nil?
-                    next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+                    next if !user.admin && channel.invisible_nick_in_channel?(u.nick)
                   end
                   Network.send(user, Numeric.rpl_whoreply(user.nick, my_channel, u, 0))
                   same_channel = true
@@ -116,14 +116,14 @@ module Standard
               end
             end
           else
-            user_channels = user.get_channels_array
-            u_channels = u.get_channels_array
+            user_channels = user.channels_array
+            u_channels = u.channels_array
             user_channels.each do |my_channel|
               u_channels.each do |c|
                 next unless c.casecmp(my_channel) == 0
                 channel = Server.channel_map[c.upcase]
                 unless channel.nil?
-                  next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick)
+                  next if !user.admin && channel.invisible_nick_in_channel?(u.nick)
                 end
                 Network.send(user, Numeric.rpl_whoreply(user.nick, my_channel, u, 0))
                 same_channel = true

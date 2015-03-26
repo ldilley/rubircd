@@ -40,7 +40,7 @@ module Optional
     # args[2] = optional part message
     def on_fpart(user, args)
       args = args.join.split(' ', 3)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -57,7 +57,7 @@ module Optional
         Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
-      unless target_user.is_on_channel?(args[1])
+      unless target_user.on_channel?(args[1])
         Network.send(user, Numeric.err_notonchannel(user.nick, args[1]))
         return
       end
@@ -73,7 +73,7 @@ module Optional
         target_user.remove_channel(args[1])
       end
       Server.users.each do |u|
-        next unless u.is_admin? || u.is_operator?
+        next unless u.admin || u.operator
         if args[2].nil?
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FPART for #{args[0]} parting from: #{args[1]}")
         else

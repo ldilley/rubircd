@@ -1,5 +1,5 @@
 # RubIRCd - An IRC server written in Ruby
-# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details) 
+# Copyright (C) 2013 Lloyd Dilley (see authors.txt for details)
 # http://www.rubircd.rocks/
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,11 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# This class serves as a helper class for other line types (g, k, q, and z lines.)
+# This class serves as a helper class for other line types (g, k, q, and z lines)
 class Xline
   def initialize(target, create_time, duration, creator, reason)
     @target = target
-    if create_time == nil
+    if create_time.nil?
       @create_time = Time.now.to_i
     else
       @create_time = create_time

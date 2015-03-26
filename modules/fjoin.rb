@@ -39,7 +39,7 @@ module Optional
     # args[1] = channel
     def on_fjoin(user, args)
       args = args.join.split(' ', 2)
-      unless user == Options.server_name || user.is_admin?
+      unless user == Options.server_name || user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -56,11 +56,11 @@ module Optional
         Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
-      if user != Options.server_name && target_user.is_on_channel?(args[1])
+      if user != Options.server_name && target_user.on_channel?(args[1])
         Network.send(user, Numeric.err_useronchannel(user.nick, target_user.nick, args[1]))
         return
       end
-      if user != Options.server_name && target_user.get_channels_length >= Limits::MAXCHANNELS
+      if user != Options.server_name && target_user.channels_length >= Limits::MAXCHANNELS
         Network.send(user, Numeric.err_toomanychannels(user.nick, args[1]))
         return
       end
@@ -86,7 +86,7 @@ module Optional
       names_cmd.call(target_user, args[1]) unless names_cmd.nil?
       return if user == Options.server_name
       Server.users.each do |u|
-        if u.is_admin? || u.is_operator?
+        if u.admin || u.operator
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FJOIN for #{args[0]} joining to: #{args[1]}")
         end
       end

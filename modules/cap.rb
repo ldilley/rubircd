@@ -52,16 +52,16 @@ module Standard
         # TODO: Add "-multi-prefix -userhost-in-names -tls" when CLEAR is issued
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :")
       when 'END'
-        user.set_negotiating_cap(false) unless user.is_registered?
+        user.negotiating_cap = false unless user.registered
       when 'LIST'
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} LIST :")
       when 'LS'
         # TODO: Add "multi-prefix userhost-in-names tls" once NAMESX, UHNAMES, and STARTTLS are supported
-        user.set_negotiating_cap(true) unless user.is_registered?
+        user.negotiating_cap = true unless user.registered
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} LS :")
       when 'REQ'
         # Note: Do not change session capabilities until last ACK is sent per IRC CAP draft
-        user.set_negotiating_cap(true) unless user.is_registered?
+        user.negotiating_cap = true unless user.registered
         # All REQs are bad for now until support for capabilities are added...
         Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK: #{args[1..-1].join(' ')}")
       else

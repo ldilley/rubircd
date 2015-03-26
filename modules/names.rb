@@ -51,7 +51,7 @@ module Standard
       channel = Server.channel_map[args.to_s.upcase]
       unless channel.nil?
         channel.users.each do |u|
-          next if !user.is_admin? && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
+          next if !user.admin && channel.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
           if user.capabilities[:namesx] && user.capabilities[:uhnames] # NAMESX and UHNAMES/userhost-in-names extensions
             userlist << u.get_prefixes(channel.name) + "#{u.nick}!#{user.ident}@#{user.hostname}"
           elsif user.capabilities[:namesx] && !user.capabilities[:uhnames]

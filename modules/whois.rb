@@ -46,17 +46,17 @@ module Standard
       Server.users.each do |u|
         next unless u.nick.casecmp(args[0]) == 0
         Network.send(user, Numeric.rpl_whoisuser(user.nick, u))
-        if u.get_channels_length > 0
+        if u.channels_length > 0
           channel_list = []
           chan = nil
-          u_channels = u.get_channels_array
+          u_channels = u.channels_array
           u_channels.each do |c|
             chan = Server.channel_map[c.upcase]
             next if chan.nil?
-            next if !user.is_admin? && chan.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
+            next if !user.admin && chan.invisible_nick_in_channel?(u.nick) # hide admins who used IJOIN
             # Hide private/secret channel from output unless user is a member of the target's channel
             if chan.modes.include?('p') || chan.modes.include?('s')
-              user_channels = user.get_channels_array
+              user_channels = user.channels_array
               user_channels.each { |uc| channel_list << c if uc.casecmp(c) == 0 }
             else
               channel_list << c
@@ -65,26 +65,26 @@ module Standard
           Network.send(user, Numeric.rpl_whoischannels(user.nick, u, channel_list))
         end
         Network.send(user, Numeric.rpl_whoisserver(user.nick, u, true))
-        if u.is_operator? && !u.is_admin?
+        if u.operator && !u.admin
           Network.send(user, Numeric.rpl_whoisoperator(user.nick, u))
         end
-        if u.is_admin? && !u.is_operator?
+        if u.admin && !u.operator
           Network.send(user, Numeric.rpl_whoisadmin(user.nick, u))
         end
-        # TODO: Add is_bot? and is_service? check later
-        if u.is_nick_registered?
+        # TODO: Add bot and service check later
+        if u.nick_registered
           Network.send(user, Numeric.rpl_whoisregnick(user.nick, u))
         end
         if u.away_message.length > 0
           Network.send(user, Numeric.rpl_away(user.nick, u))
         end
         # Only show (real if using cloaking/virtual host) IP address to self, operator, admin, or service
-        if u.nick == user.nick || user.is_operator? || user.is_admin? || user.is_service?
+        if u.nick == user.nick || user.operator || user.admin || user.service
           Network.send(user, Numeric.rpl_whoisactually(user.nick, u))
         end
         Network.send(user, Numeric.rpl_whoisidle(user.nick, u))
         Network.send(user, Numeric.rpl_endofwhois(user.nick, u))
-        if u.is_admin? && u.nick != user.nick
+        if u.admin && u.nick != user.nick
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** NOTICE: #{user.nick} has performed a WHOIS on you.")
         end
         return

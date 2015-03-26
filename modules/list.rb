@@ -44,20 +44,20 @@ module Standard
         args.each do |a|
           chan = Server.channel_map[a.to_s.upcase]
           next if chan.nil?
-          if chan.modes.include?('s') && user.is_on_channel?(chan.name) == false # do not list secret channels unless user is a member
+          if chan.modes.include?('s') && user.on_channel?(chan.name) == false # do not list secret channels unless user is a member
             next unless chan.nil?
-          elsif user.is_admin?
+          elsif user.admin
             Network.send(user, Numeric.rpl_list(user.nick, chan, true))
           else
             numeric_output = Numeric.rpl_list(user.nick, chan, false) # need to check for nils before sending
-            Network.send(user, numeric_output) unless numeric_out.nil?
+            Network.send(user, numeric_output) unless numeric_output.nil?
           end
         end
       else
         Server.channel_map.values.each do |c|
-          if c.modes.include?('s') && user.is_on_channel?(c.name) == false # do not list secret channels unless user is a member
+          if c.modes.include?('s') && user.on_channel?(c.name) == false # do not list secret channels unless user is a member
             next unless c.nil?
-          elsif user.is_admin?
+          elsif user.admin
             Network.send(user, Numeric.rpl_list(user.nick, c, true))
           else
             numeric_output = Numeric.rpl_list(user.nick, c, false) # need to check for nils before sending

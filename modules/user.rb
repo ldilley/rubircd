@@ -45,7 +45,7 @@ module Standard
         Network.send(user, Numeric.err_needmoreparams(user.nick, 'USER'))
         return
       end
-      if user.is_registered?
+      if user.registered
         Network.send(user, Numeric.err_alreadyregistered(user.nick))
         return
       end
@@ -54,11 +54,11 @@ module Standard
       # Truncate ident if it is too long
       args[0] = args[0][0..Limits::IDENTLEN - 1] if args[0].length > Limits::IDENTLEN
       if args[0] =~ /\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z/i
-        user.change_ident(args[0])
+        user.ident = args[0]
         args[3] = args[3][1..-1] if args[3][0] == ':' # remove leading ':'
         # Truncate gecos if it is too long
         args[3] = args[3][0..Limits::GECOSLEN - 1] if args[3].length > Limits::GECOSLEN
-        user.change_gecos(args[3])
+        user.gecos = args[3]
       else
         Network.send(user, Numeric.err_invalidusername(user.nick, args[0])) # invalid ident
       end

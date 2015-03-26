@@ -82,19 +82,15 @@ class Channel
   end
 
   def key=(key)
-    if Options.io_type.to_s == 'thread'
-      @mode_lock.synchronize { @key = key }
-    else
-      @key = key
-    end
+    @mode_lock.lock if Options.io_type.to_s == 'thread'
+    @key = key
+    @mode_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def limit=(limit)
-    if Options.io_type.to_s == 'thread'
-      @mode_lock.synchronize { @limit = limit }
-    else
-      @limit = limit
-    end
+    @mode_lock.lock if Options.io_type.to_s == 'thread'
+    @limit = limit
+    @mode_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def self.valid_channel_name?(channel)
@@ -106,101 +102,68 @@ class Channel
   end
 
   def add_ban(creator, mask, reason)
-    if Options.io_type.to_s == 'thread'
-      @bans_lock.synchronize do
-        ban = Ban.new(creator, mask, reason)
-        @bans.push(ban)
-      end
-    else
-      ban = Ban.new(creator, mask, reason)
-      @bans.push(ban)
-    end
+    @bans_lock.lock if Options.io_type.to_s == 'thread'
+    ban = Ban.new(creator, mask, reason)
+    @bans.push(ban)
+    @bans_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def remove_ban(mask)
-    if Options.io_type.to_s == 'thread'
-      @bans_lock.synchronize do
-        @bans.each do |ban|
-          next unless ban.mask == mask
-          @bans.delete(ban)
-          # TODO: else send appropriate RPL
-        end
-      end
-    else
-      @bans.each do |ban|
-        next unless ban.mask == mask
-        @bans.delete(ban)
-        # TODO: else send appropriate RPL
-      end
+    @bans_lock.lock if Options.io_type.to_s == 'thread'
+    @bans.each do |ban|
+      next unless ban.mask == mask
+      @bans.delete(ban)
+      # TODO: else send appropriate RPL
     end
+    @bans_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def add_mode(mode)
-    if Options.io_type.to_s == 'thread'
-      @modes_lock.synchronize { @modes.push(mode) }
-    else
-      @modes.push(mode)
-    end
+    @modes_lock.lock if Options.io_type.to_s == 'thread'
+    @modes.push(mode)
+    @modes_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def remove_mode(mode)
-    if Options.io_type.to_s == 'thread'
-      @modes_lock.synchronize { @modes.delete(mode) }
-    else
-      @modes.delete(mode)
-    end
+    @modes_lock.lock if Options.io_type.to_s == 'thread'
+    @modes.delete(mode)
+    @modes_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def clear_modes
-    if Options.io_type.to_s == 'thread'
-      @modes_lock.synchronize { @modes.clear }
-    else
-      @modes.clear
-    end
+    @modes_lock.lock if Options.io_type.to_s == 'thread'
+    @modes.clear
+    @modes_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def mode?(mode)
     if Options.io_type.to_s == 'thread'
-      @modes_lock.synchronize { return @modes.include?(mode) }
+      @modes_lock.synchronize { @modes.include?(mode) }
     else
-      return @modes.include?(mode)
+      @modes.include?(mode)
     end
   end
 
   def set_topic(user, new_topic)
-    if Options.io_type.to_s == 'thread'
-      @topic_lock.synchronize do
-        @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
-        @topic = new_topic
-        @topic_time = Time.now.to_i
-      end
-    else
-      @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
-      @topic = new_topic
-      @topic_time = Time.now.to_i
-    end
+    @topic_lock.lock if Options.io_type.to_s == 'thread'
+    @topic_author = "#{user.nick}!#{user.ident}@#{user.hostname}"
+    @topic = new_topic
+    @topic_time = Time.now.to_i
+    @topic_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def registered=(registered)
-    if Options.io_type.to_s == 'thread'
-      @modes_lock.synchronize { @registered = registered }
-    else
-      @registered = registered
-    end
+    @modes_lock.lock if Options.io_type.to_s == 'thread'
+    @registered = registered
+    @modes_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def clear_topic
-    if Options.io_type.to_s == 'thread'
-      @topic_lock.synchronize do
-        @topic_author = ''
-        @topic = ''
-        @topic_time = ''
-      end
-    else
-      @topic_author = ''
-      @topic = ''
-      @topic_time = ''
-    end
+    @topic_lock.lock if Options.io_type.to_s == 'thread'
+    @topic_author = ''
+    @topic = ''
+    @topic_time = ''
+    @topic_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def nick_in_channel?(nick)
@@ -236,39 +199,28 @@ class Channel
   end
 
   def add_user(user)
-    if Options.io_type.to_s == 'thread'
-      @users_lock.synchronize do
-        user_ref = user
-        @users.push(user_ref)
-      end
-    else
-      user_ref = user
-      @users.push(user_ref)
-    end
+    @users_lock.lock if Options.io_type.to_s == 'thread'
+    user_ref = user
+    @users.push(user_ref)
+    @users_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def remove_user(user)
-    if Options.io_type.to_s == 'thread'
-      @users_lock.synchronize { @users.delete(user) }
-    else
-      @users.delete(user)
-    end
+    @users_lock.lock if Options.io_type.to_s == 'thread'
+    @users.delete(user)
+    @users_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def add_invisible_user(user)
-    if Options.io_type.to_s == 'thread'
-      @users_lock.synchronize { @invisible_users << user }
-    else
-      @invisible_users << user
-    end
+    @users_lock.lock if Options.io_type.to_s == 'thread'
+    @invisible_users << user
+    @users_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def remove_invisible_user(user)
-    if Options.io_type.to_s == 'thread'
-      @users_lock.synchronize { @invisible_users.delete(user) }
-    else
-      @invisible_users.delete(user)
-    end
+    @users_lock.lock if Options.io_type.to_s == 'thread'
+    @invisible_users.delete(user)
+    @users_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   attr_reader :bans, :name, :key, :limit, :modes, :topic, :topic_author, :topic_time, :users, :invisible_users, :url, :founder, :registered, :create_timestamp

@@ -189,7 +189,7 @@ class Options
     end
 
     unless @@cloak_host == nil
-      unless Utility.is_valid_hostname?(@@cloak_host) || Utility.is_valid_address?(@@cloak_host)
+      unless Utility.valid_hostname?(@@cloak_host) || Utility.valid_address?(@@cloak_host)
         error_text = "\ncloak_host value is not a valid hostname or address!"
         return Exception.new(error_text.lstrip) if called_from_rehash
         puts(error_text)

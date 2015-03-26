@@ -50,7 +50,7 @@ module Standard
       channels.each do |channel|
         user_on_channel = false
         if Channel.valid_channel_name?(channel)
-          user_channels = user.get_channels_array
+          user_channels = user.channels_array
           user_channels.each do |c|
             next unless c.casecmp(channel) == 0
             user_on_channel = true
@@ -59,7 +59,7 @@ module Standard
             if args[1].nil?
               chan.users.each do |u|
                 # Omit PART by invisible administrators for anyone not an administrator
-                if chan.invisible_nick_in_channel?(user.nick) && u.is_admin?
+                if chan.invisible_nick_in_channel?(user.nick) && u.admin
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")
                 elsif !chan.invisible_nick_in_channel?(user.nick)
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel}")
@@ -67,7 +67,7 @@ module Standard
               end
             else
               chan.users.each do |u|
-                if chan.invisible_nick_in_channel?(user.nick) && u.is_admin?
+                if chan.invisible_nick_in_channel?(user.nick) && u.admin
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}")
                 elsif !chan.invisible_nick_in_channel?(user.nick)
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PART #{channel} :#{args[1]}")

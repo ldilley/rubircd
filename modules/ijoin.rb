@@ -39,7 +39,7 @@ module Optional
 
     # args[0] = channel
     def on_ijoin(user, args)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -51,12 +51,12 @@ module Optional
         Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
-      if user.is_on_channel?(args[0])
+      if user.on_channel?(args[0])
         Network.send(user, Numeric.err_useronchannel(user.nick, user.nick, args[0]))
         return
       end
       # Allow administrators to bypass channel cap
-      # if user.get_channels_length() >= Limits::MAXCHANNELS
+      # if user.channels_length() >= Limits::MAXCHANNELS
       #   Network.send(user, Numeric.err_toomanychannels(user.nick, args[0]))
       #   return
       # end
@@ -72,13 +72,13 @@ module Optional
         channel_existed = true
         user.add_channel(args[0])
       end
-      user.add_channel_mode(channel, 'a') if user.is_admin?
-      user.add_channel_mode(channel, 'z') if user.is_operator?
+      user.add_channel_mode(channel, 'a') if user.admin
+      user.add_channel_mode(channel, 'z') if user.operator
       chan.add_user(user)
       chan.add_invisible_user(user)
       # Only show IJOIN to other administrators in the channel
       chan.users.each do |u|
-        if u.is_admin?
+        if u.admin
           Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} JOIN :#{args[0]}")
         end
       end
@@ -89,7 +89,7 @@ module Optional
       names_cmd = Command.command_map['NAMES']
       names_cmd.call(user, args[0]) unless names_cmd.nil?
       Server.users.each do |u|
-        if u.is_admin? || u.is_operator?
+        if u.admin || u.operator
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued IJOIN for: #{args[0]}")
         end
       end

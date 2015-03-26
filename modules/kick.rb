@@ -49,11 +49,11 @@ module Standard
         Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
-      unless user.is_on_channel?(chan.name)
+      unless user.on_channel?(chan.name)
         Network.send(user, Numeric.err_notonchannel(user.nick, args[0]))
         return
       end
-      if !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
+      if !user.chanop?(chan.name) && !user.admin && !user.service
         Network.send(user, Numeric.err_chanoprivsneeded(user.nick, chan.name))
         return
       end
@@ -74,11 +74,11 @@ module Standard
       good_nicks.each do |n|
         Server.users.each do |u|
           next unless u.nick.casecmp(n) == 0
-          if !u.is_on_channel?(chan.name)
+          if !u.on_channel?(chan.name)
             Network.send(user, Numeric.err_usernotinchannel(user.nick, u.nick, chan.name))
-          elsif (u.is_admin? && !user.is_admin?) || u.is_service?
+          elsif (u.admin && !user.admin) || u.service
             Network.send(user, Numeric.err_attackdeny(user.nick, u.nick))
-            if u.is_admin?
+            if u.admin
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :#{user.nick} attempted to kick you from #{chan.name}")
             end
           elsif kick_count >= Limits::MODES

@@ -52,11 +52,11 @@ module Standard
         Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
-      unless user.is_on_channel?(args[1])
+      unless user.on_channel?(args[1])
         Network.send(user, Numeric.err_notonchannel(user.nick, args[1]))
         return
       end
-      if target_user.is_on_channel?(args[1])
+      if target_user.on_channel?(args[1])
         Network.send(user, Numeric.err_useronchannel(user.nick, args[0], args[1]))
         return
       end
