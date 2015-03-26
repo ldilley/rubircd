@@ -37,7 +37,7 @@ module Standard
 
     # args[0] = password
     def on_pass(user, args)
-      if user.is_registered?
+      if user.registered
         Network.send(user, Numeric.err_alreadyregistered(user.nick))
         return
       end

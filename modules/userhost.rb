@@ -46,7 +46,7 @@ module Standard
         break if userhost_list.length >= Limits::MAXTARGETS
         Server.users.each do |u|
           next unless u.nick.casecmp(a) == 0
-          if u.is_admin? || u.is_operator?
+          if u.admin || u.operator
             userhost_list << "#{u.nick}*=+#{u.ident}@#{u.hostname}"
           else
             userhost_list << "#{u.nick}=+#{u.ident}@#{u.hostname}"

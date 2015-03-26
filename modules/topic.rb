@@ -68,13 +68,13 @@ module Standard
       end
       if args[0] =~ /[#&+][A-Za-z0-9_!-]/ && args.length > 1
         user_on_channel = false
-        user_channels = user.get_channels_array
+        user_channels = user.channels_array
         user_channels.each do |c|
           next unless c.casecmp(args[0]) == 0
           user_on_channel = true
           chan = Server.channel_map[args[0].to_s.upcase]
           next if chan.nil?
-          if chan.mode?('t') && !user.is_halfop?(chan.name) && !user.is_chanop?(chan.name) && !user.is_admin? && !user.is_service?
+          if chan.mode?('t') && !user.halfop?(chan.name) && !user.chanop?(chan.name) && !user.admin && !user.service
             Network.send(user, Numeric.err_chanoprivsneeded(user.nick, chan.name))
             return
           end

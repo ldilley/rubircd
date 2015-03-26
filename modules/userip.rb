@@ -40,7 +40,7 @@ module Optional
     def on_userip(user, args)
       # Unlike USERHOST, USERIP exposes the actual IP address of the user. As a
       # result, it requires elevated privileges in case host cloaking is enabled.
-      unless user.is_operator? || user.is_admin? || user.is_service?
+      unless user.operator || user.admin || user.service
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -54,7 +54,7 @@ module Optional
         break if userip_list.length >= Limits::MAXTARGETS
         Server.users.each do |u|
           next unless u.nick.casecmp(a) == 0
-          if u.is_admin? || u.is_operator?
+          if u.admin || u.operator
             userip_list << "#{u.nick}*=+#{u.ident}@#{u.ip_address}"
           else
             userip_list << "#{u.nick}=+#{u.ident}@#{u.ip_address}"

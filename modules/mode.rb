@@ -114,11 +114,11 @@ module Standard
           Network.send(user, Numeric.rpl_endofbanlist(user.nick, channel.name))
           return
         end
-        unless user.is_on_channel?(channel.name)
+        unless user.on_channel?(channel.name)
           Network.send(user, Numeric.err_notonchannel(user.nick, target))
           return
         end
-        unless user.is_chanop?(channel.name) || user.is_admin?
+        unless user.chanop?(channel.name) || user.admin
           Network.send(user, Numeric.err_chanoprivsneeded(user.nick, channel.name))
           return
         end
@@ -203,7 +203,7 @@ module Standard
                   # Make nick argument match actual nickname if the case differs
                   mode_args[arg_index] = u.nick
                   nick_exists = true
-                  if u.is_chanop?(channel.name)
+                  if u.chanop?(channel.name)
                     modelist = modelist.split
                     modelist = modelist.delete_at(mode_index)
                     mode_args.delete_at(arg_index)
@@ -231,7 +231,7 @@ module Standard
                   nick_exists = true
                   next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
                   mode_args[arg_index] = u.nick
-                  if u.is_halfop?(channel.name)
+                  if u.halfop?(channel.name)
                     mode_args.delete_at(arg_index)
                     was_deleted = true
                     arg_index += 1 unless arg_index >= mode_args.length
@@ -251,7 +251,7 @@ module Standard
                   nick_exists = true
                   next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
                   mode_args[arg_index] = u.nick
-                  if u.is_voiced?(channel.name)
+                  if u.voiced?(channel.name)
                     mode_args.delete_at(arg_index)
                     was_deleted = true
                     arg_index += 1 unless arg_index >= mode_args.length
@@ -417,7 +417,7 @@ module Standard
             modelist = modelist.delete('v')
             Network.send(user, Numeric.err_noprivileges(user.nick))
           end
-          user.set_vhost(Options.cloak_host) if modelist.include?('x')
+          user.virtual_hostname = Options.cloak_host if modelist.include?('x')
           final_add_modes = modelist
           final_add_modes.each_char { |mode| user.add_umode(mode) }
         end
@@ -430,7 +430,7 @@ module Standard
               final_remove_modes.delete(mode)
             end
           end
-          user.set_vhost(nil) if modelist.include?('x')
+          user.virtual_hostname = nil if modelist.include?('x')
           final_remove_modes = modelist
           final_remove_modes.each_char do |mode|
             user.remove_umode(mode)

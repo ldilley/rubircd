@@ -56,10 +56,10 @@ module Standard
         Server.admins.each do |admin|
           if admin.nick == admin_nick && admin.hash == hash.to_s
             if admin.host.nil? || admin.host == '' || admin.host == '*'
-              user.set_admin
+              user.become_admin
               Network.send(user, Numeric.rpl_youareoper(user))
               Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
+                if u.admin || u.operator
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
@@ -70,10 +70,10 @@ module Standard
             hostmask = admin.host.to_s.gsub('\*', '.*?')
             regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
             if user.hostname =~ regx
-              user.set_admin
+              user.become_admin
               Network.send(user, Numeric.rpl_youareoper(user.nick))
               Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
+                if u.admin || u.operator
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Server Administrator.")
                 end
               end
@@ -82,7 +82,7 @@ module Standard
               return
             else
               Server.users.each do |u|
-                if u.is_admin? || u.is_operator?
+                if u.admin || u.operator
                   Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
                 end
               end
@@ -92,7 +92,7 @@ module Standard
             end
           else
             Server.users.each do |u|
-              if u.is_admin? || u.is_operator?
+              if u.admin || u.operator
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
               end
             end
@@ -106,10 +106,10 @@ module Standard
       Server.opers.each do |oper|
         if oper.nick == oper_nick && oper.hash == hash.to_s
           if oper.host.nil? || oper.host == '' || oper.host == '*'
-            user.set_operator
+            user.become_operator
             Network.send(user, Numeric.rpl_youareoper(user))
             Server.users.each do |u|
-              if u.is_admin? || u.is_operator?
+              if u.admin || u.operator
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
               end
             end
@@ -120,10 +120,10 @@ module Standard
           hostmask = oper.host.to_s.gsub('\*', '.*?')
           regx = Regexp.new("^#{hostmask}$", Regexp::IGNORECASE)
           if user.hostname =~ regx
-            user.set_operator
+            user.become_operator
             Network.send(user, Numeric.rpl_youareoper(user.nick))
             Server.users.each do |u|
-              if u.is_admin? || u.is_operator?
+              if u.admin || u.operator
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} is now an IRC Operator.")
               end
             end
@@ -132,7 +132,7 @@ module Standard
             return
           else
             Server.users.each do |u|
-              if u.is_admin? || u.is_operator?
+              if u.admin || u.operator
                 Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Host mismatch")
               end
             end
@@ -142,7 +142,7 @@ module Standard
           end
         else
           Server.users.each do |u|
-            if u.is_admin? || u.is_operator?
+            if u.admin || u.operator
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} failed an OPER attempt: Password mismatch")
             end
           end
@@ -154,7 +154,7 @@ module Standard
 
     def update_channel_prefix(user, mode)
       # Add oper prefix to each channel the user is in
-      user_channels = user.get_channels_array
+      user_channels = user.channels_array
       user_channels.each do |channel|
         user.add_channel_mode(channel, mode)
         chan = Server.channel_map[channel.to_s.upcase]

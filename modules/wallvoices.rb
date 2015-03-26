@@ -56,9 +56,9 @@ module Optional
         Network.send(user, Numeric.err_nosuchchannel(user.nick, args[0]))
         return
       end
-      if user.is_on_channel?(args[0]) || !chan.modes.include?('n')
+      if user.on_channel?(args[0]) || !chan.modes.include?('n')
         chan.users.each do |u|
-          if u.is_voiced?(args[0]) && u.nick.casecmp(user.nick) != 0
+          if u.voiced?(args[0]) && u.nick.casecmp(user.nick) != 0
             Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE +#{args[0]} :#{args[1]}")
           end
         end

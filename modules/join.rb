@@ -48,13 +48,13 @@ module Standard
       key_index = 0
       user_on_channel = false
       channels.each do |channel|
-        user_on_channel = user.is_on_channel?(channel)
+        user_on_channel = user.on_channel?(channel)
         if user_on_channel
           Network.send(user, Numeric.err_useronchannel(user.nick, user.nick, channel))
           key_index += 1 if !keys.nil? && keys.length > key_index
           next unless channel.nil?
         end
-        if user.get_channels_length >= Limits::MAXCHANNELS
+        if user.channels_length >= Limits::MAXCHANNELS
           Network.send(user, Numeric.err_toomanychannels(user.nick, channel))
           key_index += 1 if !keys.nil? && keys.length > key_index
           next unless channel.nil?
@@ -69,19 +69,19 @@ module Standard
         channel_existed = false if chan.nil?
         unless chan.nil?
           # TODO: Check for bans against user here
-          if chan.modes.include?('l') && chan.users.length >= chan.limit.to_i && !user.is_admin?
+          if chan.modes.include?('l') && chan.users.length >= chan.limit.to_i && !user.admin
             Network.send(user, Numeric.err_channelisfull(user.nick, channel))
             key_index += 1 if !keys.nil? && keys.length > key_index
             next unless channel.nil?
           end
-          if chan.modes.include?('k') && !user.is_admin?
+          if chan.modes.include?('k') && !user.admin
             if keys.nil? || keys[key_index] != chan.key
               Network.send(user, Numeric.err_badchannelkey(user.nick, channel))
               key_index += 1 if !keys.nil? && keys.length > key_index
               next unless channel.nil?
             end
           end
-          if chan.modes.include?('i') && !user.invites.any? { |channel_invite| channel_invite.casecmp(channel) == 0 } && !user.is_admin?
+          if chan.modes.include?('i') && !user.invites.any? { |channel_invite| channel_invite.casecmp(channel) == 0 } && !user.admin
             Network.send(user, Numeric.err_inviteonlychan(user.nick, channel))
             key_index += 1 if !keys.nil? && keys.length > key_index
             next unless channel.nil?
@@ -96,8 +96,8 @@ module Standard
         else
           user.add_channel(channel)
         end
-        user.add_channel_mode(channel, 'a') if user.is_admin?
-        user.add_channel_mode(channel, 'z') if user.is_operator?
+        user.add_channel_mode(channel, 'a') if user.admin
+        user.add_channel_mode(channel, 'z') if user.operator
         chan.add_user(user)
         if user.invites.length > 0
           user.invites.each do |channel_invite|

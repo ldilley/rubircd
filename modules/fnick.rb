@@ -39,7 +39,7 @@ module Optional
     # args[1] = new nick
     def on_fnick(user, args)
       args = args.join.split(' ', 2)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -76,9 +76,9 @@ module Optional
           end
         end
       end
-      if target_user.is_registered?
-        if target_user.get_channels_length > 0
-          user_channels = target_user.get_channels_array
+      if target_user.registered
+        if target_user.channels_length > 0
+          user_channels = target_user.channels_array
           user_channels.each do |c|
             chan = Server.channel_map[c.to_s.upcase]
             chan.users.each do |u|
@@ -92,9 +92,9 @@ module Optional
       end
       whowas_loaded = Command.command_map['WHOWAS']
       Server.whowas_mod.add_entry(target_user, ::Time.now.asctime) unless whowas_loaded.nil?
-      target_user.change_nick(args[1])
+      target_user.nick = args[1]
       Server.users.each do |u|
-        if u.is_admin? || u.is_operator?
+        if u.admin || u.operator
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FNICK for #{args[0]} changing nick to: #{args[1]}")
         end
       end

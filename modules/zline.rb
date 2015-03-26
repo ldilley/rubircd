@@ -57,7 +57,7 @@ module Standard
     # args[2] = reason
     def on_zline(user, args)
       args = args.join.split(' ', 3)
-      unless user.is_operator? || user.is_admin? || user.is_service?
+      unless user.operator || user.admin || user.service
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -106,7 +106,7 @@ module Standard
         end
         if zline_found
           Server.users.each do |u|
-            if u.is_admin? || u.is_operator?
+            if u.admin || u.operator
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has removed a z-line for: #{args[0]}")
             end
           end
@@ -128,7 +128,7 @@ module Standard
         end
       end
       # Validate IP address and duration
-      unless Utility.is_valid_address?(args[0])
+      unless Utility.valid_address?(args[0])
         if args[0].nil? || args[0] == ''
           Network.send(user, ":#{Options.server_name} NOTICE #{user.nick} :*** NOTICE: Invalid IP address in z-line. It was empty!")
         else
@@ -155,7 +155,7 @@ module Standard
         Log.write(3, e)
       end
       Server.users.each do |u|
-        next unless u.is_admin? || u.is_operator?
+        next unless u.admin || u.operator
         if args[1].casecmp('0') == 0
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has issued a z-line for #{args[0]}: #{args[2]}")
         else

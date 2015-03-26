@@ -44,7 +44,7 @@ module Optional
     # args[1] = virtual host
     def on_vhost(user, args)
       args = args.join.split(' ', 2)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -57,10 +57,10 @@ module Optional
         Network.send(user, Numeric.err_nosuchnick(user.nick, args[0]))
         return
       end
-      if Utility.is_valid_hostname?(args[1]) || Utility.is_valid_address?(args[1])
-        target_user.set_vhost(args[1])
+      if Utility.valid_hostname?(args[1]) || Utility.valid_address?(args[1])
+        target_user.virtual_hostname = args[1]
         Server.users.each do |u|
-          if u.is_admin? || u.is_operator?
+          if u.admin || u.operator
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick}!#{user.ident}@#{user.hostname} has set the vhost for #{args[0]} to #{args[1]}")
           end
         end
@@ -94,10 +94,10 @@ module Optional
           # 0 = ident
           # 1 = host
           # 2 = vhost
-          unless Utility.is_valid_hostname?(vhost_fields[1]) || Utility.is_valid_address?(vhost_fields[1]) || vhost_fields[1] == '*'
+          unless Utility.valid_hostname?(vhost_fields[1]) || Utility.valid_address?(vhost_fields[1]) || vhost_fields[1] == '*'
             Log.write(3, "Invalid host in vhosts.yml: #{vhost_fields[1]}")
           end
-          unless Utility.is_valid_hostname?(vhost_fields[2]) || Utility.is_valid_address?(vhost_fields[2])
+          unless Utility.valid_hostname?(vhost_fields[2]) || Utility.valid_address?(vhost_fields[2])
             Log.write(3, "Invalid vhost in vhosts.yml: #{vhost_fields[2]}")
           end
           entry = { :ident => vhost_fields[0], :host => vhost_fields[1], :vhost => vhost_fields[2] }

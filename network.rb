@@ -175,7 +175,7 @@ class Network
               if input[0].to_s.upcase == "PING"
                 user.last_ping = Time.now.to_i
               else
-                user.set_last_activity()
+                user.update_last_activity
               end
               Command.parse(user, input)
             end
@@ -195,7 +195,7 @@ class Network
   def self.connection_checker()
     loop do
       Server.users.each do |u|
-        if u != nil && u.is_registered?
+        if u != nil && u.registered
           Network.send(u, "PING :#{Options.server_name}")
           ping_diff = Time.now.to_i - u.last_ping
           if ping_diff >= Limits::PING_STRIKES * Limits::PING_INTERVAL
@@ -284,12 +284,12 @@ class Network
      #puts(e)
     ensure
       Server.users.each do |u|
-        if u != nil && u.is_admin? && u.umodes.include?('v') && u.socket.closed? == false && !lost_socket
+        if u != nil && u.admin && u.umodes.include?('v') && u.socket.closed? == false && !lost_socket
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** QUIT: #{user.nick}!#{user.ident}@#{user.hostname} has disconnected: #{reason}")
         end
       end
-      if user != nil && user.get_channels_length() > 0
-        user_channels = user.get_channels_array()
+      if user != nil && user.channels_length > 0
+        user_channels = user.channels_array
         user_channels.each do |c|
           chan = Server.channel_map[c.to_s.upcase]
           if chan != nil
@@ -297,7 +297,7 @@ class Network
               # Do not broadcast QUIT for invisible administrators in a channel who disconnect.
               # Only do this for other administrators
               user_is_invisible = chan.invisible_nick_in_channel?(u.nick)
-              if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false && user_is_invisible && u.is_admin?
+              if user != nil && u != nil && user.nick != u.nick && u.socket.closed? == false && user_is_invisible && u.admin
                 Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} QUIT :#{reason}")
               end
               # Checking if user and 'u' are nil below prevent a "SystemStackError: stack level too deep" exception.
@@ -348,7 +348,7 @@ class Network
         if zline.target.casecmp(client_ip) == 0
           Network.send(user, "ERROR :Closing link: #{client_ip} [Z-lined (#{zline.reason})]")
           Server.users.each do |u|
-            if u.is_admin? || u.is_operator?
+            if u.admin || u.operator
               Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{client_ip} was z-lined: #{zline.reason}")
             end
           end
@@ -367,7 +367,7 @@ class Network
           if clone_count >= Options.max_clones
             Network.send(user, "ERROR :Closing link: [Maximum number of connections from the same IP address exceeded]")
             Server.users.each do |su|
-              if su.is_admin? || su.is_operator?
+              if su.admin || su.operator
                 Network.send(su, ":#{Options.server_name} NOTICE #{su.nick} :*** BROADCAST: Maximum number of connections from #{user.ip_address} exceeded.")
               end
             end
@@ -388,7 +388,7 @@ class Network
     else
       Network.send(user, ":#{Options.server_name} NOTICE Auth :*** Found your hostname (#{hostname})")
     ensure
-      user.change_hostname(hostname)
+      user.hostname = hostname
     end
     registered = false
     timer_thread = Thread.new() { Network.registration_timer(user) }
@@ -423,14 +423,14 @@ class Network
       else
         Command.parse(user, input)
       end
-      if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.is_negotiating_cap?
+      if user.nick != "*" && user.ident != nil && user.gecos != nil && !user.negotiating_cap
         if Options.server_hash != nil && !good_pass
           Network.send(user, "ERROR :Closing link: [Access denied]")
           Network.close(user, "Access denied", false)
         end
         registered = true
       else
-        if user.nick != "*" && user.ident != nil && user.gecos != nil && user.is_negotiating_cap?
+        if user.nick != "*" && user.ident != nil && user.gecos != nil && user.negotiating_cap
           Network.send(user, Numeric.err_notregistered("CAP")) # user has not closed CAP with END
         end
         redo
@@ -449,7 +449,7 @@ class Network
       if ping_response[0] =~ /(^pong$)/i && ping_response.length == 2
         if ping_response[1] == ":#{ping_time}" || ping_response[1] == "#{ping_time}"
           Thread.kill(timer_thread)
-          user.set_registered
+          user.registered = true
           user.last_ping = Time.now.to_i
 
           # Set umode +i if auto_invisible is enabled.
@@ -460,10 +460,10 @@ class Network
           # Set cloak_host if auto_cloak is true or umode is +x.
           # This must be taken care of before virtual hosts are used to avoid overwriting the user's virtual host.
           unless Options.cloak_host == nil
-            unless user.has_umode?('x')
+            unless user.umode?('x')
               if Options.auto_cloak.to_s == "true"
                 user.add_umode('x')
-                user.set_vhost(Options.cloak_host)
+                user.virtual_hostname = Options.cloak_host
               end
             end
           end
@@ -472,8 +472,8 @@ class Network
           unless Server.vhost_mod == nil
             vhost = Server.vhost_mod.find_vhost(user.ident, user.hostname)
             if vhost != nil
-              if Utility.is_valid_hostname?(vhost) || Utility.is_valid_address?(vhost)
-                user.set_vhost(vhost)
+              if Utility.valid_hostname?(vhost) || Utility.valid_address?(vhost)
+                user.virtual_hostname = vhost
               else
                 Log.write(3, "Virtual host was not set for #{user.nick}!#{user.ident}@#{user.hostname} since vhost is invalid: #{vhost}")
               end
@@ -502,7 +502,7 @@ class Network
       if (tokens[0].casecmp(user.ident) == 0 && tokens[1] == '*') || (tokens[0].casecmp(user.ident) == 0 && tokens[1].casecmp(user.hostname) == 0)
         Network.send(user, "ERROR :Closing link: #{kline.target} [K-lined (#{kline.reason})]")
         Server.users.each do |u|
-          if u.is_admin? || u.is_operator?
+          if u.admin || u.operator
             Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{kline.target} was k-lined: #{kline.reason}")
           end
           Log.write(2, "#{kline.target} was k-lined: #{kline.reason}")
@@ -514,7 +514,7 @@ class Network
 
   def self.welcome(user)
     Server.users.each do |u|
-      if u.is_admin? && u.umodes.include?('v')
+      if u.admin && u.umodes.include?('v')
         Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** CONNECT: #{user.nick}!#{user.ident}@#{user.hostname} has connected.")
       end
     end
@@ -564,7 +564,7 @@ class Network
       if input[0].to_s.upcase == "PING"
         user.last_ping = Time.now.to_i
       else
-        user.set_last_activity()
+        user.update_last_activity
       end
       Command.parse(user, input)
     end

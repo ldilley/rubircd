@@ -38,7 +38,7 @@ module Optional
 
     # args[0] = message
     def on_broadcast(user, args)
-      unless user.is_admin? || user.is_service?
+      unless user.admin || user.service
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end

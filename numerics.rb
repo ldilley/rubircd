@@ -273,8 +273,8 @@ class Numeric
 
   # 322
   # Returning modes is not standard, but more informative (InspIRCd does this)
-  def self.rpl_list(nick, channel, is_admin)
-    if is_admin # show administrators the actual client count
+  def self.rpl_list(nick, channel, admin)
+    if admin # show administrators the actual client count
       return format(':%s 322 %s %s %i :[+%s] %s', Options.server_name, nick, channel.name, channel.users.length, channel.modes.join(''), channel.topic)
     else        # hide invisible administrators in user count from everyone else and do not list the channel if only invisible administrators occupy it
       if channel.users.length - channel.invisible_users.length >= 1
@@ -405,7 +405,7 @@ class Numeric
 
   # 381
   def self.rpl_youareoper(user)
-    if user.is_admin?
+    if user.admin
       return format(':%s 381 %s :You are now an IRC Server Administrator', Options.server_name, user.nick)
     else
       return format(':%s 381 %s :You are now an IRC Operator', Options.server_name, user.nick)

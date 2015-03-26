@@ -45,7 +45,7 @@ module Optional
     # args[1] = optional quit message
     def on_fquit(user, args)
       args = args.join.split(' ', 2)
-      unless user.is_admin?
+      unless user.admin
         Network.send(user, Numeric.err_noprivileges(user.nick))
         return
       end
@@ -59,7 +59,7 @@ module Optional
         return
       end
       Server.users.each do |u|
-        next unless u.is_admin? || u.is_operator?
+        next unless u.admin || u.operator
         if args.length > 1
           Network.send(u, ":#{Options.server_name} NOTICE #{u.nick} :*** BROADCAST: #{user.nick} has issued FQUIT for #{args[0]} with message: #{args[1]}")
         else
