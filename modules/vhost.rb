@@ -100,7 +100,7 @@ module Optional
           unless Utility.valid_hostname?(vhost_fields[2]) || Utility.valid_address?(vhost_fields[2])
             Log.write(3, "Invalid vhost in vhosts.yml: #{vhost_fields[2]}")
           end
-          entry = { :ident => vhost_fields[0], :host => vhost_fields[1], :vhost => vhost_fields[2] }
+          entry = { ident: vhost_fields[0], host: vhost_fields[1], vhost: vhost_fields[2] }
           if Options.io_type.to_s == 'thread'
             @vhosts_data_lock.synchronize { @vhosts_data.push(entry) }
           else

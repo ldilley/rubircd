@@ -50,7 +50,7 @@ end
 # Handles SSL connections
 module SecureServer
   def post_init
-    start_tls :private_key_file => 'cfg/key.pem', :cert_chain_file => 'cfg/cert.pem', :verify_peer => false
+    start_tls(private_key_file: 'cfg/key.pem', cert_chain_file: 'cfg/cert.pem', verify_peer: false)
     Server.increment_clients
     # TODO: A lot...
   end
