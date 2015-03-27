@@ -314,11 +314,10 @@ module Standard
               elsif mode == 'h'
                 nick_exists = false
                 channel.users.each do |u|
-                  if !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
-                    mode_args[arg_index] = u.nick
-                    u.remove_channel_mode(channel.name, 'h')
-                    nick_exists = true
-                  end
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  mode_args[arg_index] = u.nick
+                  u.remove_channel_mode(channel.name, 'h')
+                  nick_exists = true
                 end
                 unless nick_exists
                   modelist = modelist.delete(mode)
@@ -329,11 +328,10 @@ module Standard
               elsif mode == 'v'
                 nick_exists = false
                 channel.users.each do |u|
-                  if !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
-                    mode_args[arg_index] = u.nick
-                    u.remove_channel_mode(channel.name, 'v')
-                    nick_exists = true
-                  end
+                  next unless !mode_args[arg_index].nil? && u.nick.casecmp(mode_args[arg_index]) == 0
+                  mode_args[arg_index] = u.nick
+                  u.remove_channel_mode(channel.name, 'v')
+                  nick_exists = true
                 end
                 unless nick_exists
                   modelist = modelist.delete(mode)

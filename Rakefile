@@ -16,4 +16,4 @@ task :install do
   sh 'bundle install'
 end
 
-task :default => [:install]
+task default: [:install]

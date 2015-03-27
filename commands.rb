@@ -124,7 +124,7 @@ class Command
       new_module.plugin_init(Command)
     rescue Errno::ENOENT, LoadError, NameError, SyntaxError => e
       if user.nil? # called during startup for module autoload, so don't send message down the socket
-        puts("Failed to load module: #{mod_name} #{e}")
+        puts "Failed to load module: #{mod_name} #{e}"
       elsif user == ''
         # No action required for attempting to load a dependency or performing an ad hoc load
       else
@@ -214,12 +214,8 @@ class Command
     end
   end
 
-  def self.command_map
-    @command_map
-  end
-
-  def self.command_counter_map
-    @command_counter_map
+  class << self
+    attr_reader :command_map, :command_counter_map
   end
 
   # Standard commands remaining to be implemented:
@@ -285,8 +281,8 @@ class Mod
     Command.handle_modload('', mod_name.downcase) if mod.nil?
   end
 
-  def self.modules
-    @modules
+  class << self
+    attr_reader :modules
   end
 end
 

@@ -55,16 +55,17 @@ class Numeric
   # 005.2
   def self.rpl_isupport2(nick, server)
     unless Options.ssl_port.nil?
-      ssl_info = "SSL=#{Network.listen_address}:#{Options.ssl_port} "
+      ssl_info = " SSL=#{Network.listen_address}:#{Options.ssl_port}"
     end
+    starttls = 'STARTTLS ' unless Mod.find('CAP').nil?
     unless Mod.find('PROTOCTL').nil?
       namesx = 'NAMESX '
       uhnames = ' UHNAMES'
     end
     userip = ' USERIP' unless Mod.find('USERIP').nil?
-    format(':%s 005 %s MAXTARGETS=%s MODES=%s %sNETWORK=%s NICKLEN=%i OPERLOG PREFIX=%s %sSTARTTLS STATUSMSG=%s TOPICLEN=%i%s%s :are supported by this server',
-           server, nick, Limits::MAXTARGETS, Limits::MODES, namesx, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, ssl_info, Server::STATUS_PREFIXES,
-           Limits::TOPICLEN, uhnames, userip)
+    format(':%s 005 %s MAXTARGETS=%s MODES=%s %sNETWORK=%s NICKLEN=%i OPERLOG PREFIX=%s%s %sSTATUSMSG=%s TOPICLEN=%i%s%s :are supported by this server',
+           server, nick, Limits::MAXTARGETS, Limits::MODES, namesx, Options.network_name, Limits::NICKLEN, Channel::ISUPPORT_PREFIX, ssl_info, starttls,
+           Server::STATUS_PREFIXES, Limits::TOPICLEN, uhnames, userip)
   end
   # 005.3
   def self.rpl_isupport3(nick, server)
