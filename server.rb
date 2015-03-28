@@ -54,7 +54,7 @@ class Server
   def self.init_locks
     @client_count_lock = Mutex.new
     @link_count_lock = Mutex.new
-    @users_lock = Mutex.new
+    @users_lock = Monitor.new      # Monitor allows re-entrancy for the same thread
     @channels_lock = Mutex.new
     @data_recv_lock = Mutex.new
     @data_sent_lock = Mutex.new
@@ -127,20 +127,31 @@ class Server
   end
 
   def self.add_user(user)
-    @users_lock.lock if Options.io_type.to_s == 'thread'
-    @users.push(user)
-    @users_lock.unlock if Options.io_type.to_s == 'thread'
+    if Options.io_type.to_s == 'thread'
+      @users_lock.synchronize { @users.push(user) }
+    else
+      @users.push(user)
+    end
   end
 
   def self.remove_user(user)
-    @users_lock.lock if Options.io_type.to_s == 'thread'
-    if !@users.delete(user).nil?
-      Server.oper_count -= 1 if user.admin || user.operator
-      return true
+    if Options.io_type.to_s == 'thread'
+      @users_lock.synchronize do
+        if !@users.delete(user).nil?
+          Server.oper_count -= 1 if user.admin || user.operator
+          return true
+        else
+          return false
+        end
+      end
     else
-      return false
+      if !@users.delete(user).nil?
+        Server.oper_count -= 1 if user.admin || user.operator
+        return true
+      else
+        return false
+      end
     end
-    @users_lock.unlock if Options.io_type.to_s == 'thread'
   end
 
   def self.channel_exists?(channel)

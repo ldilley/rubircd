@@ -61,6 +61,19 @@ class Network
       Log.write(4, e)
       exit!
     end
+    if Options.enable_starttls.to_s == 'true'
+      begin
+        tls_context = OpenSSL::SSL::SSLContext.new
+        tls_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
+        tls_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
+        tls_server = OpenSSL::SSL::SSLServer.new(plain_server, tls_context)
+        tls_server.start_immediately = false # don't start SSL handshake until client issues "STARTTLS"
+        plain_server = tls_server            # plain_server is now an SSLServer
+      rescue => e
+        puts "Failed to enable TLS socket: #{e}"
+        Log.write(4, "Failed to enable TLS socket: #{e}")
+      end
+    end
     unless Options.ssl_port.nil?
       begin
         if !Options.listen_host.nil?
@@ -295,7 +308,11 @@ class Network
   end
 
   def self.register_connection(client_socket, connection_thread)
-    allowed_commands = %w(CAP CAPAB NICK PASS QUIT SERVER USER)
+    if Options.enable_starttls.to_s == 'true'
+      allowed_commands = %w(CAP CAPAB NICK PASS QUIT SERVER STARTTLS USER)
+    else
+      allowed_commands = %w(CAP CAPAB NICK PASS QUIT SERVER USER)
+    end
     _sock_domain, _client_port, client_hostname, client_ip = client_socket.peeraddr
     user = User.new('*', nil, client_hostname, client_ip, nil, client_socket, connection_thread)
     Log.write(1, "Received connection from #{user.ip_address}.")
@@ -376,6 +393,8 @@ class Network
             good_pass = pass_cmd.call(user, '')
           end
         end
+      elsif input[0].to_s.casecmp('STARTTLS') == 0
+        handle_tls(user)
       else
         Command.parse(user, input)
       end
@@ -438,6 +457,23 @@ class Network
         end
       else
         redo # wrong number of args or not a pong
+      end
+    end
+  end
+
+  def self.handle_tls(user)
+    if Options.enable_starttls.to_s == 'true'
+      begin
+        Network.send(user, Numeric.rpl_starttls(user.nick))
+        user.socket.accept
+        user.capabilities[:tls] = true
+      rescue => e
+        Log.write(2, "STARTTLS failed for #{user.ip_address}: #{e}")
+        # It may be more secure to close the connection since it prevents
+        # fallback to plain text if the user fails to handshake properly.
+        Network.close(user, 'Failed TLS handshake', true)
+        # Cannot send the numeric below since the socket went away
+        # Network.send(user, Numeric.err_starttlsfailure(user.nick))
       end
     end
   end

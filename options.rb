@@ -30,6 +30,7 @@ class Options
   @server_description = nil
   @listen_port = nil
   @ssl_port = nil
+  @enable_starttls = nil
   @max_clones = nil
   @auto_join = nil
   @cloak_host = nil
@@ -57,6 +58,7 @@ class Options
       @io_type = options_file['io_type']
       @debug_mode = options_file['debug_mode']
     end
+    @enable_starttls = options_file['enable_starttls']
     @max_connections = options_file['max_connections']
     @max_clones = options_file['max_clones']
     @cloak_host = options_file['cloak_host']
@@ -173,6 +175,13 @@ class Options
       exit!
     end
 
+    if @enable_starttls.to_s != 'true' && @enable_starttls.to_s != 'false'
+      error_text = '\nenable_starttls value should be set to either true or false.'
+      return Exception.new(error_text.lstrip) if called_from_rehash
+      puts error_text
+      exit!
+    end
+
     if @max_connections < 10
       error_text = '\nmax_connections value is set too low!'
       return Exception.new(error_text.lstrip) if called_from_rehash
@@ -250,8 +259,9 @@ class Options
 
   class << self
     attr_reader :admin_name, :admin_nick, :admin_email, :network_name, :server_name, :server_description,
-                :listen_host, :listen_port, :ssl_port, :max_connections, :max_clones, :cloak_host, :auto_cloak,
-                :auto_invisible, :auto_join, :io_type, :debug_mode, :control_hash, :server_hash
+                :listen_host, :listen_port, :ssl_port, :enable_starttls, :max_connections, :max_clones,
+                :cloak_host, :auto_cloak, :auto_invisible, :auto_join, :io_type, :debug_mode, :control_hash,
+                :server_hash
   end
 end
 
