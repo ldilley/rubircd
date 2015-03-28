@@ -30,6 +30,10 @@ listen_port: 6667
 # Leave blank or comment out to disable SSL support.
 #ssl_port: 6697
 
+# Allows clients to use TLS over a plain-text connection
+# This feature requires SSL certificates.
+enable_starttls: false
+
 # Maximum number of simultaneous connections this server
 # will support
 max_connections: 128

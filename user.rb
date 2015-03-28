@@ -34,12 +34,11 @@ class User
     @nick_registered = false
     @negotiating_cap = false
     @capabilities = {}
-    @capabilities[:multiprefix] = false # same as NAMESX, but also applies to WHO output
-    @capabilities[:namesx] = false      # multiple prefixes in NAMES output
-    @capabilities[:uhnames] = false     # userhost-in-names PROTOCTL equivalent
-    @capabilities[:tls] = false         # STARTTLS
+    @capabilities[:namesx] = false  # multiple prefixes in NAMES output
+    @capabilities[:uhnames] = false # userhost-in-names PROTOCTL equivalent
+    @capabilities[:tls] = false     # STARTTLS
     @away_message = ''
-    @away_since = nil                   # gets set to current time when calling AWAY
+    @away_since = nil               # gets set to current time when calling AWAY
     @socket = socket
     @thread = thread
     @umodes = []

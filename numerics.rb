@@ -57,7 +57,7 @@ class Numeric
     unless Options.ssl_port.nil?
       ssl_info = " SSL=#{Network.listen_address}:#{Options.ssl_port}"
     end
-    starttls = 'STARTTLS ' unless Mod.find('CAP').nil?
+    starttls = 'STARTTLS ' if Options.enable_starttls.to_s == 'true' && !Mod.find('CAP').nil?
     unless Mod.find('PROTOCTL').nil?
       namesx = 'NAMESX '
       uhnames = ' UHNAMES'

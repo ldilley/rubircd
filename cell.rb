@@ -45,7 +45,16 @@ class Cell
 
   def initialize(host, plain_port, ssl_port)
     # Since Celluloid::IO is included, this is a Celluloid::IO::TCPServer
-    @plain_server = TCPServer.new(host, plain_port)
+    if Options.enable_starttls.to_s == 'false'
+      @plain_server = TCPServer.new(host, plain_port)
+    else
+      tls_context = OpenSSL::SSL::SSLContext.new
+      tls_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
+      tls_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
+      tls_server = SSLServer.new(TCPServer.new(host, plain_port), tls_context)
+      tls_server.start_immediately = false # don't start SSL handshake until client issues "STARTTLS"
+      @plain_server = tls_server           # plain_server is now an SSLServer
+    end
     async.plain_acceptor
     return if Options.ssl_port.nil?
     ssl_context = OpenSSL::SSL::SSLContext.new
