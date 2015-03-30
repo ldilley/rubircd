@@ -50,19 +50,31 @@ module Standard
       good_targets = 0
       targets = args[0].split(',')
       targets.each do |target|
+        # Check if user is trying to PRIVMSG only certain prefixed users in a channel
+        prefix = ''
+        chan = target
+        if chan[0] =~ /[&!~@%+]/
+          prefix = chan[0]
+          chan = chan[1..-1] # remove the leading prefix before channel name is validated
+        end
         if good_targets >= Limits::MAXTARGETS
           Network.send(user, Numeric.err_toomanytargets(user.nick, target))
           next unless target.nil?
         end
-        if Channel.valid_channel_name?(target)
-          channel = Server.channel_map[target.to_s.upcase]
+        if Channel.valid_channel_name?(chan)
+          channel = Server.channel_map[chan.to_s.upcase]
           if channel.nil?
             Network.send(user, Numeric.err_nosuchchannel(user.nick, target))
           else
             good_targets += 1
-            if user.on_channel?(target) || !channel.modes.include?('n')
+            if user.on_channel?(chan) || !channel.modes.include?('n')
               channel.users.each do |u|
-                if u.nick != user.nick
+                next unless u.nick != user.nick
+                if !prefix.nil? && !prefix.empty?
+                  if u.qualifying_prefix?(prefix, chan) # allow messages to >= prefix
+                    Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{prefix}#{chan} :#{args[1]}")
+                  end
+                else
                   Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{target} :#{args[1]}")
                 end
               end
@@ -70,6 +82,8 @@ module Standard
               Network.send(user, Numeric.err_cannotsendtochan(user.nick, channel.name, 'no external messages'))
             end
           end
+        elsif !prefix.nil?
+          Network.send(user, Numeric.err_nosuchchannel(user.nick, target))
         else
           good_nick = false
           Server.users.each do |u|

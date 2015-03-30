@@ -316,6 +316,21 @@ class User
     prefix_list.join
   end
 
+  # Used for STATUSMSG
+  def qualifying_prefix?(prefix, channel)
+    @channels.each_key do |c|
+      next unless c.casecmp(channel) == 0
+      retval = @channels[c] =~ /[vhofza]/ if prefix == '+'
+      retval = @channels[c] =~ /[hofza]/ if prefix == '%'
+      retval = @channels[c] =~ /[ofza]/ if prefix == '@'
+      retval = @channels[c] =~ /[fza]/ if prefix == '~'
+      retval = @channels[c] =~ /[za]/ if prefix == '!'
+      retval = @channels[c] =~ /[a]/ if prefix == '&'
+      return false if retval.nil?
+      return true
+    end
+  end
+
   def update_last_activity
     @activity_lock.lock if Options.io_type.to_s == 'thread'
     @last_activity = Time.now.to_i
