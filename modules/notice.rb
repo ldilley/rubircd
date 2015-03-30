@@ -50,7 +50,7 @@ module Standard
       good_targets = 0
       targets = args[0].split(',')
       targets.each do |target|
-        # Check if user is trying to PRIVMSG only certain prefixed users in a channel
+        # Check if user is trying to NOTICE only certain prefixed users in a channel
         prefix = ''
         chan = target
         if chan[0] =~ /[&!~@%+]/
@@ -75,7 +75,7 @@ module Standard
                     Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{prefix}#{chan} :#{args[1]}")
                   end
                 else
-                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{target} :#{args[1]}")
+                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} NOTICE #{chan} :#{args[1]}")
                 end
               end
             else
