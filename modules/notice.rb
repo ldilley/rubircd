@@ -61,7 +61,7 @@ module Standard
           Network.send(user, Numeric.err_toomanytargets(user.nick, target))
           next unless target.nil?
         end
-        if Channel.valid_channel_name?(chan)
+        if chan.include?('#') && Channel.valid_channel_name?(chan)
           channel = Server.channel_map[chan.to_s.upcase]
           if channel.nil?
             Network.send(user, Numeric.err_nosuchchannel(user.nick, target))
@@ -82,7 +82,7 @@ module Standard
               Network.send(user, Numeric.err_cannotsendtochan(user.nick, channel.name, 'no external messages'))
             end
           end
-        elsif !prefix.nil?
+        elsif !prefix.nil? && chan.include?('#')
           Network.send(user, Numeric.err_nosuchchannel(user.nick, target))
         else
           good_nick = false
