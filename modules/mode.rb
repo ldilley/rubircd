@@ -125,6 +125,7 @@ module Standard
         Network.send(user, Numeric.err_notonchannel(user.nick, target))
         return
       end
+      # TODO: Halfop check if +/-v is provided
       unless user.chanop?(channel.name) || user.admin
         Network.send(user, Numeric.err_chanoprivsneeded(user.nick, channel.name))
         return
@@ -371,14 +372,50 @@ module Standard
       end
     end
 
+    # Remove duplicate + umodes
+    def del_dup_add_umodes(user, add_modes)
+      unless add_modes.length == 0
+        modelist = ''
+        add_modes.each_char do |mode|
+          modelist << mode unless modelist.include?(mode)
+          add_modes.delete(mode) if modelist =~ /[#{Server::USER_MODES}]/
+        end
+        modelist.each_char do |mode|
+          if ['a', 'b', 'o', 'r', 'v'].include?(mode)
+            modelist = modelist.delete(mode)
+            Network.send(user, Numeric.err_noprivileges(user.nick))
+          end
+        end
+        user.virtual_hostname = Options.cloak_host if modelist.include?('x')
+        add_modes = modelist
+        add_modes.each_char { |mode| user.add_umode(mode) }
+      end
+      add_modes
+    end
+
+    # Remove duplicate - umodes
+    def del_dup_sub_umodes(user, sub_modes)
+      unless sub_modes.length == 0
+        modelist = ''
+        sub_modes.each_char do |mode|
+          modelist << mode unless modelist.include?(mode)
+          sub_modes.delete(mode) if modelist =~ /[#{Server::USER_MODES}]/
+        end
+        user.virtual_hostname = nil if modelist.include?('x')
+        sub_modes = modelist
+        sub_modes.each_char { |mode| user.remove_umode(mode) }
+      end
+      sub_modes
+    end
+
     def handle_nick_modes(user, args, modes_to_add, modes_to_remove, _mode_args)
       final_add_modes = ''
       final_remove_modes = ''
-      if args[0] == user.nick && args[1].nil?
+      if args[0].casecmp(user.nick) == 0 && args[1].nil?
         Network.send(user, Numeric.rpl_umodeis(user.nick, user.umodes.join('')))
         return
       end
-      if args[0] == user.nick && !args[1].nil?
+      if args[0].casecmp(user.nick) == 0 && !args[1].nil?
         unless modes_to_add.nil?
           modes_to_add.each_char do |mode|
             if Server::USER_MODES.include?(mode)
@@ -397,47 +434,8 @@ module Standard
             end
           end
         end
-        # Remove duplicate + umodes
-        unless final_add_modes.length == 0
-          modelist = ''
-          final_add_modes.each_char do |mode|
-            modelist << mode unless modelist.include?(mode)
-            if modelist =~ /[#{Server::USER_MODES}]/
-              final_add_modes.delete(mode)
-            end
-          end
-          if modelist.include?('a')
-            modelist = modelist.delete('a')
-            Network.send(user, Numeric.err_noprivileges(user.nick))
-          end
-          if modelist.include?('o')
-            modelist = modelist.delete('o')
-            Network.send(user, Numeric.err_noprivileges(user.nick))
-          end
-          if modelist.include?('v') && !user.umodes.include?('a')
-            modelist = modelist.delete('v')
-            Network.send(user, Numeric.err_noprivileges(user.nick))
-          end
-          user.virtual_hostname = Options.cloak_host if modelist.include?('x')
-          final_add_modes = modelist
-          final_add_modes.each_char { |mode| user.add_umode(mode) }
-        end
-        # Remove duplicate - umodes
-        unless final_remove_modes.length == 0
-          modelist = ''
-          final_remove_modes.each_char do |mode|
-            modelist << mode unless modelist.include?(mode)
-            if modelist =~ /[#{Server::USER_MODES}]/
-              final_remove_modes.delete(mode)
-            end
-          end
-          user.virtual_hostname = nil if modelist.include?('x')
-          final_remove_modes = modelist
-          final_remove_modes.each_char do |mode|
-            user.remove_umode(mode)
-          end
-        end
-        # FIXME: Check if final_add/remove_modes is nil
+        final_add_modes = del_dup_add_umodes(user, final_add_modes)
+        final_remove_modes = del_dup_sub_umodes(user, final_remove_modes)
         if final_add_modes.length == 0 && final_remove_modes.length == 0
           return
         elsif final_add_modes.length > 0 && final_remove_modes.length > 0
