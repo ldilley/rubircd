@@ -68,15 +68,20 @@ module Standard
           else
             good_targets += 1
             if user.on_channel?(chan) || !channel.modes.include?('n')
-              channel.users.each do |u|
-                next unless u.nick != user.nick
-                if !prefix.nil? && !prefix.empty?
-                  if u.qualifying_prefix?(prefix, chan) # allow messages to >= prefix
-                    Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{prefix}#{chan} :#{args[1]}")
+              # Allow voiced users and up to speak in moderated channels
+              if !channel.modes.include?('m') || (channel.modes.include?('m') && user.qualifying_prefix?('+', chan))
+                channel.users.each do |u|
+                  next unless u.nick != user.nick
+                  if !prefix.nil? && !prefix.empty?
+                    if u.qualifying_prefix?(prefix, chan) # allow messages to >= prefix
+                      Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{prefix}#{chan} :#{args[1]}")
+                    end
+                  else
+                    Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{chan} :#{args[1]}")
                   end
-                else
-                  Network.send(u, ":#{user.nick}!#{user.ident}@#{user.hostname} PRIVMSG #{chan} :#{args[1]}")
                 end
+              else
+                Network.send(user, Numeric.err_cannotsendtochan(user.nick, channel.name, '+m'))
               end
             else
               Network.send(user, Numeric.err_cannotsendtochan(user.nick, channel.name, 'no external messages'))

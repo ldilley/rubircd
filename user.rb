@@ -115,13 +115,19 @@ class User
 
   def become_admin
     @admin = true
-    add_umode('a')
+    add_umode('a') unless umode?('a')
+    add_umode('s') unless umode?('s')
+    add_umode('v') unless umode?('v')
+    add_umode('w') unless umode?('w')
     Server.oper_count += 1
   end
 
   def become_operator
     @operator = true
-    add_umode('o')
+    add_umode('o') unless umode?('o')
+    add_umode('s') unless umode?('s')
+    add_umode('v') unless umode?('v')
+    add_umode('w') unless umode?('w')
     Server.oper_count += 1
   end
 
@@ -316,7 +322,7 @@ class User
     prefix_list.join
   end
 
-  # Used for STATUSMSG
+  # Used for STATUSMSG and clearance for moderated channels
   def qualifying_prefix?(prefix, channel)
     @channels.each_key do |c|
       next unless c.casecmp(channel) == 0
