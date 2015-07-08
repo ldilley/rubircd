@@ -101,6 +101,10 @@ class Channel
     end
   end
 
+  def self.valid_ban?(ban_mask)
+    # TODO: Validate ban masks
+  end
+
   def add_ban(creator, mask, reason)
     @bans_lock.lock if Options.io_type.to_s == 'thread'
     ban = Ban.new(creator, mask, reason)
