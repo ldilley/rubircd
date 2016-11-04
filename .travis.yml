@@ -1,4 +1,9 @@
 language: ruby
+
+# Workaround for jruby-head build failure
+before_install:
+  - gem install bundler
+
 rvm:
   - "1.9.3"
   - "2.0.0"
@@ -8,10 +13,21 @@ rvm:
   - jruby-head
   - rbx
   - rbx-2
+  - rbx-3
 # Uncomment this line if your project needs to run something other than `rake`:
 # script: bundle exec rspec spec
 
+matrix:
+  allow_failures:
+    # Rubinius is failing on Travis lately...
+    - rvm: rbx
+    - rvm: rbx-2
+    - rvm: rbx-3
+
 notifications:
+  email: false
   irc:
     - "irc.rubircd.rocks#rubircd"
     - "irc.rubircd.rocks#sysadmininkudzu"
+    - "chat.freenode.net#rubircd"
+    - "irc.oftc.net#rubircd"
