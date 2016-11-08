@@ -100,10 +100,10 @@ module Standard
             end
           end
           unless good_extensions.empty?
-            Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK: #{good_extensions}")
+            Network.send(user, ":#{Options.server_name} CAP #{user.nick} ACK :#{good_extensions}")
           end
           unless bad_extensions.empty?
-            Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK: #{bad_extensions}")
+            Network.send(user, ":#{Options.server_name} CAP #{user.nick} NAK :#{bad_extensions}")
           end
         end
       else

@@ -64,6 +64,7 @@ class Network
     if Options.enable_starttls.to_s == 'true'
       begin
         tls_context = OpenSSL::SSL::SSLContext.new
+        tls_context.ca_file = 'cfg/ca.pem' if File.exists?('cfg/ca.pem')
         tls_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
         tls_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
         tls_server = OpenSSL::SSL::SSLServer.new(plain_server, tls_context)
@@ -84,6 +85,7 @@ class Network
           *_, @listen_address = base_server.addr
         end
         ssl_context = OpenSSL::SSL::SSLContext.new
+        ssl_context.ca_file = 'cfg/ca.pem' if File.exists?('cfg/ca.pem')
         ssl_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
         ssl_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
         ssl_server = OpenSSL::SSL::SSLServer.new(base_server, ssl_context)

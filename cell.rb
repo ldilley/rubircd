@@ -49,6 +49,7 @@ class Cell
       @plain_server = TCPServer.new(host, plain_port)
     else
       tls_context = OpenSSL::SSL::SSLContext.new
+      tls_context.ca_file = 'cfg/ca.pem' if File.exists?('cfg/ca.pem')
       tls_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
       tls_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
       tls_server = SSLServer.new(TCPServer.new(host, plain_port), tls_context)
@@ -58,6 +59,7 @@ class Cell
     async.plain_acceptor
     return if Options.ssl_port.nil?
     ssl_context = OpenSSL::SSL::SSLContext.new
+    ssl_context.ca_file = 'cfg/ca.pem' if File.exists?('cfg/ca.pem')
     ssl_context.cert = OpenSSL::X509::Certificate.new(File.read('cfg/cert.pem'))
     ssl_context.key = OpenSSL::PKey::RSA.new(File.read('cfg/key.pem'))
     @ssl_server = SSLServer.new(TCPServer.new(host, ssl_port), ssl_context)
