@@ -27,9 +27,7 @@ dir_name = 'logs'
 Dir.mkdir(dir_name) unless File.exists?(dir_name)
 
 # Local class requirements
-require_relative 'cell'
 require_relative 'channel'
-require_relative 'eventmach'
 require_relative 'log'
 require_relative 'network'
 require_relative 'options'
@@ -50,6 +48,8 @@ Log.write(2, 'Logging initialized.')
 print 'Parsing options file... '
 Options.parse(false)
 puts 'done.'
+require_relative 'cell' if Options.io_type.to_s == 'cell'
+require_relative 'eventmach' if Options.io_type.to_s == 'em'
 Log.write(2, 'Options loaded.')
 Opers.parse(false)
 Thread.abort_on_exception = true if Options.debug_mode.to_s == 'true'

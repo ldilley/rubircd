@@ -26,6 +26,7 @@ require_relative 'server'
 begin
   gem 'celluloid-io', '>=0.16.0'
   require 'celluloid/io'
+#  require 'celluloid/current'
   require 'celluloid/autostart'
 rescue Gem::LoadError
   puts 'Celluloid-IO gem not found!'
