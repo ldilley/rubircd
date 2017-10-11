@@ -2,7 +2,7 @@
 
 ## Testing
 
-You can connect to the test server running the current version of RubIRCd to check out the latest features. Just use the information below:
+You can connect to the test server running the current version of RubIRCd to check out the latest features. Just use the information below.
 
 **Server:** rubircd.dilley.me
 
