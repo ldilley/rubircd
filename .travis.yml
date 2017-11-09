@@ -3,11 +3,15 @@ language: ruby
 # Workaround for jruby-head build failure
 before_install:
   - gem install bundler
+  - gem update bundler
 
 rvm:
   - "1.9.3"
   - "2.0.0"
+  - "2.1.0"
   - "2.2.0"
+  - "2.3.0"
+  - "2.4.0"
   - ruby-head
   - jruby-19mode # JRuby in 1.9 mode
   - jruby-head
@@ -17,12 +21,131 @@ rvm:
 # Uncomment this line if your project needs to run something other than `rake`:
 # script: bundle exec rspec spec
 
+# Test execution with JRuby using the Java implementations below
+jdk:
+  - openjdk7
+  - openjdk8
+  - openjdk9
+  - oraclejdk7
+  - oraclejdk8
+  - oraclejdk9
+
 matrix:
   allow_failures:
     # Rubinius is failing on Travis lately...
     - rvm: rbx
     - rvm: rbx-2
     - rvm: rbx-3
+  exclude:
+    # Ignore Java use with CRuby and Rubinius
+    - rvm: 1.9.3
+      jdk: openjdk7
+    - rvm: 1.9.3
+      jdk: openjdk8
+    - rvm: 1.9.3
+      jdk: openjdk9
+    - rvm: 1.9.3
+      jdk: oraclejdk7
+    - rvm: 1.9.3
+      jdk: oraclejdk8
+    - rvm: 1.9.3
+      jdk: oraclejdk9
+    - rvm: 2.0.0
+      jdk: openjdk7
+    - rvm: 2.0.0
+      jdk: openjdk8
+    - rvm: 2.0.0
+      jdk: openjdk9
+    - rvm: 2.0.0
+      jdk: oraclejdk7
+    - rvm: 2.0.0
+      jdk: oraclejdk8
+    - rvm: 2.0.0
+      jdk: oraclejdk9
+    - rvm: 2.1.0
+      jdk: openjdk7
+    - rvm: 2.1.0
+      jdk: openjdk8
+    - rvm: 2.1.0
+      jdk: openjdk9
+    - rvm: 2.1.0
+      jdk: oraclejdk7
+    - rvm: 2.1.0
+      jdk: oraclejdk8
+    - rvm: 2.1.0
+      jdk: oraclejdk9
+    - rvm: 2.2.0
+      jdk: openjdk7
+    - rvm: 2.2.0
+      jdk: openjdk8
+    - rvm: 2.2.0
+      jdk: openjdk9
+    - rvm: 2.2.0
+      jdk: oraclejdk7
+    - rvm: 2.2.0
+      jdk: oraclejdk8
+    - rvm: 2.2.0
+      jdk: oraclejdk9
+    - rvm: 2.3.0
+      jdk: openjdk7
+    - rvm: 2.3.0
+      jdk: openjdk8
+    - rvm: 2.3.0
+      jdk: openjdk9
+    - rvm: 2.3.0
+      jdk: oraclejdk7
+    - rvm: 2.3.0
+      jdk: oraclejdk8
+    - rvm: 2.3.0
+      jdk: oraclejdk9
+    - rvm: 2.4.0
+      jdk: openjdk7
+    - rvm: 2.4.0
+      jdk: openjdk8
+    - rvm: 2.4.0
+      jdk: openjdk9
+    - rvm: 2.4.0
+      jdk: oraclejdk7
+    - rvm: 2.4.0
+      jdk: oraclejdk8
+    - rvm: 2.4.0
+      jdk: oraclejdk9
+    - rvm: rbx
+      jdk: openjdk7
+    - rvm: rbx
+      jdk: openjdk8
+    - rvm: rbx
+      jdk: openjdk9
+    - rvm: rbx
+      jdk: oraclejdk7
+    - rvm: rbx
+      jdk: oraclejdk8
+    - rvm: rbx
+      jdk: oraclejdk9
+    - rvm: rbx-2
+      jdk: openjdk7
+    - rvm: rbx-2
+      jdk: openjdk8
+    - rvm: rbx-2
+      jdk: openjdk9
+    - rvm: rbx-2
+      jdk: oraclejdk7
+    - rvm: rbx-2
+      jdk: oraclejdk8
+    - rvm: rbx-2
+      jdk: oraclejdk9
+    - rvm: rbx-3
+      jdk: openjdk7
+    - rvm: rbx-3
+      jdk: openjdk8
+    - rvm: rbx-3
+      jdk: openjdk9
+    - rvm: rbx-3
+      jdk: oraclejdk7
+    - rvm: rbx-3
+      jdk: oraclejdk8
+    - rvm: rbx-3
+      jdk: oraclejdk9
 
 notifications:
   email: false
