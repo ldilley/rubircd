@@ -4,6 +4,8 @@ language: ruby
 before_install:
   - gem install bundler
   - gem update bundler
+  - jruby -S gem install bundler
+  - jruby -S gem update bundler
 
 rvm:
   - "1.9.3"
