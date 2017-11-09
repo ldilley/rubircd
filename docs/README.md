@@ -1,3 +1,4 @@
+[![Waffle.io - Columns and their card count](https://badge.waffle.io/ldilley/rubircd.png?columns=all)](https://waffle.io/ldilley/rubircd?utm_source=badge)
 rubircd
 =======
 
