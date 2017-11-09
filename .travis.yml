@@ -25,7 +25,8 @@ rvm:
 jdk:
   - openjdk7
   - openjdk8
-  - oraclejdk7
+  # oraclejdk7 is busted on Travis
+  #- oraclejdk7
   - oraclejdk8
   - oraclejdk9
 
@@ -35,6 +36,8 @@ matrix:
     - rvm: rbx
     - rvm: rbx-2
     - rvm: rbx-3
+
+matrix:
   exclude:
     # Ignore Java use with CRuby and Rubinius
     - rvm: 1.9.3
@@ -42,8 +45,6 @@ matrix:
     - rvm: 1.9.3
       jdk: openjdk8
     - rvm: 1.9.3
-      jdk: oraclejdk7
-    - rvm: 1.9.3
       jdk: oraclejdk8
     - rvm: 1.9.3
       jdk: oraclejdk9
@@ -52,8 +53,6 @@ matrix:
     - rvm: 2.0.0
       jdk: openjdk8
     - rvm: 2.0.0
-      jdk: oraclejdk7
-    - rvm: 2.0.0
       jdk: oraclejdk8
     - rvm: 2.0.0
       jdk: oraclejdk9
@@ -62,8 +61,6 @@ matrix:
     - rvm: 2.1.0
       jdk: openjdk8
     - rvm: 2.1.0
-      jdk: oraclejdk7
-    - rvm: 2.1.0
       jdk: oraclejdk8
     - rvm: 2.1.0
       jdk: oraclejdk9
@@ -72,8 +69,6 @@ matrix:
     - rvm: 2.2.0
       jdk: openjdk8
     - rvm: 2.2.0
-      jdk: oraclejdk7
-    - rvm: 2.2.0
       jdk: oraclejdk8
     - rvm: 2.2.0
       jdk: oraclejdk9
@@ -82,8 +77,6 @@ matrix:
     - rvm: 2.3.0
       jdk: openjdk8
     - rvm: 2.3.0
-      jdk: oraclejdk7
-    - rvm: 2.3.0
       jdk: oraclejdk8
     - rvm: 2.3.0
       jdk: oraclejdk9
@@ -92,8 +85,6 @@ matrix:
     - rvm: 2.4.0
       jdk: openjdk8
     - rvm: 2.4.0
-      jdk: oraclejdk7
-    - rvm: 2.4.0
       jdk: oraclejdk8
     - rvm: 2.4.0
       jdk: oraclejdk9
@@ -102,8 +93,6 @@ matrix:
     - rvm: ruby-head
       jdk: openjdk8
     - rvm: ruby-head
-      jdk: oraclejdk7
-    - rvm: ruby-head
       jdk: oraclejdk8
     - rvm: ruby-head
       jdk: oraclejdk9
@@ -112,8 +101,6 @@ matrix:
     - rvm: rbx
       jdk: openjdk8
     - rvm: rbx
-      jdk: oraclejdk7
-    - rvm: rbx
       jdk: oraclejdk8
     - rvm: rbx
       jdk: oraclejdk9
@@ -122,8 +109,6 @@ matrix:
     - rvm: rbx-2
       jdk: openjdk8
     - rvm: rbx-2
-      jdk: oraclejdk7
-    - rvm: rbx-2
       jdk: oraclejdk8
     - rvm: rbx-2
       jdk: oraclejdk9
@@ -131,8 +116,6 @@ matrix:
       jdk: openjdk7
     - rvm: rbx-3
       jdk: openjdk8
-    - rvm: rbx-3
-      jdk: oraclejdk7
     - rvm: rbx-3
       jdk: oraclejdk8
     - rvm: rbx-3
